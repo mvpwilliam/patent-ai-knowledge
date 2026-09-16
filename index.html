@@ -1,0 +1,599 @@
+<!doctype html><html lang="zh-Hant"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI × PATENT｜Internal Knowledge Series</title><style>
+:root{--ink:#172033;--muted:#667085;--line:#e6eaf0;--soft:#f6f8fb;--accent:#3157d5;--green:#147d64;--amber:#a45b00}
+*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;color:var(--ink);background:#fff;line-height:1.72}
+main{max-width:940px;margin:auto;padding:56px 24px 80px}.eyebrow{font-weight:800;letter-spacing:.14em;font-size:13px;color:var(--accent)}
+h1{font-size:44px;line-height:1.15;margin:14px 0 14px;letter-spacing:-.03em} .lead{font-size:21px;color:#475467;max-width:760px;margin:0}
+.meta{margin-top:22px;color:#7a8495;font-size:13px;font-weight:700;letter-spacing:.05em}.rule{height:1px;background:var(--line);margin:42px 0}
+h2{font-size:28px;margin:0 0 12px;letter-spacing:-.02em}h3{font-size:20px;margin:0 0 8px}.intro{font-size:18px;max-width:800px}
+.compare,.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}.card{border:1px solid var(--line);border-radius:18px;padding:22px;background:#fff}
+.card.soft{background:var(--soft)}.label{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}.big{font-size:20px;font-weight:800;margin:8px 0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0}.step{padding:9px 12px;border-radius:10px;background:var(--soft);font-weight:700;font-size:14px}.arrow{color:#98a2b3}
+.item{padding:28px 0;border-top:1px solid var(--line)}.item:first-of-type{border-top:0}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#edf2ff;color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.05em;margin-bottom:10px}
+.badge.green{background:#eaf8f3;color:var(--green)}.badge.amber{background:#fff4e5;color:var(--amber)}
+.note{border-left:4px solid #c8d2ea;background:#f8faff;padding:15px 18px;border-radius:0 12px 12px 0;margin:20px 0}
+.takeaway{font-size:24px;font-weight:850;line-height:1.45;padding:26px;border-radius:18px;background:#172033;color:white;margin:24px 0}
+.role{font-size:15px}.role b{display:block;font-size:18px;margin-bottom:6px}.try{background:#f4f7ff;border-radius:20px;padding:26px;margin-top:22px}
+.sources a{display:block;color:#3157d5;text-decoration:none;margin:9px 0}.sources a:hover{text-decoration:underline}
+footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:#98a2b3;font-size:12px;letter-spacing:.08em}
+@media(max-width:680px){main{padding:38px 18px 60px}h1{font-size:34px}.lead{font-size:18px}.compare,.two{grid-template-columns:1fr}.takeaway{font-size:21px}}
+
+/* Reading section aligned with #02 */
+.sources li{margin:9px 0}
+
+/* Exact #02 reading/footer styles */
+.sources a{color:var(--accent);text-decoration:none;font-weight:650}
+.sources a:hover{text-decoration:underline}
+.sources li{margin:9px 0}
+.sources li{margin:9px 0}
+.sources a{color:var(--accent);text-decoration:none;font-weight:650}
+.sources a:hover{text-decoration:underline}
+.sources a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
+
+
+:root{--bg:#f5f7fa;--card:#fff;--ink:#172033;--muted:#687386;--line:#e6eaf0;--accent:#2457d6;--soft:#eef3ff;}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",Arial,sans-serif;line-height:1.72}
+.wrap{max-width:880px;margin:auto;padding:34px 20px 64px}
+.hero{background:linear-gradient(135deg,#101a34,#253d79);color:white;border-radius:24px;padding:44px 42px;box-shadow:0 16px 40px rgba(20,34,70,.16)}
+.kicker{font-size:13px;letter-spacing:.16em;font-weight:700;opacity:.78}.hero h1{font-size:38px;line-height:1.25;margin:14px 0 12px}.sub{font-size:18px;opacity:.86}
+.meta{margin-top:22px;font-size:13px;opacity:.72}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:30px;margin-top:20px}
+h2{font-size:23px;margin:0 0 14px}.lead{font-size:18px;margin:0}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}.box{border-radius:16px;padding:20px;background:#f7f8fb}.box.ai{background:var(--soft);border:1px solid #dce6ff}.label{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}.quote{font-size:20px;font-weight:750;margin-top:7px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.mini{border:1px solid var(--line);border-radius:16px;padding:19px}.mini h3{margin:0 0 8px;font-size:17px}.mini p{margin:0;color:#4f5a6d;font-size:14.5px}
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:17px 0}.step{padding:9px 13px;background:#f5f7fa;border-radius:10px;font-weight:650}.new .step{background:var(--soft);color:#173d9b}.arrow{color:#9aa4b4}
+.take{border-left:4px solid var(--accent);padding-left:17px;font-size:18px;font-weight:650;margin-top:18px}
+.sources a{color:var(--accent);text-decoration:none;font-weight:650}.sources a:hover{text-decoration:underline}.sources li{margin:9px 0}
+.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
+@media(max-width:680px){.hero{padding:32px 24px}.hero h1{font-size:30px}.compare,.grid{grid-template-columns:1fr}.card{padding:23px}.wrap{padding:18px 12px 44px}}
+
+.badge.green{background:#eaf8f3!important;color:#147d64!important}
+.badge.amber{background:#fff4e5!important;color:#a45b00!important}
+
+
+:root{--ink:#172033;--muted:#667085;--line:#e6eaf0;--soft:#f6f8fb;--accent:#3157d5;--green:#147d64;--amber:#a45b00}
+*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;color:var(--ink);background:#fff;line-height:1.72}
+main{max-width:940px;margin:auto;padding:56px 24px 80px}.eyebrow{font-weight:800;letter-spacing:.14em;font-size:13px;color:var(--accent)}
+h1{font-size:44px;line-height:1.15;margin:14px 0 14px;letter-spacing:-.03em} .lead{font-size:21px;color:#475467;max-width:760px;margin:0}
+.meta{margin-top:22px;color:#7a8495;font-size:13px;font-weight:700;letter-spacing:.05em}.rule{height:1px;background:var(--line);margin:42px 0}
+h2{font-size:28px;margin:0 0 12px;letter-spacing:-.02em}h3{font-size:20px;margin:0 0 8px}.intro{font-size:18px;max-width:800px}
+.compare,.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}.card{border:1px solid var(--line);border-radius:18px;padding:22px;background:#fff}
+.card.soft{background:var(--soft)}.label{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}.big{font-size:20px;font-weight:800;margin:8px 0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0}.step{padding:9px 12px;border-radius:10px;background:var(--soft);font-weight:700;font-size:14px}.arrow{color:#98a2b3}
+.item{padding:28px 0;border-top:1px solid var(--line)}.item:first-of-type{border-top:0}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#edf2ff;color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.05em;margin-bottom:10px}
+.badge.green{background:#eaf8f3;color:var(--green)}.badge.amber{background:#fff4e5;color:var(--amber)}
+.note{border-left:4px solid #c8d2ea;background:#f8faff;padding:15px 18px;border-radius:0 12px 12px 0;margin:20px 0}
+.takeaway{font-size:24px;font-weight:850;line-height:1.45;padding:26px;border-radius:18px;background:#172033;color:white;margin:24px 0}
+.role{font-size:15px}.role b{display:block;font-size:18px;margin-bottom:6px}.try{background:#f4f7ff;border-radius:20px;padding:26px;margin-top:22px}
+.sources a{display:block;color:#3157d5;text-decoration:none;margin:9px 0}.sources a:hover{text-decoration:underline}
+footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:#98a2b3;font-size:12px;letter-spacing:.08em}
+@media(max-width:680px){main{padding:38px 18px 60px}h1{font-size:34px}.lead{font-size:18px}.compare,.two{grid-template-columns:1fr}.takeaway{font-size:21px}}
+
+/* Reading section aligned with #02 */
+.sources li{margin:9px 0}
+
+/* Exact #02 reading/footer styles */
+.sources a{color:var(--accent);text-decoration:none;font-weight:650}
+.sources a:hover{text-decoration:underline}
+.sources li{margin:9px 0}
+.sources li{margin:9px 0}
+.sources a{color:var(--accent);text-decoration:none;font-weight:650}
+.sources a:hover{text-decoration:underline}
+.sources a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
+
+
+:root{--ink:#172033;--muted:#667085;--line:#e6eaf0;--soft:#f6f8fb;--accent:#3157d5;--green:#147d64;--amber:#a45b00}
+*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif;color:var(--ink);background:#fff;line-height:1.72}
+main{max-width:940px;margin:auto;padding:56px 24px 80px}.eyebrow{font-weight:800;letter-spacing:.14em;font-size:13px;color:var(--accent)}
+h1{font-size:44px;line-height:1.15;margin:14px 0 14px;letter-spacing:-.03em} .lead{font-size:21px;color:#475467;max-width:760px;margin:0}
+.meta{margin-top:22px;color:#7a8495;font-size:13px;font-weight:700;letter-spacing:.05em}.rule{height:1px;background:var(--line);margin:42px 0}
+h2{font-size:28px;margin:0 0 12px;letter-spacing:-.02em}h3{font-size:20px;margin:0 0 8px}.intro{font-size:18px;max-width:800px}
+.compare,.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}.card{border:1px solid var(--line);border-radius:18px;padding:22px;background:#fff}
+.card.soft{background:var(--soft)}.label{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}.big{font-size:20px;font-weight:800;margin:8px 0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0}.step{padding:9px 12px;border-radius:10px;background:var(--soft);font-weight:700;font-size:14px}.arrow{color:#98a2b3}
+.item{padding:28px 0;border-top:1px solid var(--line)}.item:first-of-type{border-top:0}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#edf2ff;color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.05em;margin-bottom:10px}
+.badge.green{background:#eaf8f3;color:var(--green)}.badge.amber{background:#fff4e5;color:var(--amber)}
+.note{border-left:4px solid #c8d2ea;background:#f8faff;padding:15px 18px;border-radius:0 12px 12px 0;margin:20px 0}
+.takeaway{font-size:24px;font-weight:850;line-height:1.45;padding:26px;border-radius:18px;background:#172033;color:white;margin:24px 0}
+.role{font-size:15px}.role b{display:block;font-size:18px;margin-bottom:6px}.try{background:#f4f7ff;border-radius:20px;padding:26px;margin-top:22px}
+.sources a{display:block;color:#3157d5;text-decoration:none;margin:9px 0}.sources a:hover{text-decoration:underline}
+footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:#98a2b3;font-size:12px;letter-spacing:.08em}
+@media(max-width:680px){main{padding:38px 18px 60px}h1{font-size:34px}.lead{font-size:18px}.compare,.two{grid-template-columns:1fr}.takeaway{font-size:21px}}
+
+/* Reading section aligned with #02 */
+.sources li{margin:9px 0}
+
+/* Exact #02 reading/footer styles */
+.sources a{color:var(--accent);text-decoration:none;font-weight:650}
+.sources a:hover{text-decoration:underline}
+.sources li{margin:9px 0}
+.sources li{margin:9px 0}
+.sources a{color:var(--accent);text-decoration:none;font-weight:650}
+.sources a:hover{text-decoration:underline}
+.sources a:hover{text-decoration:underline}
+.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
+
+html{scroll-behavior:smooth;scroll-padding-top:82px}
+body{margin:0}
+.series-nav{position:sticky;top:0;z-index:1000;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-bottom:1px solid #e5e7eb}
+.series-nav-inner{max-width:1120px;margin:auto;display:flex;align-items:center;gap:24px;padding:14px 22px}
+.series-brand{font-weight:900;letter-spacing:.06em;color:#111827;text-decoration:none;white-space:nowrap}
+.series-links{margin-left:auto;display:flex;gap:18px;overflow:auto}
+.series-links a{font:700 12px/1.2 Arial,sans-serif;color:#6b7280;text-decoration:none;white-space:nowrap}
+.series-links a:hover{color:#111827}
+.series-home{max-width:1120px;margin:auto;padding:72px 24px 64px}
+.series-label{font:800 12px/1 Arial,sans-serif;letter-spacing:.18em;color:#2563eb;margin-bottom:18px}
+.series-home h1{font-size:clamp(38px,6vw,72px);line-height:1.03;margin:0 0 22px;letter-spacing:-.045em}
+.series-deck{font-size:20px;line-height:1.75;color:#4b5563;max-width:760px}
+.series-meta{font:700 12px/1 Arial,sans-serif;color:#9ca3af;letter-spacing:.08em;margin-top:24px}
+.lifecycle{margin:52px 0 42px;padding:26px 28px;border:1px solid #e5e7eb;border-radius:18px;background:#fafafa}
+.lifecycle-title{font:800 11px/1 Arial,sans-serif;letter-spacing:.14em;color:#9ca3af;margin-bottom:18px}
+.life-row{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:12px;align-items:center}
+.life-node{padding:18px 12px;border-radius:13px;background:white;border:1px solid #e5e7eb;text-align:center;font-weight:800}
+.life-arrow{color:#9ca3af;font-weight:900}
+.memory{margin-top:16px;text-align:center;color:#6b7280;font-size:14px}
+.topic-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.topic-card{display:flex;min-height:250px;flex-direction:column;padding:26px;border:1px solid #e5e7eb;border-radius:18px;text-decoration:none;color:#111827;background:white;transition:.18s ease}
+.topic-card:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(17,24,39,.08);border-color:#cbd5e1}
+.topic-top{display:flex;justify-content:space-between;font:800 10px/1 Arial,sans-serif;letter-spacing:.08em;color:#9ca3af}
+.topic-kicker{margin-top:34px;font:900 11px/1 Arial,sans-serif;letter-spacing:.14em;color:#2563eb}
+.topic-card h3{font-size:25px;line-height:1.28;margin:12px 0 10px;letter-spacing:-.02em}
+.topic-card p{color:#6b7280;line-height:1.65;margin:0 0 24px}
+.topic-read{margin-top:auto;display:flex;justify-content:space-between;font:800 11px/1 Arial,sans-serif;color:#9ca3af}
+.issue{border-top:1px solid #e5e7eb;padding-top:26px}
+.issue-shell{max-width:920px;margin:auto}
+.issue-nav{max-width:920px;margin:40px auto 80px;padding:22px 24px;border-top:1px solid #e5e7eb;display:grid;grid-template-columns:1fr auto 1fr;gap:14px}
+.issue-nav a{font:700 12px/1.4 Arial,sans-serif;color:#4b5563;text-decoration:none}
+.issue-nav a:last-child{text-align:right}
+@media(max-width:760px){
+ .series-nav-inner{padding:12px 16px}.series-links{gap:14px}
+ .series-links a{font-size:10px}.series-home{padding:48px 18px}
+ .series-deck{font-size:17px}.topic-grid{grid-template-columns:1fr}
+ .life-row{grid-template-columns:1fr}.life-arrow{transform:rotate(90deg);text-align:center}
+ .issue-nav{grid-template-columns:1fr 1fr;padding:18px}.issue-nav a:nth-child(2){display:none}
+}
+</style>
+<style>
+@media (max-width: 760px){
+  /* Standalone issue styles used full width; restore a comfortable reading gutter. */
+  .issue-shell{
+    width:auto !important;
+    max-width:none !important;
+    margin:0 !important;
+    padding-left:20px !important;
+    padding-right:20px !important;
+    box-sizing:border-box !important;
+  }
+  .issue-shell main{
+    width:auto !important;
+    max-width:none !important;
+    margin:0 !important;
+    padding-left:0 !important;
+    padding-right:0 !important;
+  }
+  .issue-shell h1,
+  .issue-shell h2,
+  .issue-shell h3,
+  .issue-shell p,
+  .issue-shell .lead{
+    overflow-wrap:anywhere;
+  }
+  .issue-shell .card,
+  .issue-shell .takeaway,
+  .issue-shell .flow,
+  .issue-shell .two{
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  .issue-nav{
+    margin-left:20px !important;
+    margin-right:20px !important;
+    padding-left:0 !important;
+    padding-right:0 !important;
+  }
+}
+</style>
+
+
+<style>
+/* No-JavaScript article switching, compatible with local/iOS HTML preview */
+.issue{display:none !important;}
+.issue:target{display:block !important;}
+body:has(.issue:target) .series-home{display:none !important;}
+
+.article-back{
+  max-width:920px;
+  margin:0 auto;
+  padding:22px 24px 0;
+  box-sizing:border-box;
+}
+.article-back a{
+  font:800 12px/1.2 Arial,sans-serif;
+  letter-spacing:.04em;
+  color:#64748b;
+  text-decoration:none;
+}
+@media(max-width:760px){
+  .article-back{padding:18px 20px 0;}
+  body:has(.issue:target) .series-links{display:none;}
+}
+</style>
+
+</head><body>
+<nav class="series-nav"><div class="series-nav-inner">
+<a class="series-brand" href="#home">AI × PATENT</a>
+<div class="series-links">
+<a href="#issue-01">01 WORKFLOW</a><a href="#issue-02">02 SEARCH</a>
+<a href="#issue-03">03 DRAFT</a><a href="#issue-04">04 OA</a>
+</div></div></nav>
+
+<header id="home" class="series-home">
+<div class="series-label">INTERNAL KNOWLEDGE SERIES</div>
+<h1>AI 正在怎麼改變<br>Patent Work？</h1>
+<p class="series-deck">從工作流程、Prior Art Search、Draft & Review 到 OA / Prosecution，整理目前已經發生的 AI 應用，以及下一步值得思考的方向。</p>
+<div class="series-meta">4 TOPICS · 資訊更新至 2026.09</div>
+
+<div class="lifecycle">
+<div class="lifecycle-title">PATENT LIFECYCLE</div>
+<div class="life-row">
+<div class="life-node">01<br>Workflow</div><div class="life-arrow">→</div>
+<div class="life-node">02<br>Search</div><div class="life-arrow">→</div>
+<div class="life-node">03<br>Draft & Review</div><div class="life-arrow">→</div>
+<div class="life-node">04<br>Prosecution</div>
+</div>
+<div class="memory">Search → Draft → Review → Prosecution → Learn → 下一件新案　·　Company Patent Memory</div>
+</div>
+
+<div class="topic-grid">
+<a class="topic-card" href="#issue-01">
+  <div class="topic-top"><span>01</span><span>UPDATED · 2026.09</span></div>
+  <div class="topic-kicker">IP WORKFLOW</div>
+  <h3>AI 開始接手專利工作流程了嗎？</h3>
+  <p>從單一工作走向一整段 Workflow</p>
+  <div class="topic-read">3 MIN READ<b>→</b></div>
+</a>
+
+<a class="topic-card" href="#issue-02">
+  <div class="topic-top"><span>02</span><span>UPDATED · 2026.09</span></div>
+  <div class="topic-kicker">PRIOR ART SEARCH</div>
+  <h3>AI 已經會幫忙找 Prior Art 了？</h3>
+  <p>從關鍵字搜尋走向理解技術內容</p>
+  <div class="topic-read">2 MIN READ<b>→</b></div>
+</a>
+
+<a class="topic-card" href="#issue-03">
+  <div class="topic-top"><span>03</span><span>UPDATED · 2026.09</span></div>
+  <div class="topic-kicker">DRAFT & REVIEW</div>
+  <h3>AI 會寫專利了，但它知道「該怎麼寫」嗎？</h3>
+  <p>把 Prior Art 與公司經驗帶進新案</p>
+  <div class="topic-read">3 MIN READ<b>→</b></div>
+</a>
+
+<a class="topic-card" href="#issue-04">
+  <div class="topic-top"><span>04</span><span>UPDATED · 2026.09</span></div>
+  <div class="topic-kicker">OA & PROSECUTION</div>
+  <h3>AI 看得懂 OA，為什麼還是不太會「答」？</h3>
+  <p>從 OA 分析走向真正的答辯策略</p>
+  <div class="topic-read">3 MIN READ<b>→</b></div>
+</a></div>
+</header>
+<article id="issue-01" class="issue"><div class="article-back"><a href="#">← AI × PATENT 首頁</a></div><div class="issue-shell">
+<div class="eyebrow">AI × PATENT · #01 · IP WORKFLOW</div>
+<h1>AI 開始接手專利工作流程了嗎？</h1>
+<p class="lead">從專利工程師到專利程序／管理人員，AI 正從「回答問題」走向「執行工作」。</p>
+<div class="meta">SEP 2026 · 3 MIN READ · 資訊更新至 2026.09</div>
+
+<div class="rule"></div>
+<h2>從「人操作系統」到「AI 先處理、人確認」</h2>
+<p class="intro">過去的專利管理系統，主要由人把案件、文件、期限與任務輸入系統。現在的變化，是 AI 與流程自動化開始直接讀文件、取得資料、整理案件，甚至把下一步工作準備好。</p>
+<div class="compare">
+ <div class="card"><div class="label">傳統專利管理系統</div><div class="big">人輸入資料 → 系統幫忙管理</div><div>下載文件、辨識案件、更新欄位、建立任務，再由系統提醒。</div></div>
+ <div class="card soft"><div class="label">AI + 自動化流程</div><div class="big">AI 先處理 → 人確認例外</div><div>自動取得與整理資料，讓人力集中在確認、例外處理與專業判斷。</div></div>
+</div>
+
+<div class="rule"></div>
+<h2>現在已經做到哪裡？</h2>
+<div class="flow" style="margin-top:10px;margin-bottom:22px">
+  <span class="badge" style="margin:0">目前已可做到</span>
+  <span class="badge green" style="margin:0">已正式推出／實際導入</span>
+  <span class="badge amber" style="margin:0">開發中／即將推出</span>
+</div>
+
+<section class="item">
+<span class="badge">目前已可做到</span>
+<h3>① AI 自主工作流程：先從行政工作開始</h3>
+<p>Anaqua 在 2026 年把 <b>AI 自主工作流程</b>視為專利管理的重要方向：AI 負責處理大量重複性的行政工作，但仍保留人工監督，讓專利專業人員把時間放在專利組合決策、風險評估等需要判斷的工作。</p>
+<div class="flow"><span class="step">讀取資料／文件</span><span class="arrow">→</span><span class="step">執行既定流程</span><span class="arrow">→</span><span class="step">處理例行工作</span><span class="arrow">→</span><span class="step">人工監督</span></div>
+</section>
+
+<section class="item">
+<span class="badge">目前已可做到</span>
+<h3>② 建檔／IDS／期限管理：其實已經高度自動化</h3>
+<p>Clarivate FoundationIP 已支援從 USPTO 或電子郵件進行案件建檔、建立內部任務，並依相關專利家族自動觸發工作；也能自動更新欄位、產生報表與提醒。IDS 可大量匯入引證文獻、同步到相關案件並產生表單；法規更新與期限重算則涵蓋 300 多個司法管轄區。</p>
+<div class="flow"><span class="step">專利局／Email</span><span class="arrow">→</span><span class="step">案件建檔</span><span class="arrow">→</span><span class="step">任務／專利家族</span><span class="arrow">→</span><span class="step">IDS／期限</span></div>
+<div class="note"><b>這裡的重點：</b>不一定每一步都是生成式 AI。真正改變程序工作的，是 AI、資料串接與流程自動化合在一起。</div>
+</section>
+
+<section class="item">
+<span class="badge green">2026.06 · 已實際導入</span>
+<h3>③ Questel Qthena：企業已開始導入審查流程管理</h3>
+<p>Qthena 可以直接連到各國專利登錄系統，自動取得、儲存、重新命名並整理審查文件，例如先前技術、檢索意見與審查文件，再把文件、AI 分析結果與團隊協作集中在同一個案件空間。</p>
+<p>2026 年 6 月，Giesecke+Devrient（G+D）宣布採用 Qthena。這代表「AI + 專利審查流程」已不只是展示，而開始進入企業 IP 部門。</p>
+<div class="flow"><span class="step">專利登錄系統</span><span class="arrow">→</span><span class="step">自動取得文件</span><span class="arrow">→</span><span class="step">命名 / 整理</span><span class="arrow">→</span><span class="step">AI 分析</span><span class="arrow">→</span><span class="step">團隊確認</span></div>
+</section>
+
+<section class="item">
+<span class="badge amber">開發中／即將推出</span>
+<h3>④ Equinox：AI 開始瞄準「來件處理」</h3>
+<p>Questel 旗下 Equinox 已公開 AI 建檔發展方向：下一步是讓 AI 直接處理收到的文件，自動抽取<b>案件代碼、文件類型、重要號碼與日期</b>，再建議應啟動哪一個預先設定的流程。這正是專利程序／管理人員常見的收件與案件管理工作。</p>
+<div class="flow"><span class="step">收到文件</span><span class="arrow">→</span><span class="step">抽取案件／日期／文件類型</span><span class="arrow">→</span><span class="step">建議下一步</span><span class="arrow">→</span><span class="step">人工確認</span></div>
+<div class="note"><b>注意：</b>Equinox 官網目前仍將「自動讀取來件」與「建議下一步」標為即將推出。這反而很能說明 2026 年的真實邊界：傳統流程自動化已相當成熟，但真正由 AI 讀懂文件並決定下一步，仍在落地途中。</div>
+</section>
+
+<section class="item">
+<span class="badge green">2026.05 · 已正式推出</span>
+<h3>⑤ Dennemeyer：開始可以直接用白話查專利組合</h3>
+<p>Dennemeyer 2026 年推出新一代 DIAMS Infinity，除了專利局資料串接、案件建檔、期限追蹤與任務管理，也加入<b>自然語言搜尋</b>：使用者不必熟悉複雜欄位與篩選條件，就能直接用白話查詢專利管理系統裡的專利組合資訊。</p>
+<div class="flow"><span class="step">用白話詢問</span><span class="arrow">→</span><span class="step">AI 理解問題</span><span class="arrow">→</span><span class="step">查詢系統資料</span><span class="arrow">→</span><span class="step">取得管理資訊</span></div>
+</section>
+
+<section class="item">
+<span class="badge">目前已可做到</span>
+<h3>⑥ MaxVal：有些「像 AI Agent 的效果」其實早已能自動化</h3>
+<p>MaxVal Symphony 已可直接同步主要專利局資料，做到<b>幾乎不需人工介入的自動建檔／解除待辦</b>，並自動維護期限規則。2025 年又把 Relecura AI 整合進系統，增加新穎性檢索與專利分類能力。</p>
+<div class="note"><b>這是一個重要分界：</b>不要把所有自動化都叫 AI Agent。專利局資料同步、規則引擎、期限觸發，本來就能做到大量無人化處理；2026 年真正的新進展，是 AI 開始處理過去較難用固定規則完成的「讀文件、理解內容、找資料、建議下一步」。</div>
+</section>
+
+<section class="item">
+<span class="badge">目前已可做到</span>
+<h3>⑦ AI Agent 開始能直接連「真的專利資料」</h3>
+<p>PatSnap Open Platform 已提供 API、MCP 與 Agent Skills。AI Agent 執行任務時可以即時呼叫專利檢索與資料取得功能，而不是只靠語言模型的既有知識回答；平台也把新穎性檢索、FTO、技術問答與說明書撰寫等能力做成可串接的流程。</p>
+<div class="flow"><span class="step">AI 接到任務</span><span class="arrow">→</span><span class="step">連接專利資料</span><span class="arrow">→</span><span class="step">取得即時資料</span><span class="arrow">→</span><span class="step">執行下一步</span></div>
+</section>
+
+<div class="rule"></div>
+<h2>對整個 IP 部門有什麼意義？</h2>
+<div class="two">
+ <div class="card role"><b>⚖️ 專利工程師</b>先前技術／OA 分析<br>請求項對照<br>說明書／請求項審閱<br>審查答辯決策支援<br><br><strong>核心仍是技術／法律判斷</strong></div>
+ <div class="card role"><b>🗂️ 專利程序／管理人員</b>文件取得與整理<br>案件建檔 / Task creation<br>Deadline / law update<br>IDS / family data flow<br><br><strong>AI 可先承接例行程序，讓人力轉向例外處理與流程管理</strong></div>
+</div>
+
+<div class="takeaway">以前：人輸入資料，系統幫你管理。<br><br>現在：AI 讀取資料、準備下一步，人負責確認例外與做專業判斷。</div>
+
+<p>對專利程序／管理人員而言，這比較像是工作重心的轉變：減少重複性的資料輸入與文件整理，把時間移到例外處理、流程監控、跨部門協調與資料品質確認。<br><br>
+所以現階段比較準確的說法，不是「AI 已經可以自動運作整個 IP 部門」，而是：</p>
+<p><b>AI 正從「幫你做一個工作」，走向「幫你跑一段流程」。</b></p>
+
+
+<div class="rule"></div>
+<h2>從這裡開始找 AI 應用</h2>
+<p>不一定要先想「AI 可以做什麼」。先觀察日常工作中，哪些事情一直重複出現：</p>
+
+<div class="two">
+  <div class="card">
+    <div class="big">📄 一直在「讀」</div>
+    <div>可以想想 AI 能不能自動辨識文件、案件、日期與重要資訊。</div>
+  </div>
+  <div class="card">
+    <div class="big">📥 一直在「搬」</div>
+    <div>可以想想 AI 能不能從 Email／文件抽取資料，再帶到下一個系統或流程。</div>
+  </div>
+  <div class="card">
+    <div class="big">🔍 一直在「比」</div>
+    <div>可以想想 AI 能不能協助比對前後版本、Claims、OA、翻譯或案件資料。</div>
+  </div>
+  <div class="card">
+    <div class="big">⏱️ 一直在「追」</div>
+    <div>可以想想 AI 能不能辨識目前案件狀態，整理待辦並提醒下一步。</div>
+  </div>
+</div>
+
+<div class="takeaway">先找每天重複發生的「讀、搬、比、追」，<br>AI 應用通常就藏在裡面。</div>
+
+<div class="try">
+<div class="label">可以試試看</div>
+<h3>找一個每週重複最多次的流程</h3>
+<p>例如「收到國外事務所／專利局文件 → 找案件 → 存檔 → 更新期限 → 建立任務 → 通知承辦人」。<b>可以從這六個步驟逐一檢視：哪些適合由系統自動完成？哪些仍需要人工確認與專業判斷？</b></p>
+</div>
+
+<section class="card sources">
+<h2>延伸閱讀</h2>
+<ul>
+<li><a href="https://www.anaqua.com/ja/resource/agentic-workflows-will-define-ip-management/">Anaqua — 2026 AI Predictions: Agentic Workflows Will Define IP Management</a></li>
+<li><a href="https://clarivate.com/intellectual-property/ip-management-software/foundationip/">Clarivate — FoundationIP</a></li>
+<li><a href="https://www.questel.com/patent/ai-assistants-patent-productivity/patent-prosecution-workflow/">Questel — Qthena Patent Prosecution Workflow</a></li>
+<li><a href="https://equinox-ipms.com/ai-assisted-ip-docketing/">Equinox — AI Agents for IP Docketing</a></li>
+<li><a href="https://www.dennemeyer.com/diams-infinity">Dennemeyer — DIAMS Infinity</a></li>
+<li><a href="https://www.maxval.com/symphony-law-firm/patent-management/docketing/">MaxVal — Symphony Patent Docketing</a></li>
+<li><a href="https://www.questel.com/resourcehub/giesecke-devrient-has-selected-qthena-patent-prosecution-workflow-platform/">Questel — G+D Selects Qthena (2026)</a></li>
+<li><a href="https://open.patsnap.com/devportal">PatSnap — Developer Center: API, MCP &amp; Agent Workflows</a></li>
+</ul>
+</section>
+<div class="footer">AI × PATENT · Internal Knowledge Series</div>
+</div><div class="issue-nav"><span></span><a href="#home">回到首頁 ↑</a><a href="#issue-02">02 PRIOR ART SEARCH →</a></div></article><article id="issue-02" class="issue"><div class="article-back"><a href="#">← AI × PATENT 首頁</a></div><div class="issue-shell">
+<section class="hero">
+<div class="kicker">AI × PATENT · #02 · PRIOR ART SEARCH</div>
+<h1>AI 已經會幫忙找 Prior Art 了？</h1>
+<div class="sub">用 2 分鐘看看 AI 如何改變專利檢索的起點。</div>
+<div class="meta">SEP 2026 · 2 MIN READ · 資訊更新至 2026.09</div>
+</section>
+
+<section class="card">
+<h2>從「找對關鍵字」到「讓 AI 理解技術」</h2>
+<p class="lead">傳統 Prior Art Search 通常從理解發明、找 synonym / CPC、建立 Boolean query 開始。現在的 AI 檢索 則開始嘗試直接理解一段技術描述，再尋找概念相近的文件。</p>
+<div class="compare">
+<div class="box"><div class="label">傳統搜尋</div><div class="quote">「文字一樣嗎？」</div></div>
+<div class="box ai"><div class="label">AI 搜尋</div><div class="quote">「講的是不是同一件事？」</div></div>
+</div>
+</section>
+
+<section class="card">
+<h2>現在 AI 專利檢索 已經做到哪裡？</h2>
+<p class="lead">AI 專利檢索 已經不只是「幫你想 Keyword」。目前可以看到一條很清楚的能力演進：</p>
+
+<div class="mini" style="margin-top:20px">
+<h3>① 🌐 WIPO <span style="font-size:12px;background:#e8f0ff;color:#2457d6;padding:4px 8px;border-radius:999px">2026.07 NEW</span>｜用白話告訴 AI「我要找什麼」</h3>
+<p>2026 年 PATENTSCOPE 推出 AI-Assisted Search。使用者可以直接用自然語言描述需求，例如「找 2022 年後提升效率的太陽能板專利」，再由 AI 轉成 PATENTSCOPE 可執行的 Keyword、日期、國家等搜尋條件，並可透過對話繼續修改。</p>
+<p><strong>目前比較像：自然語言 → AI 幫你建立 Search Query。</strong></p>
+</div>
+
+<div class="mini" style="margin-top:14px">
+<h3>② 🇺🇸 USPTO <span style="font-size:12px;background:#f0f2f5;color:#596579;padding:4px 8px;border-radius:999px">SimSearch 2022.09 →</span>｜AI 已實際幫 Examiner 找 Prior Art</h3>
+<p>USPTO Examiner 已使用 <strong>Similarity Search（SimSearch）</strong>：AI 可利用 Patent Application 的文字產生搜尋內容，再將相似文件依相關程度排序；Application 經 Amendment 修改後，也能重新產生結果。</p>
+<p>後續的 <strong>ASAP! Pilot（2025.10–2026.06 · 試辦已結束）</strong> 更測試在正式 Examination 前，由 AI 分析 Specification、Claims、Abstract 與 CPC，先提供可能相關的 Prior Art。</p>
+<p><strong>這代表 AI Prior Art Search 已經真正進入 Patent Examination Workflow。</strong></p>
+</div>
+
+<div class="mini" style="margin-top:14px;background:var(--soft);border-color:#dce6ff">
+<h3>③ 🤖 Questel Sophia <span style="font-size:12px;background:#e8f0ff;color:#2457d6;padding:4px 8px;border-radius:999px">2025.10 →</span>｜讀發明 → 拆技術特徵 → 找揭露</h3>
+<p>Questel 的 Sophia Search 又往前一步。使用者可以直接提供 <strong>Invention Disclosure / Memo / 技術說明</strong>，讓 AI 先理解內容並拆出重要 Technical Features，再搜尋「技術意思相近」的專利。</p>
+<div class="flow new" style="margin-bottom:10px">
+<span class="step">讀發明揭露</span><span class="arrow">→</span>
+<span class="step">拆解技術特徵</span><span class="arrow">→</span>
+<span class="step">找相似先前技術</span><span class="arrow">→</span>
+<span class="step">比對技術特徵揭露</span>
+</div>
+<p>對搜尋結果，Sophia 還能協助判斷各 Feature 是否 <strong>Disclosed / Partially Disclosed</strong>，並指出支持判斷的相關段落或 Claim，進一步產生 先前技術報告。</p>
+<p><strong>也就是從「幫我找相似專利」，開始往「幫我看看這個發明的哪些技術特徵可能已被揭露」前進。</strong></p><p style="margin-top:12px;padding:10px 12px;background:#fff;border-radius:10px;font-size:14px"><strong>2026.04 UPDATE｜</strong>Questel 發布新的 QaECTER patent semantic retrieval model，並導入 Orbit Intelligence / Sophia 等產品，持續強化「依技術意思找相似專利」的能力。</p>
+</div>
+
+<p style="margin:20px 2px 0;color:var(--muted);font-size:14px">⚠️ AI 檢索 目前仍不是完整檢索的替代品。實務上仍需搭配 Keyword、Classification、Citation 等搜尋方式，並由 Patent Professional 做最後判斷。</p>
+</section>
+
+<section class="card">
+<h2>💡 對 專利工程師 有什麼意義？</h2>
+<div class="label">以前</div>
+<div class="flow"><span class="step">Keyword</span><span class="arrow">→</span><span class="step">Boolean Search</span><span class="arrow">→</span><span class="step">Review</span></div>
+<div class="label">AI 檢索 開始帶來的流程</div>
+<div class="flow new"><span class="step">Invention Disclosure</span><span class="arrow">→</span><span class="step">AI 找相似先前技術</span><span class="arrow">→</span><span class="step">Human Review</span></div>
+<p class="take">AI 現階段不是取代 專利檢索，而是幫助我們更快開始搜尋，也更容易找到「不同文字、相似技術」的文件。</p>
+</section>
+
+<section class="card">
+<h2>🧪 可以試試看</h2>
+<p class="lead">拿一件已知重要 Prior Art 的舊案，把原始 Disclosure 丟進 AI 檢索：<strong>已知的 Reference 能不能被找到？AI 又能不能找到當年沒發現的相關文件？</strong></p>
+</section>
+
+<section class="card sources">
+<h2>延伸閱讀</h2>
+<ul>
+<li><a href="https://www.uspto.gov/about-us/news-updates/another-uspto-ai-assisted-examination-tool-ready-prime-time">USPTO — AI-assisted Similarity Search</a></li>
+<li><a href="https://www.wipo.int/en/web/patentscope/w/news/2026/patentscope-ai-assisted-search-now-available">WIPO — PATENTSCOPE AI-Assisted Search</a></li>
+<li><a href="https://www.questel.com/lp/sophia-ai-agents-orbit-intelligence/">Questel — Sophia AI Agents for Orbit Intelligence</a></li>
+<li><a href="https://intelligence.help.questel.com/en/support/solutions/articles/77000585238-sophia-search-ai-powered-text-analysis-disclosure-reveal">Questel — Sophia Search / Disclosure Reveal</a></li>
+<li><a href="https://www.questel.com/questel-ai-lab-launches-breakthrough-ai-model-enhancing-semantic-patent-search/">Questel — QaECTER 專利檢索 Model (2026.04)</a></li>
+</ul>
+</section>
+<div class="footer">AI × PATENT · Internal Knowledge Series</div>
+</div><div class="issue-nav"><a href="#issue-01">← 01 IP WORKFLOW</a><a href="#home">回到首頁 ↑</a><a href="#issue-03">03 DRAFT & REVIEW →</a></div></article><article id="issue-03" class="issue"><div class="article-back"><a href="#">← AI × PATENT 首頁</a></div><div class="issue-shell">
+<div class="eyebrow">AI × PATENT · #03 · DRAFT & REVIEW</div>
+<h1>AI 會寫專利了，<br>但它知道「該怎麼寫」嗎？</h1>
+<p class="sub">從 Prior Art、公司既有專利到過往核准經驗，AI 能不能把這些知識帶進新案 Draft & Review？</p>
+<div class="meta">SEP 2026 · 3 MIN READ · 資訊更新至 2026.09</div>
+
+<div class="rule"></div>
+<p class="lead">AI Patent Drafting 已經從「幫忙改文字」，走到可以從 invention disclosure 或 claim tree 產生初稿。<br><b>下一個更有意思的問題是：AI 能不能把「檢索結果」與「公司過去學到的經驗」一起帶進新案？</b></p>
+
+<div class="rule"></div><h2>Part 1｜AI 真的已經會寫 Patent Draft 了？</h2>
+<div class="card"><span class="badge green">2026 · 已實際導入</span><h3>Qthena｜從 Disclosure / Claim Tree 產生初稿</h3><p>Qthena 可從 claim tree 或完整 invention disclosure 產生 patent application first draft，並提供 unclaimed matter、antecedent basis、numerals 等檢查；也能匯入 previous applications 重用偏好的 wording / style，或加入團隊自己的 playbook。</p></div>
+<div class="card"><span class="badge green">2026.09 · 隨機實驗</span><h3>NBER｜AI 讓 Patent Drafting 變好，但「學會多少」因人而異</h3><p>一項三個月隨機實驗讓 11 家美國 IP law firms 的 133 位 patent lawyers 使用 AI drafting assistant。AI 組在第 10 天與第 90 天的 drafting benchmark 品質分別提高 0.34 與 0.38 個標準差，Junior 的即時提升較大；但三個月後拿掉 AI 做 redline 測試時，持續性的能力提升集中在 Senior，Junior 平均沒有顯著提升。</p><p><b>AI 不只改變「寫得多快」，也開始影響 Patent Attorney 如何累積 drafting expertise。</b></p></div>
+
+<div class="takeaway">「AI 會不會寫」正在變成基本題。<br>更值得問的是：它寫之前，知道哪些資訊最重要嗎？</div>
+
+<div class="rule"></div><h2>Part 2｜Prior Art Search 不應該停在 Search Report</h2>
+<p>#02 談的是 AI 怎麼找 Prior Art；但 Search 的結果，其實可以直接成為下一步 Drafting 的 context。</p>
+<div class="card"><span class="badge green">目前已可做到</span><h3>Solve Intelligence｜Search → Claim / Draft Optimization</h3><p>Solve 已把 patentability assessment 放進 Drafting workflow。官方說明可在撰寫過程利用檢索結果強化 claims、預先考慮可能的 rejection，並補入 backup disclosure 與 claims。</p></div>
+<div class="flow"><span>Invention Disclosure</span><b>→</b><span>AI Prior Art Search</span><b>→</b><span>Feature Map</span><b>→</b><span>Drafting Context</span><b>→</b><span>Draft</span></div>
+<div class="card"><h3>不是「把 20 篇 Prior Art 丟給 AI」</h3><p>更有用的是先整理：哪些 feature 已很常見？哪些 technical relationship 在目前檢索中仍有差異？哪些地方需要更多 fallback positions、embodiments 或 technical effect 描述？再把這些資訊交給撰稿者或 Drafting AI。</p></div>
+
+<div class="rule"></div><h2>Part 3｜如果再加入「公司過去的核准經驗」？</h2>
+<p>這一步目前市售工具已經碰到一部分，但還沒有看到公開資料證明已完整做到「歷史核准關鍵 → 自動回饋新案」。</p>
+<div class="two">
+<div class="card"><div class="big">外界已做到：重用過去申請</div><div>Qthena 可匯入 previous applications，維持 wording / style 一致，也可加入 team playbook 與 best practices。</div></div>
+<div class="card"><div class="big">外界已做到：Prosecution History</div><div>現有 Patent AI 已能在 prosecution 階段讀取 family history、過去 argument / amendment，作為案件分析 context。</div></div>
+</div>
+<div class="card"><span class="badge amber">值得進一步發展</span><h3>下一步：把「為什麼核准」帶回新案</h3><p>對一件新案，AI 可以先找公司內部技術相似的歷史專利，再往回讀 prosecution history：原始 Claim 怎麼寫？Examiner challenge 哪裡？公司怎麼 argument / amend？最後留下哪個 technical distinction 才取得核准？</p></div>
+
+<div class="flow"><span>External Prior Art</span><b>+</b><span>Internal Similar Patents</span><b>+</b><span>過往 Prosecution</span><b>→</b><span>Drafting Brief</span></div>
+
+<div class="card"><h3>Drafting Brief 可能長這樣</h3>
+<p><b>Prior Art 已知：</b>A / B / C features 已普遍揭露。<br>
+<b>本案可能差異：</b>X–Y relationship。<br>
+<b>公司相似案件：</b>Patent 123、Patent 456。<br>
+<b>過往核准經驗：</b>Patent 123 的 prosecution 中，X–Y relationship 曾成為區別 prior art 的重要 feature。<br>
+<b>Drafting Reminder：</b>如果本案也涉及這個 relationship，確認 specification 是否充分描述結構、technical effect、替代 embodiment 與 fallback position。</p></div>
+
+<div class="takeaway">AI 不一定要告訴撰稿者「Claim 1 應該加什麼」。<br>更有價值的可能是提醒：<br>「公司以前在相似技術上，這裡曾經很重要，這次不要漏掉。」</div>
+
+<div class="rule"></div><h2>Part 4｜那 In-house 的 AI Reviewer 呢？</h2>
+<p>事務所完成 Draft 後，同一批 context 還可以再用一次。AI 不只檢查文件形式，也可以協助 Patent Engineer 找「值得確認的地方」。</p>
+<div class="two">
+<div class="card"><div class="big">文件本身</div><div>Claim ↔ Spec support、antecedent basis、dependency、元件名稱／圖號、embodiment consistency、英中版本差異。</div></div>
+<div class="card"><div class="big">公司經驗</div><div>與內部相似專利、過去核准 claims、重要 prosecution distinctions 比較，提醒可能遺漏的 technical point。</div></div>
+</div>
+
+<div class="rule"></div><h2>把四期串起來，就會變成一個循環</h2>
+<div class="flow"><span>Search</span><b>→</b><span>Draft</span><b>→</b><span>Review</span><b>→</b><span>Prosecution</span><b>→</b><span>Learn</span><b>→</b><span>下一件新案</span></div>
+<p><b>每一件案子的 prosecution 經驗，不只是結案紀錄，也可能成為下一件新案的 drafting knowledge。</b></p>
+
+<section class="card sources"><h2>延伸閱讀</h2><ul>
+<li><a href="https://www.nber.org/papers/w35720">NBER｜Does AI Assistance Enhance or Erode Expertise? Patent Drafting RCT (2026)</a></li>
+<li><a href="https://www.solveintelligence.com/capabilities/patentability-assessments">Solve Intelligence｜Patentability Assessments in Drafting</a></li>
+<li><a href="https://questel.com/qthena/features/ai-powered-use-cases">Questel Qthena｜AI-Powered Use Cases Across the IP Lifecycle</a></li>
+<li><a href="https://www.questel.com/qthena/resources/news/scaling-specialist-ai-hgf-expands-qthena-for-firm-wide-patent-practice">Qthena × HGF｜Firm-wide Patent AI Adoption (2026)</a></li>
+<li><a href="https://arxiv.org/abs/2406.16897">InstructPatentGPT｜Learning Patent Drafting from Prosecution Outcomes</a></li>
+</ul></section>
+<div class="footer">AI × PATENT · Internal Knowledge Series</div>
+</div><div class="issue-nav"><a href="#issue-02">← 02 PRIOR ART SEARCH</a><a href="#home">回到首頁 ↑</a><a href="#issue-04">04 OA & PROSECUTION →</a></div></article><article id="issue-04" class="issue"><div class="article-back"><a href="#">← AI × PATENT 首頁</a></div><div class="issue-shell">
+<div class="eyebrow">AI × PATENT · #04 · OA & PROSECUTION</div>
+<h1>AI 看得懂 OA，<br>為什麼還是不太會「答」？</h1>
+<p class="sub">從 OA 分析、答辯建議，到真正理解公司的 prosecution strategy，AI 還差哪一步？</p>
+<div class="meta">SEP 2026 · 3 MIN READ · 資訊更新至 2026.09</div>
+
+<div class="rule"></div>
+<p class="lead">現在的 AI 已經可以讀 OA、整理 rejection、比對 prior art，甚至提出 argument 與 claim amendment。<br><b>但真正困難的，可能不是「產生一份答辯」，而是理解「為什麼要這樣答」。</b></p>
+
+<div class="rule"></div><h2>現在 AI 答辯已經做到哪裡？</h2>
+<div class="card"><span class="badge green">2026 · 已正式推出</span><h3>Questel Qthena｜從 OA 分析走到策略建議</h3><p>Qthena 可整理 OA 與 prior art、提出多個 response strategy、argument 與 claim amendment，選定策略後再協助產生答辯初稿。Questel 同時強調 human-in-the-loop：最後的策略選擇與法律確認仍由專業人員完成。</p></div>
+<div class="card"><span class="badge green">2026.04 · 公開專利申請</span><h3>Solve Intelligence｜AI 已開始參與 OA 策略與答辯生成</h3><p>其公開的美國專利申請描述一套 AI-assisted OA response 系統：取得 OA 與 cited prior art → 抽取 rejection / objection → 產生多個 response strategy 候選 → 由使用者選擇策略 → 再生成對應答辯文字。重點仍是由專業人員決定採用哪一個答辯方向。</p></div>
+<div class="card"><span class="badge amber">研究前沿</span><h3>PatRe / PARIS-PRO｜「看懂」和「會答」不是同一件事</h3><p>2026 年 PatRe 以 480 件真實案件建立 OA 與 applicant rebuttal benchmark，研究發現 examiner-side analysis 與 applicant-side rebuttal 存在任務差異。PARIS → LE-PARIS → PARIS-PRO 則加入 OA Topics Database、Response Templates、推薦系統、LLM 與 Agentic RAG：答辯 AI 正從單純生成文字，走向「先找適合的答辯知識，再生成」。</p></div>
+
+<div class="takeaway">AI 已經能提出答辯策略。<br>但「有建議」不等於「建議得準」。</div>
+
+<div class="rule"></div><h2>為什麼實際用起來，策略常常不夠精準？</h2>
+<p>OA、Claims、Specification 與 cited references，大多只能告訴 AI：<b>Examiner 為什麼 reject。</b> 真正決定答辯方向的資訊，卻常常不在這些文件裡。</p>
+<div class="two">
+<div class="card"><div class="big">這個 feature 能不能限縮？</div><div>技術上可以 amendment，不代表公司希望把它寫進 independent claim。</div></div>
+<div class="card"><div class="big">真正想保護的是什麼？</div><div>同一個 rejection 可能有多種解法，但不同解法對 claim scope 的影響完全不同。</div></div>
+<div class="card"><div class="big">過去類似案件怎麼處理？</div><div>公司可能已有相似技術、相似 §103 combination 或 amendment 經驗。</div></div>
+<div class="card"><div class="big">為什麼當時這樣答？</div><div>歷史 Response 留下的是結果，未必留下當時的策略考量。</div></div>
+</div>
+<div class="takeaway">問題可能不是 LLM 不夠強，<br>而是 AI 缺少 prosecution decision 真正需要的 context。</div>
+
+<div class="rule"></div><h2>如果把公司的歷史答辯經驗接進來呢？</h2>
+<p>比較有價值的方向，不是叫 AI 模仿「公司最常用的答法」，而是讓它先找到<b>真正相似的歷史案件</b>，再提供可追溯的策略選項。</p>
+<div class="flow"><span>Current OA</span><b>→</b><span>Claim / Prior Art Mapping</span><b>→</b><span>相似歷史案件</span><b>→</b><span>策略選項</span><b>→</b><span>人工決策</span></div>
+<div class="card"><h3>Strategy A｜先 Argument，不修改 Claim</h3><p>指出 prior art 未揭露特定 technical relationship，並列出公司過去採相似論點的案件與結果。</p></div>
+<div class="card"><h3>Strategy B｜加入 Feature X</h3><p>說明可能克服目前 mapping，但同時標示 claim scope 會如何縮小，以及過去類似 amendment 的案例。</p></div>
+<div class="card"><h3>Strategy C｜先進行 Examiner Interview</h3><p>若 examiner reasoning 對特定 feature relationship 有歧義，先整理需要確認的問題。</p></div>
+
+<div class="takeaway">公司的歷史 prosecution data，真正值得留下的也許不只是「以前怎麼答」，<br>而是「當時為什麼這樣答」。</div>
+
+<div class="rule"></div><h2>可以從現在開始累積什麼？</h2>
+<p>每次 OA 結案時，不一定要先建立複雜資料庫。可以先多留一小段結構化資訊：</p>
+<div class="flow"><span>遇到什麼問題</span><b>→</b><span>有哪些選項</span><b>→</b><span>最後選哪個</span><b>→</b><span>為什麼</span><b>→</b><span>結果如何</span></div>
+<p><b>如果未來 AI 不只找得到「以前怎麼答」，還知道「當時為什麼這樣答」，它提出的策略會不會更有價值？</b></p>
+
+<section class="card sources"><h2>延伸閱讀</h2><ul>
+<li><a href="https://www.questel.com/resourcehub/how-can-ai-help-ip-practitioners-manage-responses-to-office-actions/">Questel｜AI 與 Office Action Response</a></li>
+<li><a href="https://patents.google.com/patent/US20260105550A1/en">Google Patents｜US20260105550A1 — AI-Assisted OA Response Generation</a></li>
+<li><a href="https://arxiv.org/abs/2605.03571">PatRe｜Full-Stage Office Action and Rebuttal Benchmark</a></li>
+<li><a href="https://tdr.lib.ntu.edu.tw/handle/123456789/97807">NTU｜自動化專利答辯：PARIS / LE-PARIS / PARIS-PRO</a></li>
+<li><a href="https://aclanthology.org/2024.knowllm-1.12.pdf">ACL｜Patent Response System Optimised for Faithfulness</a></li>
+<li><a href="https://www.law.berkeley.edu/research/bclt/bclt-legal-analysis/alpi-d2-06/">UC Berkeley Law｜Generative and Agentic AI in Patent Prosecution</a></li>
+</ul></section>
+<div class="footer">AI × PATENT · Internal Knowledge Series</div>
+</div><div class="issue-nav"><a href="#issue-03">← 03 DRAFT & REVIEW</a><a href="#home">回到首頁 ↑</a><span></span></div></article>
+</body></html>
