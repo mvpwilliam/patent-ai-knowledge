@@ -11,6 +11,8 @@
 +.intro{color:#171717}.year{font-weight:850}.intro h1{font-weight:700}.eyebrow{font-weight:650}.today,.nav button{color:#171717;border-color:#17171760;font-weight:600}.nav button{background:#ffffff12}.nav button:not(:disabled):hover,.today:hover{background:#171717;color:#ffffff}.stamp{color:#171717;font-weight:750}.day{font-weight:800}.question{font-weight:700}.paper{color:#171717}.picker-row input{font-weight:600}.answer-label{font-weight:650}.meta{color:#342a24}
 +
 +:root{color:#262626;background:#FFFDF7}.intro{color:#262626}.note{color:#6f685f}.meta{color:#80766a}.paper{color:#262626;box-shadow:0 18px 48px #51423116}.paper-wrap:after{background:#eee7da;box-shadow:0 8px 22px #51423112}.nav button{background:#ffffff;border-color:#dfd6ca;color:#262626}.today,#next{background:#FF6600;border-color:#FF6600;color:#262626}.today:hover,#next:not(:disabled):hover{background:#ed5c00;border-color:#ed5c00;color:#171717}.nav #prev:not(:disabled):hover{background:#FFF0E5;border-color:#e7b58e;color:#262626}.picker-row input{border:1px solid #dfd6ca;color:#262626}.stamp{background:#FF6600;color:#262626}.answer-box{background:#FFF0E5}.weekday{color:#74685e}
++
++:root{background:#FFFDF7;color:#234F4C}.paper{background:#FFFDF7;color:#234F4C}.intro{color:#234F4C}.stamp{background:#F4E7AC;color:#234F4C}.day,.question{color:#234F4C}.answer-box{background:#E9F1EC}.answer{color:#234F4C}.answer-label,.weekday{color:#59736B}.progress span{background:#A9BEAA}.leaf-ornament{position:absolute;top:94px;right:27px;width:58px;height:58px;object-fit:contain;pointer-events:none}@media(max-width:850px){.leaf-ornament{top:78px;right:22px;width:48px;height:48px}}
 +</style>
 </head>
 <body><main>
@@ -23,7 +25,7 @@
 <p class="meta">244 個上班日 · 休假日跳過</p>
 </section>
 <div class="paper-wrap"><article class="paper" id="paper" aria-label="當日撕曆">
-<div class="perforation" aria-hidden="true"></div><div class="stamp" id="stamp"></div><div class="day" id="day"></div><p class="weekday" id="weekday"></p>
+<div class="perforation" aria-hidden="true"></div><img class="leaf-ornament" src="leaf.png" width="200" height="200" alt="" aria-hidden="true"><div class="stamp" id="stamp"></div><div class="day" id="day"></div><p class="weekday" id="weekday"></p>
 <h2 class="question" id="question"></h2>
 <section class="answer-box" aria-labelledby="answer-label"><h3 class="answer-label" id="answer-label"></h3><p class="answer" id="answer"></p></section>
 <div class="count" id="count"></div><div class="progress" aria-hidden="true"><span id="progress"></span></div>
