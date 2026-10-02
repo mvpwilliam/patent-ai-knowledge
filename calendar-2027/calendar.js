@@ -1,29 +1,32 @@
 'use strict';
 const data=window.CALENDAR_DATA;
+const pages=data.map((row,i)=>({...row,workIndex:i}));
+pages.splice(pages.findIndex(row=>row.date>'2027-10-23'),0,{date:'2027-10-23',weekday:'六',birthday:true,question:'10的生日'});
 const el=id=>document.getElementById(id);
 let index=0;
 function localDate(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
-function locate(date){const i=data.findIndex(row=>row.date>=date);return i<0?data.length-1:i;}
+function locate(date){const i=pages.findIndex(row=>row.date>=date);return i<0?pages.length-1:i;}
 function show(i,message=''){
- index=Math.max(0,Math.min(data.length,i));
- const closing=index===data.length;
- const row=data[closing?data.length-1:index];
+ index=Math.max(0,Math.min(pages.length+1,i));
+ const ending=index===pages.length+1,closing=index===pages.length;
+ const row=pages[Math.min(index,pages.length-1)];
+ const birthday=!!row.birthday,workIndex=closing||ending?data.length-1:row.workIndex;
  const [year,month,day]=row.date.split('-');
  el('date').value=row.date;
- const ornamentDay=Math.min(index+1,244);
- el('ornament').src=(ornamentDay%5?'leaf-single':Math.floor(ornamentDay/5)%2?'flower':'sun')+'.png';
  el('stamp').textContent=year+' / '+month;
- el('day').textContent=closing?'最後一題揭曉':day;
+ el('day').textContent=ending?'撕完了。':closing?'最後一題答案':day;
  el('weekday').textContent=closing?'12 月 30 日題目':'星期'+row.weekday;
- el('question').textContent=row.question;
- el('answer-label').textContent=closing?'答案':index===0?'下一個上班日揭曉':data[index-1].date.slice(5).replace('-','/')+' 題目答案';
- el('answer').textContent=closing?row.answer:index===0?'今天先猜猜看':data[index-1].answer;
- el('count').textContent=closing?'244 題全部揭曉':String(index+1).padStart(3,'0')+' / 244';
- el('progress').style.width=(Math.min(index+1,244)/244*100)+'%';
- el('prev').disabled=index===0;el('next').disabled=closing;
- el('next').textContent=index===243?'最後一題答案':'下一頁';
- el('note').textContent=message||'每天一題；下方是前一個上班日的答案。';
- el('paper').classList.toggle('closing',closing);
+ el('question').textContent=ending?'今年的班，也差不多上完了。':row.question;
+ el('answer-label').textContent=birthday?'':closing?'答案':workIndex===0?'下一個上班日揭曉':data[Math.min(workIndex-1,data.length-1)].date.slice(5).replace('-','/')+' 題目答案';
+ el('answer').textContent=birthday?'':ending?'明年見。':closing?row.answer:workIndex===0?'今天先猜猜看':data[Math.max(0,(workIndex||0)-1)].answer;
+ el('count').textContent=closing?'244 題全部揭曉':birthday?'生日特別頁':String(workIndex+1).padStart(3,'0')+' / 244';
+ el('progress').style.width=(Math.min((workIndex||0)+1,244)/244*100)+'%';
+ el('prev').disabled=index===0;el('next').disabled=ending;
+ el('next').textContent=workIndex===243?'最後一題答案':closing?'年末收尾':'下一頁';
+ el('note').textContent=message||(birthday?'10/23・10的生日':ending?'明年見。':'每天一題；下方是前一個上班日的答案。');
+ el('paper').classList.toggle('closing',closing||ending);
+ el('paper').classList.toggle('ending',ending);
+ el('paper').classList.toggle('birthday',birthday);
  el('paper').classList.remove('changing');void el('paper').offsetWidth;el('paper').classList.add('changing');
 }
 function chooseDate(date){
@@ -31,7 +34,7 @@ function chooseDate(date){
  const i=locate(date);let note='';
  if(date<data[0].date)note='2027 年撕曆從 1 月 4 日開始，先看看第一題。';
  else if(date>data[data.length-1].date)note='2027 年最後一個上班日是 12 月 30 日。';
- else if(data[i].date!==date)note=date.slice(5).replace('-','/')+' 是休假日，顯示下個上班日 '+data[i].date.slice(5).replace('-','/')+'。';
+ else if(pages[i].date!==date)note=date.slice(5).replace('-','/')+' 是休假日，顯示下個上班日 '+pages[i].date.slice(5).replace('-','/')+'。';
  show(i,note);
 }
 el('prev').addEventListener('click',()=>show(index-1));
