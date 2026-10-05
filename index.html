@@ -134,8 +134,8 @@ body{margin:0}
 .life-node{padding:18px 12px;border-radius:13px;background:white;border:1px solid #e5e7eb;text-align:center;font-weight:800}
 .life-arrow{color:#9ca3af;font-weight:900}
 .memory{margin-top:16px;text-align:center;color:#6b7280;font-size:14px}
-.topic-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.topic-card{display:flex;min-height:250px;flex-direction:column;padding:26px;border:1px solid #e5e7eb;border-radius:18px;text-decoration:none;color:#111827;background:white;transition:.18s ease}
+.topic-grid{display:grid;grid-template-columns:1fr;gap:18px}
+.topic-card{display:flex;min-height:220px;flex-direction:column;padding:26px;border:1px solid #e5e7eb;border-radius:18px;text-decoration:none;color:#111827;background:white;transition:.18s ease}
 .topic-card:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(17,24,39,.08);border-color:#cbd5e1}
 .topic-top{display:flex;justify-content:space-between;font:800 10px/1 Arial,sans-serif;letter-spacing:.08em;color:#9ca3af}
 .topic-kicker{margin-top:34px;font:900 11px/1 Arial,sans-serif;letter-spacing:.14em;color:#2563eb}
@@ -156,6 +156,8 @@ body{margin:0}
 }
 
 .update-log{margin:0 0 30px;padding:23px 26px;border:1px solid #dbe3f2;border-radius:16px;background:#fff}.update-log h2{font-size:19px;margin:0 0 12px}.update-log-entry{display:grid;grid-template-columns:105px 1fr;gap:14px;font-size:14px;line-height:1.65}.update-log time{font-weight:800;color:#2457d6}@media(max-width:680px){.update-log-entry{grid-template-columns:1fr;gap:2px}}
+
+.topic-update{margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;color:#64748b;font-size:13px;line-height:1.55}.topic-update b{color:#2457d6;font-size:11px;letter-spacing:.06em;margin-right:8px}
 </style>
 <style>
 @media (max-width: 760px){
@@ -249,8 +251,6 @@ body:has(.issue:target) .series-home{display:none !important;}
 <div class="memory">Search → Draft → Review → Prosecution → Learn → 下一件新案　·　Company Patent Memory</div>
 </div>
 
-<section class="update-log" aria-label="版本更新紀錄"><h2>版本更新紀錄</h2><div class="update-log-entry"><time datetime="2026-10-05">2026.10.05</time><div>擴充專利流程管理與先前技術檢索的 PatSnap Open 案例，並新增 Solve Intelligence × Juristat 的 OA 答辯應用觀察。</div></div></section>
-
 <div class="topic-grid">
 <a class="topic-card" href="#issue-01">
   <div class="topic-top"><span>01</span><span>UPDATED · 2026.10.05</span></div>
@@ -258,6 +258,7 @@ body:has(.issue:target) .series-home{display:none !important;}
   <h3>AI 開始接手專利工作流程了嗎？</h3>
   <p>從單一工作走向一整段 Workflow</p>
   <div class="topic-read">3 MIN READ<b>→</b></div>
+  <div class="topic-update"><b>UPDATE · 2026.10.05</b>新增 PatSnap Open 的 MCP／Agent 工具架構與內部開發啟示。</div>
 </a>
 
 <a class="topic-card" href="#issue-02">
@@ -266,10 +267,11 @@ body:has(.issue:target) .series-home{display:none !important;}
   <h3>AI 已經會幫忙找 Prior Art 了？</h3>
   <p>從關鍵字搜尋走向理解技術內容</p>
   <div class="topic-read">2 MIN READ<b>→</b></div>
+  <div class="topic-update"><b>UPDATE · 2026.10.05</b>新增 PatSnap Open Agentic Search 與多步驟檢索應用。</div>
 </a>
 
 <a class="topic-card" href="#issue-03">
-  <div class="topic-top"><span>03</span><span>UPDATED · 2026.09</span></div>
+  <div class="topic-top"><span>03</span><span>LAST UPDATE · 2026.09</span></div>
   <div class="topic-kicker">DRAFT & REVIEW</div>
   <h3>AI 會寫專利了，但它知道「該怎麼寫」嗎？</h3>
   <p>把 Prior Art 與公司經驗帶進新案</p>
@@ -282,10 +284,11 @@ body:has(.issue:target) .series-home{display:none !important;}
   <h3>AI 看得懂 OA，為什麼還是不太會「答」？</h3>
   <p>從 OA 分析走向真正的答辯策略</p>
   <div class="topic-read">3 MIN READ<b>→</b></div>
+  <div class="topic-update"><b>UPDATE · 2026.10.05</b>新增 Solve Intelligence × Juristat 的歷史審查資料與 OA 策略應用。</div>
 </a>
 
 <a class="topic-card" href="#issue-05">
-  <div class="topic-top"><span>05</span><span>UPDATED · 2026.09</span></div>
+  <div class="topic-top"><span>05</span><span>LAST UPDATE · 2026.09</span></div>
   <div class="topic-kicker">PATENT TRANSLATION</div>
   <h3>AI 會翻專利，但能翻得像公司自己的嗎？</h3>
   <p>把歷年 US／TW 送件本變成專屬翻譯知識</p>
