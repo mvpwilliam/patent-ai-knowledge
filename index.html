@@ -158,6 +158,8 @@ body{margin:0}
 .update-log{margin:0 0 30px;padding:23px 26px;border:1px solid #dbe3f2;border-radius:16px;background:#fff}.update-log h2{font-size:19px;margin:0 0 12px}.update-log-entry{display:grid;grid-template-columns:105px 1fr;gap:14px;font-size:14px;line-height:1.65}.update-log time{font-weight:800;color:#2457d6}@media(max-width:680px){.update-log-entry{grid-template-columns:1fr;gap:2px}}
 
 .topic-update{margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;color:#64748b;font-size:13px;line-height:1.55}.topic-update b{color:#2457d6;font-size:11px;letter-spacing:.06em;margin-right:8px}
+
+.article-update{margin:22px 0;padding:18px 20px;border:1px solid #cfdcff;border-left:4px solid #3157d5;border-radius:0 14px 14px 0;background:#f7f9ff}.article-update-label{font-size:11px;font-weight:900;letter-spacing:.08em;color:#3157d5;margin-bottom:7px}.article-update-title{font-size:17px;font-weight:800;margin-bottom:7px}.article-update p{margin:8px 0}.article-update p:last-child{margin-bottom:0}
 </style>
 <style>
 @media (max-width: 760px){
@@ -368,9 +370,10 @@ body:has(.issue:target) .series-home{display:none !important;}
 <p>PatSnap Open Platform 已提供 API、MCP 與 Agent Skills。AI Agent 執行任務時可以即時呼叫專利檢索與資料取得功能，而不是只靠語言模型的既有知識回答；平台也把新穎性檢索、FTO、技術問答與說明書撰寫等能力做成可串接的流程。</p>
 <div class="flow"><span class="step">AI 接到任務</span><span class="arrow">→</span><span class="step">連接專利資料</span><span class="arrow">→</span><span class="step">取得即時資料</span><span class="arrow">→</span><span class="step">執行下一步</span></div>
 </section>
+<div class="article-update"><div class="article-update-label">UPDATE · 2026.10.05</div><div class="article-update-title">PatSnap Open：從專利資料進一步走向 Agent 工具層</div>
 
 <div class="rule"></div>
-<section class="item"><span class="badge green">新增觀察 · 2026.10.05</span><h3>PatSnap Open 延伸：從資料庫到可供 Agent 調用的工具層</h3><p>前述第⑦項 PatSnap Open 案例值得進一步關注的，不只是 AI 可以取得專利資料，而是透過 MCP／API 將檢索、資料取得等功能拆成可呼叫工具。Agent 可依任務安排多步驟資料取得與分析，專利工程師則負責核對來源及關鍵判斷。</p><p><b>對內部開發的啟示：</b>優先定義 get_case_info、get_prosecution_history、search_patents 等清楚的工具介面，串接既有 iGPS、文件及外部專利資料；不必把所有功能重新做進 Dashboard。導入前仍須確認資料授權、存取權限與審計紀錄。</p><p>官方資料：<a href="https://open.patsnap.com/" target="_blank" rel="noopener">PatSnap Open</a></p></section>
+<p>前述第⑦項 PatSnap Open 案例值得進一步關注的，不只是 AI 可以取得專利資料，而是透過 MCP／API 將檢索、資料取得等功能拆成可呼叫工具。Agent 可依任務安排多步驟資料取得與分析，專利工程師則負責核對來源及關鍵判斷。</p><p><b>對內部開發的啟示：</b>優先定義 get_case_info、get_prosecution_history、search_patents 等清楚的工具介面，串接既有 iGPS、文件及外部專利資料；不必把所有功能重新做進 Dashboard。導入前仍須確認資料授權、存取權限與審計紀錄。</p><p>官方資料：<a href="https://open.patsnap.com/" target="_blank" rel="noopener">PatSnap Open</a></p></div>
 <h2>對整個 IP 部門有什麼意義？</h2>
 <div class="two">
  <div class="card role"><b>⚖️ 專利工程師</b>先前技術／OA 分析<br>請求項對照<br>說明書／請求項審閱<br>審查答辯決策支援<br><br><strong>核心仍是技術／法律判斷</strong></div>
@@ -480,7 +483,7 @@ body:has(.issue:target) .series-home{display:none !important;}
 </section>
 
 <section class="card">
-<section class="item"><span class="badge green">新增觀察 · 2026.10.05</span><h3>PatSnap Open：從單次檢索走向 Agentic Search</h3><p>PatSnap Open 以 MCP 將專利檢索等能力提供給 AI Agent 呼叫，使檢索流程有機會從人工輸入單次查詢，延伸到 AI 規劃檢索、取得專利內容、依初步結果調整條件並整理來源。此處重點是工具整合及可追溯的研究流程，不代表已能取代人工新穎性或 FTO 判斷。</p><p><b>對內部 Agent 的啟示：</b>將 TIPO、GPSS 或其他授權資料來源包裝成明確的查詢工具，讓 Agent 依任務逐步呼叫；各步驟保存檢索式、來源與人工覆核結果。</p><p>官方資料：<a href="https://open.patsnap.com/" target="_blank" rel="noopener">PatSnap Open</a></p></section>
+<div class="article-update"><div class="article-update-label">UPDATE · 2026.10.05</div><div class="article-update-title">PatSnap Open：從單次檢索走向 Agentic Search</div><p>PatSnap Open 以 MCP 將專利檢索等能力提供給 AI Agent 呼叫，使檢索流程有機會從人工輸入單次查詢，延伸到 AI 規劃檢索、取得專利內容、依初步結果調整條件並整理來源。此處重點是工具整合及可追溯的研究流程，不代表已能取代人工新穎性或 FTO 判斷。</p><p><b>對內部 Agent 的啟示：</b>將 TIPO、GPSS 或其他授權資料來源包裝成明確的查詢工具，讓 Agent 依任務逐步呼叫；各步驟保存檢索式、來源與人工覆核結果。</p><p>官方資料：<a href="https://open.patsnap.com/" target="_blank" rel="noopener">PatSnap Open</a></p></div>
 <h2>💡 對 專利工程師 有什麼意義？</h2>
 <div class="label">以前</div>
 <div class="flow"><span class="step">Keyword</span><span class="arrow">→</span><span class="step">Boolean Search</span><span class="arrow">→</span><span class="step">Review</span></div>
@@ -599,7 +602,7 @@ body:has(.issue:target) .series-home{display:none !important;}
 
 <div class="takeaway">公司的歷史 prosecution data，真正值得留下的也許不只是「以前怎麼答」，<br>而是「當時為什麼這樣答」。</div>
 
-<div class="rule"></div><section class="item"><span class="badge green">新增觀察 · 2026.10.05</span><h3>Solve Intelligence × Juristat：讓歷史審查資料參與答辯策略</h3><p>Juristat Data Layer 透過 MCP 與 Solve Intelligence 整合，讓 AI 在分析 OA 時可取得 USPTO 歷史審查資料與 Examiner／Art Unit 相關資訊。這代表答辯輔助正從分析單一 OA 與引證文獻，走向結合歷史審查脈絡；但歷史統計不等於個案成功保證，策略仍須由專利工程師判斷。</p><p><b>對內部 Agent 的啟示：</b>若能將公司歷史 OA、Response、Claim amendment 與最終審查結果建立可追溯的資料層，便可在處理新案時找出類似案例，供人工比較，而非讓 AI 直接套用過往答辯。</p><p>官方資料：<a href="https://juristat.com/" target="_blank" rel="noopener">Juristat</a> ／ <a href="https://www.solveintelligence.com/" target="_blank" rel="noopener">Solve Intelligence</a></p></section>
+<div class="rule"></div><div class="article-update"><div class="article-update-label">UPDATE · 2026.10.05</div><div class="article-update-title">Solve Intelligence × Juristat：讓歷史審查資料參與答辯策略</div><p>Juristat Data Layer 透過 MCP 與 Solve Intelligence 整合，讓 AI 在分析 OA 時可取得 USPTO 歷史審查資料與 Examiner／Art Unit 相關資訊。這代表答辯輔助正從分析單一 OA 與引證文獻，走向結合歷史審查脈絡；但歷史統計不等於個案成功保證，策略仍須由專利工程師判斷。</p><p><b>對內部 Agent 的啟示：</b>若能將公司歷史 OA、Response、Claim amendment 與最終審查結果建立可追溯的資料層，便可在處理新案時找出類似案例，供人工比較，而非讓 AI 直接套用過往答辯。</p><p>官方資料：<a href="https://juristat.com/" target="_blank" rel="noopener">Juristat</a> ／ <a href="https://www.solveintelligence.com/" target="_blank" rel="noopener">Solve Intelligence</a></p></div>
 <h2>可以從現在開始累積什麼？</h2>
 <p>每次 OA 結案時，不一定要先建立複雜資料庫。可以先多留一小段結構化資訊：</p>
 <div class="flow"><span>遇到什麼問題</span><b>→</b><span>有哪些選項</span><b>→</b><span>最後選哪個</span><b>→</b><span>為什麼</span><b>→</b><span>結果如何</span></div>
