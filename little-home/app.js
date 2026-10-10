@@ -24,17 +24,27 @@ wall(3.2,-.07,6.55,.15,1.75);wall(-.07,3.9,.15,7.9,1.55);wall(6.47,2.75,.15,5.7,
 const ROOM_WALL_HEIGHT=2.6;
 const interiorWalls=[];
 function partition(x,z,w,d){const g=wall(x,z,w,d,ROOM_WALL_HEIGHT);g.userData.fullHeight=ROOM_WALL_HEIGHT;interiorWalls.push(g);return g}
-// Full-height walls follow the solid black lines in the furnished floor plan.
-// Bath and child doors meet at the corner visible in the site photographs.
-partition(3.35,2.12,.14,4.24);
-partition(5.395,3.65,2.15,.14);
-partition(4.32,3.965,.13,1.13); // master closet and bath wall, to the bath door
-partition(4.32,5.385,.13,.13); // short jamb below the bath door
-partition(5.4,5.45,2.15,.13); // bath / child-room boundary, beyond the child door
-partition(3.6,6.725,.13,2.55); // child-room wall behind the peninsula
-partition(4.35,8.0,2.8,.13); // black plan line between child room and kitchen
-partition(5.75,7.125,.13,1.75); // child room / utility balcony wall
-partition(3.3,9.56,.13,1.02); // kitchen entrance jamb beside the fridge cabinet
+// CAD's thick purple lines set the walls; its door arcs set the openings.
+// In plan view model X runs downward and model Z runs from right to left.
+partition(3.35,1.665,.14,3.33); // living/master wall stops at the master door
+partition(5.46,3.65,2.02,.14); // master/bath wall, x 4.45–6.47
+partition(4.45,4.125,.13,.75); // bathroom front wall, z 3.75–4.50
+partition(5.35,5.55,1.8,.13); // bath/child wall below the child door
+partition(3.05,5.55,.8,.13); // short wall above the child door
+partition(2.65,6.875,.13,2.65); // child-room wall along the dining area
+partition(4.24,8.2,3.18,.13); // child-room wall along the kitchen
+partition(5.83,7.82,.13,.76); // child room / balcony, left of the window
+partition(5.83,6.015,.13,.93); // child room / balcony, right of the window
+partition(3.05,9.68,.13,.78); // short kitchen return beside the fridge cabinet
+// Glazing between the child room and utility balcony occupies the CAD opening.
+const childWindow=new T.Group();childWindow.position.set(5.83,0,6.96);root.add(childWindow);
+box(0,.46,0,.13,.92,.96,C.wall,.008,childWindow);
+box(0,2.36,0,.13,.48,.96,C.wall,.008,childWindow);
+const childGlass=new T.MeshPhysicalMaterial({color:'#bed9d7',transparent:true,opacity:.38,roughness:.17,depthWrite:false,side:T.DoubleSide});
+box(0,1.55,0,.018,1.2,.91,childGlass,0,childWindow);
+for(const z of [-.47,.47])box(0,1.55,z,.08,1.25,.035,C.trim,0,childWindow);
+box(0,.94,0,.1,.05,.96,C.trim,0,childWindow);box(0,2.16,0,.1,.05,.96,C.trim,0,childWindow);
+walls.push(childWindow);interiorWalls.push(childWindow);
 // Only the utility balcony has a parapet; the shower has a glass enclosure.
 wall(7.36,7.5,.13,3.85,.55);
 const doorFrames=[];
@@ -43,9 +53,9 @@ for(const side of [-1,1])box(side*(width/2-.025),h/2,0,.05,h,.18,'#454c57',.008,
 box(0,h+.035,0,width,.07,.18,'#454c57',.008,g);
 box(0,(h+.07+ROOM_WALL_HEIGHT)/2,0,width,ROOM_WALL_HEIGHT-h-.07,.14,C.wall,.008,g);
 doorFrames.push(g)}
-doorway(3.835,3.4,.97,false); // master entrance
-doorway(4.32,4.925,.79); // bathroom: z 4.53–5.32
-doorway(3.96,5.45,.72,false); // child room, immediately beside the bathroom
+doorway(3.35,3.85,1.04); // master door: an actual gap in the living/master wall
+doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
+doorway(3.95,5.55,1.0,false); // child door, x 3.45–4.45 beside the bath
 // Window frames and sheer curtain folds at the two north windows.
 const curtains=new T.Group();root.add(curtains);function windowAt(x,w){box(x,1.1,.015,w,1.6,.075,'#607779',.015);box(x,1.12,.062,w-.12,1.38,.018,new T.MeshStandardMaterial({color:'#b9d3d1',roughness:.25,emissive:'#9dbabc',emissiveIntensity:.2}));box(x,1.13,.083,.035,1.38,.025,C.dark);box(x,.53,.083,w,.035,.025,C.dark);for(let i=0;i<14;i++){let xx=x-w/2+.055+i*(w-.11)/13;let m=cyl(xx,1.07,.18,.035,1.68,i%2?'#eeeddf':'#d9dfd3',.035,curtains);m.scale.z=.8}box(x,1.95,.16,w+.14,.06,.1,C.cream,.02)}windowAt(1.67,2.5);windowAt(4.92,2.55);
 // Living area: blue-gray floating console, television, consoles and soundbar.
@@ -62,35 +72,34 @@ box(.035,1.12,5.0,.065,.93,.59,'#c4b797',.01);box(.08,1.12,5,.02,.84,.50,C.white
 ball(3.22,1.10,3.05,.16,'#957e57',[.25,1.1,.75]);ball(3.22,1.27,3.05,.12,'#a58a5c',[.3,1,.8]);box(3.22,1.54,3.05,.045,.45,.05,C.wood);box(3.22,1.78,3.05,.05,.12,.09,C.dark,.012);
 // Dining table, curved backs, oak seats and peninsula with oven niches.
 function chair(x,z){for(let dx of [-.20,.20])for(let dz of [-.20,.20])rod([x+dx*1.2,.07,z+dz*1.2],[x+dx,.49,z+dz],.027,C.wood);box(x,.49,z,.49,.08,.48,'#c6c5af',.07);const back=box(x-.21,.78,z,.075,.34,.5,C.woodlight,.05);rod([x-.20,.61,z-.23],[x+.18,.68,z-.23],.023,C.woodlight);rod([x-.20,.61,z+.23],[x+.18,.68,z+.23],.023,C.woodlight)}
-box(1.72,.76,6.15,1.03,.12,1.65,C.woodlight,.16);box(1.72,.39,6.15,.59,.69,.88,'#c8b493',.18);chair(.91,5.76);chair(.91,6.52);plant(1.72,.83,6.1,.39);
-// The peninsula runs across the kitchen/child-room edge, as on the plan.
-// Its appliance face points toward the dining table; the bedroom wall is behind it.
-const peninsula=new T.Group();peninsula.position.set(3.2,0,6.8);peninsula.rotation.y=-Math.PI/2;root.add(peninsula);
+box(1.36,.76,6.15,1.03,.12,1.65,C.woodlight,.16);box(1.36,.39,6.15,.59,.69,.88,'#c8b493',.18);chair(.55,5.76);chair(.55,6.52);plant(1.36,.83,6.1,.39);
+// The peninsula sits on the dining side of the CAD wall, with its back against it.
+const peninsula=new T.Group();peninsula.position.set(2.23,0,6.8);peninsula.rotation.y=-Math.PI/2;root.add(peninsula);
 box(0,.44,0,2.28,.85,.59,C.cab,.03,peninsula);box(0,.89,0,2.4,.075,.68,'#303237',.028,peninsula);
 for(const x of [-.66,.01]){box(x,.55,.314,.57,.38,.024,'#303e3d',0,peninsula);box(x,.54,.34,.44,.29,.05,'#e1dfcf',.02,peninsula);box(x,.54,.37,.31,.19,.006,'#697877',0,peninsula);box(x,.65,.387,.29,.018,.025,C.metal,0,peninsula)}
 for(const yy of [.22,.49,.71]){box(.77,yy,.31,.53,.21,.025,'#b5aa91',.009,peninsula);box(.77,yy+.065,.33,.30,.013,.017,C.dark,0,peninsula)}
 // Full-height built-in cabinets beside dining room.
-box(3.07,.96,6.09,.38,1.86,1.1,C.cab,.018);for(let z of [5.8,6.34]){box(2.869,.96,z,.015,1.78,.51,'#686b72',.006);box(2.85,.86,z-.16,.022,.28,.016,C.dark)}
+box(3.07,.96,6.21,.38,1.86,1.1,C.cab,.018);for(let z of [5.92,6.46]){box(2.869,.96,z,.015,1.78,.51,'#686b72',.006);box(2.85,.86,z-.16,.022,.28,.016,C.dark)}
 // Master bedroom, window-side bed, wardrobe and small bedside tables.
 box(4.96,.08,1.64,2.28,.06,2.6,'#c7cbbb',.06);box(5.84,.54,1.64,.16,.94,2.05,'#b0ad98',.08);box(4.94,.29,1.64,1.85,.35,1.94,C.wood,.045);box(4.94,.52,1.64,1.90,.22,1.95,C.white,.08);box(4.63,.67,1.64,1.25,.15,1.94,C.bed,.075);for(let z of [1.12,2.15]){let p=box(5.54,.70,z,.45,.17,.71,'#f3ecda',.07);p.rotation.z=-.04}box(4.24,.77,1.64,.33,.07,1.95,'#8ea48d',.03);for(let z of [.39,2.98]){cyl(5.68,.32,z,.23,.58,C.woodlight);cyl(5.68,.63,z,.24,.05,C.cream);ball(5.68,.79,z,.12,lampMat)}box(5.22,.82,3.37,1.96,1.57,.43,C.cab,.02);for(let x of [4.59,5.23,5.87]){box(x,.83,3.143,.61,1.48,.02,'#75777c');box(x+.23,.83,3.126,.018,.2,.018,C.dark)}plant(3.68,.08,.4,.6);
 // Bathroom tiled floor, basin, mirror, toilet and glass shower partition.
 box(5.4,.07,4.58,1.91,.06,1.64,'#55585b');for(let x=4.5;x<6.4;x+=.32)box(x,.105,4.58,.01,.004,1.64,'#777b7c');for(let z=3.8;z<5.4;z+=.32)box(5.4,.105,z,1.9,.004,.01,'#777b7c');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
-// Floor-level shower tiles, clear full-height side panel and glass door.
-box(6.75,.07,5.15,1.0,.06,.8,'#55585b');
+// The wet area sits inside the bathroom, separated by glass rather than a low wall.
+box(5.9,.07,5.1,1.0,.06,.8,'#55585b');
 const showerGlass=new T.MeshPhysicalMaterial({color:'#d9eeee',transparent:true,opacity:.17,roughness:.08,metalness:0,depthWrite:false,side:T.DoubleSide});
-box(6.4,1.08,5.13,.018,2.05,.81,showerGlass);box(6.78,1.08,5.61,.74,2.05,.018,showerGlass);
-for(const x of [6.4,7.15])rod([x,.08,5.61],[x,2.13,5.61],.012,C.metal);
-rod([6.4,2.14,5.61],[7.15,2.14,5.61],.013,C.metal);
-rod([6.4,.10,5.61],[7.15,.10,5.61],.008,C.metal);
-rod([6.95,.99,5.64],[6.95,1.33,5.64],.014,C.metal);
-rod([7.22,.12,4.85],[7.22,1.53,4.85],.02,C.metal);rod([7.22,1.53,4.85],[6.98,1.53,4.85],.02,C.metal);cyl(6.98,1.51,4.85,.085,.03,C.metal);
+box(5.9,1.08,4.7,1.0,2.05,.018,showerGlass);box(5.4,1.08,5.12,.018,2.05,.76,showerGlass);
+for(const z of [4.74,5.5])rod([5.4,.08,z],[5.4,2.13,z],.012,C.metal);
+rod([5.4,2.14,4.74],[5.4,2.14,5.5],.013,C.metal);
+rod([5.4,.10,4.74],[5.4,.10,5.5],.008,C.metal);
+rod([5.37,.99,5.19],[5.37,1.33,5.19],.014,C.metal);
+rod([6.37,.12,5.15],[6.37,1.53,5.15],.02,C.metal);rod([6.37,1.53,5.15],[6.13,1.53,5.15],.02,C.metal);cyl(6.13,1.51,5.15,.085,.03,C.metal);
 // Child room: single bed and desk, no character yet.
 box(5.12,.25,6.72,1.1,.35,1.95,C.wood,.06);box(5.12,.51,6.72,1.1,.20,1.94,C.white,.055);box(5.12,.67,6.94,1.11,.13,1.48,'#c0ccbd',.05);box(5.12,.7,5.99,.72,.18,.37,'#f0dfb7',.07);box(5.12,.61,5.7,1.13,1.01,.11,C.woodlight,.03);box(5.12,.765,7.22,1.12,.04,.36,'#8fa8a0',.02);box(4.1,.72,7.18,.65,.09,1.05,C.woodlight,.03);for(let z of [6.74,7.61])box(4.1,.36,z,.055,.7,.055,C.wood);box(4.04,.78,7.0,.4,.018,.32,'#f4ebd7',.005);box(4.08,.81,7.35,.3,.04,.24,'#859b9a',.005);cyl(4.28,.46,7.22,.23,.08,'#b8bc9b');cyl(4.28,.24,7.22,.035,.4,C.wood);box(3.92,1.0,6.22,.3,1.86,.62,C.cab,.02);
 // Kitchen and appliances, preserving dark countertops and pale cabinetry.
-// Two counters stop at the entrance wall, rather than passing through it.
-box(2.52,.45,9.68,1.37,.83,.61,C.cab,.02);box(2.52,.89,9.66,1.40,.07,.70,'#eee9db',.022);
-box(4.85,.45,9.68,2.96,.83,.61,C.cab,.02);box(4.85,.89,9.66,3.0,.07,.70,'#eee9db',.022);
-for(const x of [2.18,2.89,3.72,4.38,5.04,5.70]){box(x,.46,9.363,.6,.70,.024,x>4?'#405153':'#707379',.009);box(x,.73,9.345,.4,.025,.025,C.metal)}box(3.95,.945,9.61,.72,.035,.43,C.metal,.07);box(3.95,.967,9.61,.59,.025,.32,'#a7b9b3',.06);rod([3.95,.96,9.86],[3.95,1.25,9.86],.022,C.metal);rod([3.95,1.25,9.86],[3.95,1.25,9.65],.022,C.metal);box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x,.984,9.59,.12,.02,C.metal);cyl(x,1,9.59,.08,.023,'#253b3b')}box(5.45,1.73,9.74,.89,.14,.49,'#dadbd0',.025);box(5.45,1.95,9.89,.5,.35,.23,C.white,.02);box(2.51,1.65,9.89,1.36,.73,.27,C.cab,.012);box(2.51,1.24,9.9,1.36,.025,.28,'#f9e5ae');box(2.27,1.08,9.58,.37,.3,.26,C.white,.04);box(2.8,1.07,9.61,.32,.29,.31,C.white,.05);cyl(3.02,1.03,9.62,.11,.15,C.white);cyl(3.02,1.19,9.62,.09,.2,'#afc4bd');
+// The two kitchen counters stop at the short CAD wall beside the fridge cabinet.
+box(2.36,.45,9.68,1.2,.83,.61,C.cab,.02);box(2.36,.89,9.66,1.2,.07,.70,'#eee9db',.022);
+box(4.5,.45,9.68,2.7,.83,.61,C.cab,.02);box(4.5,.89,9.66,2.75,.07,.70,'#eee9db',.022);
+for(const x of [2.05,2.65,3.43,4.05,4.68,5.31]){box(x,.46,9.363,.55,.70,.024,x>4?'#405153':'#707379',.009);box(x,.73,9.345,.38,.025,.025,C.metal)}box(3.95,.945,9.61,.72,.035,.43,C.metal,.07);box(3.95,.967,9.61,.59,.025,.32,'#a7b9b3',.06);rod([3.95,.96,9.86],[3.95,1.25,9.86],.022,C.metal);rod([3.95,1.25,9.86],[3.95,1.25,9.65],.022,C.metal);box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x,.984,9.59,.12,.02,C.metal);cyl(x,1,9.59,.08,.023,'#253b3b')}box(5.45,1.73,9.74,.89,.14,.49,'#dadbd0',.025);box(5.45,1.95,9.89,.5,.35,.23,C.white,.02);box(2.36,1.65,9.89,1.18,.73,.27,C.cab,.012);box(2.36,1.24,9.9,1.18,.025,.28,'#f9e5ae');box(2.03,1.08,9.58,.32,.3,.26,C.white,.04);box(2.52,1.07,9.61,.28,.29,.31,C.white,.05);cyl(2.75,1.03,9.62,.10,.15,C.white);cyl(2.75,1.19,9.62,.09,.2,'#afc4bd');
 box(1.35,.95,9.52,.73,1.85,.83,'#87928b',.045);for(let yy of [1.39,.85,.34])box(1.35,yy,9.08,.67,yy>1?.88:.32,.035,'#a2aaa0',.018);box(1.36,1.39,9.048,.016,.87,.025,'#6a7b73');box(1.37,.73,9.04,.5,.025,.04,C.dark);box(1.55,1.6,9.045,.14,.2,.01,'#e3e4c8');
 // Entry cabinet, dark pegboard, bench, shoes, and a welcoming mat.
 box(-.65,.95,8.03,.95,1.84,.31,C.cab,.015);box(-.65,.9,8.205,.81,.44,.025,'#405b53');box(-.65,.65,8.23,.95,.045,.39,C.woodlight,.01);box(-.65,1.15,8.23,.95,.025,.39,'#f3dfab');plant(-.87,.68,8.25,.25);box(-.47,.8,8.245,.16,.23,.025,C.cream);box(-.71,.07,9.64,.64,.035,.43,'#9da993',.03);for(let x of [-.75,-.52])ball(x,.1,8.3,.11,'#b8a381',[.65,.45,1.35]);box(.37,.91,9.98,.75,1.0,.04,'#42625e',.02);for(let x=.1;x<.7;x+=.12)for(let y=.5;y<1.35;y+=.12)ball(x,y,9.948,.012,'#273f3e');box(.38,.42,9.60,.7,.22,.5,'#adb9a5',.09);for(let x of [.13,.63])box(x,.2,9.6,.05,.36,.28,C.wood);box(-1.16,.94,9.06,.04,1.46,.66,'#829b95',.025);
