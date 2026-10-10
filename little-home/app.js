@@ -26,7 +26,7 @@ const interiorWalls=[];
 function partition(x,z,w,d){const g=wall(x,z,w,d,ROOM_WALL_HEIGHT);g.userData.fullHeight=ROOM_WALL_HEIGHT;interiorWalls.push(g);return g}
 // CAD's thick purple lines set the walls; its door arcs set the openings.
 // In plan view model X runs downward and model Z runs from right to left.
-partition(3.35,1.665,.14,3.33); // living/master wall stops at the master door
+partition(3.35,2.25,.14,4.5); // continuous living/master divider, to the short entrance wall
 partition(5.46,3.65,2.02,.14); // master/bath wall, x 4.45–6.47
 partition(4.45,4.125,.13,.75); // bathroom front wall, z 3.75–4.50
 partition(5.35,5.55,1.8,.13); // bath/child wall below the child door
@@ -53,7 +53,14 @@ for(const side of [-1,1])box(side*(width/2-.025),h/2,0,.05,h,.18,'#454c57',.008,
 box(0,h+.035,0,width,.07,.18,'#454c57',.008,g);
 box(0,(h+.07+ROOM_WALL_HEIGHT)/2,0,width,ROOM_WALL_HEIGHT-h-.07,.14,C.wall,.008,g);
 doorFrames.push(g)}
-doorway(3.35,3.85,1.04); // master door: an actual gap in the living/master wall
+// The master door sits in the short transverse entrance from the living room,
+// between the divider and bathroom wall (the door swing on the detailed plan).
+doorway(3.90,4.5,1.10,false);
+const masterDoor=new T.Group();root.add(masterDoor);
+box(3.22,1.01,4.02,.065,2.02,.88,'#3f3532',.012,masterDoor);
+for(const y of [.52,1.39])box(3.173,y,4.02,.008,.51,.60,'#51433b',.008,masterDoor);
+ball(3.17,1.02,4.29,.035,C.metal,[.8,.8,1],masterDoor);
+doorFrames.push(masterDoor);
 doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
 doorway(3.95,5.55,1.0,false); // child door, x 3.45–4.45 beside the bath
 // Window frames and sheer curtain folds at the two north windows.
@@ -63,8 +70,15 @@ box(1.65,.07,2.32,2.7,.06,3.35,'#d6d4bf',.03);for(let i=0;i<12;i++)box(1.65,.107
 box(.23,.4,2.25,.44,.42,3.2,C.navy,.035);box(.465,.42,1.2,.025,.26,.75,C.white,.008);box(.465,.42,3.25,.025,.26,.75,C.white,.008);box(.465,.42,2.23,.03,.16,.95,C.dark);box(.24,.64,2.28,.43,.045,3.32,C.navy,.014);
 box(.15,1.18,2.1,.095,.93,1.65,'#293b3e',.022);const tvMat=new T.MeshStandardMaterial({color:'#60878b',emissive:'#496b70',emissiveIntensity:.45,roughness:.28});box(.204,1.18,2.1,.012,.83,1.54,tvMat,.009);const tvArt=new T.Group();root.add(tvArt);box(.215,1.18,2.1,.007,.055,.9,'#cadcc8',.002,tvArt);box(.216,1.37,2.1,.006,.11,.41,'#d2d9ad',.01,tvArt);box(.216,1.06,2.1,.006,.04,.65,'#9cb9ac',0,tvArt);
 box(.36,.7,2.1,.13,.09,1.0,C.dark,.025);box(.27,.83,3.36,.13,.35,.19,'#f4f2e8',.026);box(.272,.83,3.25,.10,.34,.018,'#293b3e');box(.32,.72,1.03,.13,.16,.24,'#263f43',.013);box(.32,.72,.885,.14,.17,.07,'#60a7a6',.02);box(.32,.72,1.175,.14,.17,.07,'#ca7064',.02);
-// Soft three-seat sofa facing the television, with rounded pillows.
-box(2.68,.23,2.12,.92,.25,2.8,'#b4ae9c',.10);box(2.98,.7,2.12,.24,.94,2.85,C.cream,.11);for(let i=0;i<3;i++){box(2.6,.45,1.23+i*.88,.84,.28,.84,C.white,.12);let m=box(2.87,.79,1.23+i*.88,.21,.52,.75,'#e0ddcd',.09);m.rotation.z=-.12}for(let z of [.74,3.5])box(2.67,.59,z,1,.50,.20,C.cream,.08);let cushion=box(2.59,.77,1.03,.22,.39,.43,'#aebfac',.07);cushion.rotation.x=.16;cushion.rotation.z=.22;box(2.52,.65,3.17,.42,.12,.58,'#c5b895',.045);
+// BoConcept Bergamo three-seater: a 2.5 m straight profile, one long seat,
+// three loose back cushions, broad squared arms and low dark feet.
+const sofaFabric='#a6a7a5',sofaSeat='#b5b6b4',sofaShade='#969896';
+for(const x of [2.37,2.98])for(const z of [.98,3.08])box(x,.065,z,.055,.13,.055,'#292d2e',.008);
+box(2.67,.245,2.03,.91,.32,2.5,sofaShade,.075);
+box(2.54,.465,2.03,.68,.22,2.06,sofaSeat,.075);
+box(3.00,.64,2.03,.22,.69,2.08,sofaFabric,.065);
+for(const z of [.85,3.21])box(2.67,.55,z,.91,.70,.16,sofaFabric,.055);
+for(let i=0;i<3;i++){let p=box(2.91,.79,1.36+i*.67,.24,.50,.62,sofaSeat,.065);p.rotation.z=-.07}
 cyl(1.55,.35,2.16,.43,.1,'#e8dfca');cyl(1.55,.2,2.16,.25,.25,C.wood);box(1.5,.413,2.18,.23,.025,.27,'#9ba68b',.01);cyl(1.74,.44,2.09,.055,.1,'#f9f4e7');
 const lampMat=new T.MeshStandardMaterial({color:'#fff1ce',emissive:'#ffe0a1',emissiveIntensity:.5});cyl(2.85,.08,.42,.18,.06,C.metal);rod([2.85,.1,.42],[2.85,1.53,.42],.022,C.metal);ball(2.85,1.56,.42,.18,lampMat);plant(.45,.67,.57,.42);
 // Portrait artwork and wall-mounted guitar, simplified as game props.
@@ -109,7 +123,7 @@ box(6.89,.49,8.72,.65,.91,.66,C.white,.04);let drum=cyl(6.89,.5,8.36,.23,.035,'#
 plant(.51,.08,4.11,.62);box(1.7,.86,5.66,.20,.03,.26,'#ede4cc',.015);cyl(1.7,.92,5.66,.05,.10,C.white);
 let night=false,tv=true,curtainClosed=true,wallLow=false,topView=false;
 let theta=.77,phi=.76,dist=19.5,target=new T.Vector3(2.9,.2,5),desiredTarget=target.clone(),desiredDist=19.5;
-const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃、柔軟的白色沙發，還有窗邊的一點綠意。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'單人床、書桌與收納空間，留給下一章的小主人。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},entry:{name:'玄關 · 歡迎回家',desc:'鞋櫃、穿鞋椅和深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
+const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃、灰色 Bergamo 三人座沙發，還有窗邊的一點綠意。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'單人床、書桌與收納空間，留給下一章的小主人。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},entry:{name:'玄關 · 歡迎回家',desc:'鞋櫃、穿鞋椅和深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
 let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{tv=!tv;tvMat.color.set(tv?'#60878b':'#263b3e');tvMat.emissiveIntensity=tv?.45:0;tvArt.visible=tv;selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
 document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');lampMat.emissiveIntensity=night?3:.5;renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
 // Touch-first camera controls: one pointer orbits, two pointers zoom.
