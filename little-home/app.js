@@ -19,7 +19,9 @@ floor(3.2,5,6.4,10);floor(-.6,8.95,1.2,2.1,'#c9c8b9');floor(6.85,7.5,.9,3.8,'#b9
 box(2.8,-.52,5,9.2,.28,12.2,'#d3dac4',.13);box(2.8,-.72,5,9.5,.18,12.5,'#bdcbae',.06);
 const ground=new T.Mesh(new T.PlaneGeometry(200,200),new T.ShadowMaterial({color:0x536e48,opacity:.15}));ground.rotation.x=-Math.PI/2;ground.position.y=-.82;ground.receiveShadow=true;scene.add(ground);
 const walls=[];function wall(x,z,w,d,h=1.15){let g=new T.Group();g.position.set(x,0,z);root.add(g);box(0,h/2,0,w,h,d,C.wall,.018,g);box(0,h+.025,0,w+.045,.05,d+.045,C.trim,.012,g);box(0,.075,0,w+.035,.11,d+.035,'#545b66',.006,g);walls.push(g);return g}
-wall(3.2,-.07,6.55,.15,1.75);wall(-.07,3.9,.15,7.9,1.55);wall(6.47,2.75,.15,5.7,.62);wall(6.47,7.7,.15,4.6,.62);wall(3.2,10.07,6.55,.15,.65);wall(-1.27,8.95,.15,2.25,.8);wall(-.65,7.85,1.35,.15,1.5);wall(-.93,10.07,.65,.15,.25);
+wall(3.2,-.07,6.55,.15,1.75);wall(-.07,3.9,.15,7.9,2.6);wall(6.47,2.75,.15,5.7,.62);wall(6.47,7.7,.15,4.6,.62);
+// The kitchen backsplash wall and the entrance enclosure reach the ceiling.
+wall(3.2,10.07,6.55,.15,2.6);wall(-1.27,8.95,.15,2.25,2.6);wall(-.65,7.85,1.35,.15,2.6);wall(-.93,10.07,.65,.15,2.6);
 // Interior walls use a full 2.6 m height; low-wall mode is display-only.
 const ROOM_WALL_HEIGHT=2.6;
 const interiorWalls=[];
@@ -129,8 +131,22 @@ box(2.36,.45,9.68,1.2,.83,.61,C.cab,.02);box(2.36,.89,9.66,1.2,.07,.70,'#eee9db'
 box(4.5,.45,9.68,2.7,.83,.61,C.cab,.02);box(4.5,.89,9.66,2.75,.07,.70,'#eee9db',.022);
 for(const x of [2.05,2.65,3.43,4.05,4.68,5.31]){box(x,.46,9.363,.55,.70,.024,x>4?'#405153':'#707379',.009);box(x,.73,9.345,.38,.025,.025,C.metal)}box(3.95,.945,9.61,.72,.035,.43,C.metal,.07);box(3.95,.967,9.61,.59,.025,.32,'#a7b9b3',.06);rod([3.95,.96,9.86],[3.95,1.25,9.86],.022,C.metal);rod([3.95,1.25,9.86],[3.95,1.25,9.65],.022,C.metal);box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x,.984,9.59,.12,.02,C.metal);cyl(x,1,9.59,.08,.023,'#253b3b')}box(5.45,1.73,9.74,.89,.14,.49,'#dadbd0',.025);box(5.45,1.95,9.89,.5,.35,.23,C.white,.02);box(2.36,1.65,9.89,1.18,.73,.27,C.cab,.012);box(2.36,1.24,9.9,1.18,.025,.28,'#f9e5ae');box(2.03,1.08,9.58,.32,.3,.26,C.white,.04);box(2.52,1.07,9.61,.28,.29,.31,C.white,.05);cyl(2.75,1.03,9.62,.10,.15,C.white);cyl(2.75,1.19,9.62,.09,.2,'#afc4bd');
 box(1.35,.95,9.52,.73,1.85,.83,'#87928b',.045);for(let yy of [1.39,.85,.34])box(1.35,yy,9.08,.67,yy>1?.88:.32,.035,'#a2aaa0',.018);box(1.36,1.39,9.048,.016,.87,.025,'#6a7b73');box(1.37,.73,9.04,.5,.025,.04,C.dark);box(1.55,1.6,9.045,.14,.2,.01,'#e3e4c8');
-// Entry cabinet, dark pegboard, bench, shoes, and a welcoming mat.
-box(-.65,.95,8.03,.95,1.84,.31,C.cab,.015);box(-.65,.9,8.205,.81,.44,.025,'#405b53');box(-.65,.65,8.23,.95,.045,.39,C.woodlight,.01);box(-.65,1.15,8.23,.95,.025,.39,'#f3dfab');plant(-.87,.68,8.25,.25);box(-.47,.8,8.245,.16,.23,.025,C.cream);box(-.71,.07,9.64,.64,.035,.43,'#9da993',.03);for(let x of [-.75,-.52])ball(x,.1,8.3,.11,'#b8a381',[.65,.45,1.35]);box(.37,.91,9.98,.75,1.0,.04,'#42625e',.02);for(let x=.1;x<.7;x+=.12)for(let y=.5;y<1.35;y+=.12)ball(x,y,9.948,.012,'#273f3e');box(.38,.42,9.60,.7,.22,.5,'#adb9a5',.09);for(let x of [.13,.63])box(x,.2,9.6,.05,.36,.28,C.wood);box(-1.16,.94,9.06,.04,1.46,.66,'#829b95',.025);
+// Entry cabinet facing the front door: three upper panels, lit open niche,
+// shallow drawers, lower doors and an open shoe space near the floor.
+const entryWood='#8f8071',entryFace='#9d8c79',entryDark='#313a38';
+for(const x of [-1.13,-.17])box(x,1.22,8.045,.055,2.38,.40,entryDark,.008);
+box(-.65,1.87,8.045,.94,.78,.38,entryWood,.016);
+for(const x of [-.96,-.65,-.34])box(x,1.87,8.245,.295,.73,.018,entryFace,.005);
+box(-.65,1.47,8.24,.91,.025,.40,'#f2deaf',.008);
+box(-.65,1.24,8.02,.90,.43,.035,entryDark,.005);
+box(-.65,1.00,8.22,.94,.06,.42,'#3a4644',.012);
+for(const y of [.84,.69])box(-.65,y,8.245,.89,.135,.025,entryFace,.006);
+box(-.65,.395,8.05,.94,.44,.36,entryWood,.008);
+for(const x of [-.88,-.42])box(x,.395,8.245,.44,.42,.018,entryFace,.005);
+box(-.65,.115,8.04,.91,.035,.39,'#65594a',.005);
+for(const x of [-.83,-.47])box(x,.11,8.29,.21,.075,.30,'#6b5b48',.025);
+box(-.71,.07,9.64,.64,.035,.43,'#9da993',.03);
+box(.37,.91,9.98,.75,1.0,.04,'#42625e',.02);for(let x=.1;x<.7;x+=.12)for(let y=.5;y<1.35;y+=.12)ball(x,y,9.948,.012,'#273f3e');box(.38,.42,9.60,.7,.22,.5,'#adb9a5',.09);for(let x of [.13,.63])box(x,.2,9.6,.05,.36,.28,C.wood);box(-1.16,.94,9.06,.04,1.46,.66,'#829b95',.025);
 // Utility balcony: washing machine, storage, herb pots.
 box(6.89,.49,8.72,.65,.91,.66,C.white,.04);let drum=cyl(6.89,.5,8.36,.23,.035,'#839b9b');drum.rotation.x=Math.PI/2;let glass=cyl(6.89,.5,8.33,.17,.04,'#405e60');glass.rotation.x=Math.PI/2;box(6.89,.82,8.37,.49,.08,.025,'#cfdbd0',.01);box(6.89,1.33,8.96,.72,.66,.26,C.cab,.025);plant(6.9,.08,6.08,.62);plant(6.87,.08,6.68,.40);
 // Small welcoming details.
