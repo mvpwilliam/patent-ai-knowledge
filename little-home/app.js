@@ -35,6 +35,7 @@ partition(2.65,6.875,.13,2.65); // child-room wall along the dining area
 partition(4.24,8.2,3.18,.13); // child-room wall along the kitchen
 partition(5.83,7.82,.13,.76); // child room / balcony, left of the window
 partition(5.83,6.015,.13,.93); // child room / balcony, right of the window
+partition(5.83,9.635,.13,.87); // kitchen / balcony wall after the balcony door
 partition(3.05,9.68,.13,.78); // short kitchen return beside the fridge cabinet
 // Glazing between the child room and utility balcony occupies the CAD opening.
 const childWindow=new T.Group();childWindow.position.set(5.83,0,6.96);root.add(childWindow);
@@ -58,6 +59,18 @@ doorFrames.push(g)}
 doorway(3.90,4.5,1.10,false);
 doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
 doorway(3.95,5.55,1.0,false); // child door, x 3.45–4.45 beside the bath
+// Kitchen access to the utility balcony occupies z 8.2–9.2 beside the hob.
+// The real door has a black frame, dark glazed panel and short fabric curtain.
+const balconyDoor=new T.Group();balconyDoor.position.set(5.83,0,8.70);root.add(balconyDoor);
+for(const z of [-.48,.48])box(0,1.12,z,.12,2.24,.07,'#24272a',.008,balconyDoor);
+box(0,2.20,0,.12,.10,1.02,'#24272a',.008,balconyDoor);
+box(0,.045,0,.15,.09,1.02,'#24272a',.005,balconyDoor);
+const balconyGlass=new T.MeshPhysicalMaterial({color:'#263a3c',transparent:true,opacity:.62,roughness:.19,metalness:.1,depthWrite:false,side:T.DoubleSide});
+box(0,1.13,0,.035,2.02,.91,balconyGlass,0,balconyDoor);
+box(-.027,.37,0,.024,.70,.89,'#323638',.008,balconyDoor);
+box(-.08,1.08,-.35,.04,.35,.025,C.metal,.009,balconyDoor);
+for(const z of [-.23,.23])box(-.045,1.82,z,.012,.69,.43,'#285a9b',.015,balconyDoor);
+doorFrames.push(balconyDoor);
 // Window frames and sheer curtain folds at the two north windows.
 const curtains=new T.Group();root.add(curtains);function windowAt(x,w){box(x,1.1,.015,w,1.6,.075,'#607779',.015);box(x,1.12,.062,w-.12,1.38,.018,new T.MeshStandardMaterial({color:'#b9d3d1',roughness:.25,emissive:'#9dbabc',emissiveIntensity:.2}));box(x,1.13,.083,.035,1.38,.025,C.dark);box(x,.53,.083,w,.035,.025,C.dark);for(let i=0;i<14;i++){let xx=x-w/2+.055+i*(w-.11)/13;let m=cyl(xx,1.07,.18,.035,1.68,i%2?'#eeeddf':'#d9dfd3',.035,curtains);m.scale.z=.8}box(x,1.95,.16,w+.14,.06,.1,C.cream,.02)}windowAt(1.67,2.5);windowAt(4.92,2.55);
 // Living area: blue-gray floating console, television, consoles and soundbar.
@@ -82,10 +95,10 @@ ball(3.22,1.10,3.05,.16,'#957e57',[.25,1.1,.75]);ball(3.22,1.27,3.05,.12,'#a58a5
 // Dining table, curved backs, oak seats and peninsula with oven niches.
 function chair(x,z){for(let dx of [-.20,.20])for(let dz of [-.20,.20])rod([x+dx*1.2,.07,z+dz*1.2],[x+dx,.49,z+dz],.027,C.wood);box(x,.49,z,.49,.08,.48,'#c6c5af',.07);const back=box(x-.21,.78,z,.075,.34,.5,C.woodlight,.05);rod([x-.20,.61,z-.23],[x+.18,.68,z-.23],.023,C.woodlight);rod([x-.20,.61,z+.23],[x+.18,.68,z+.23],.023,C.woodlight)}
 box(1.36,.76,6.15,1.03,.12,1.65,C.woodlight,.16);box(1.36,.39,6.15,.59,.69,.88,'#c8b493',.18);chair(.55,5.76);chair(.55,6.52);plant(1.36,.83,6.1,.39);
-// A 1.39 m island runs across the dining/kitchen axis. Its left end begins
-// about .9 m from the outer wall, leaving the entry-side circulation clear.
+// A 1.39 m island runs across the dining/kitchen axis, with its right end
+// against the bedroom-side wall and circulation to its left.
 // Oven and open shelf face the entry; three drawers occupy the right end.
-const peninsula=new T.Group();peninsula.position.set(1.60,0,7.30);root.add(peninsula);
+const peninsula=new T.Group();peninsula.position.set(1.94,0,7.30);root.add(peninsula);
 box(0,.44,0,1.34,.85,.59,C.cab,.03,peninsula);box(0,.89,0,1.42,.075,.68,'#303237',.028,peninsula);
 box(-.38,.55,.314,.46,.38,.024,'#303e3d',0,peninsula);
 box(-.38,.54,.34,.38,.29,.05,'#e1dfcf',.02,peninsula);
@@ -108,8 +121,8 @@ rod([5.4,2.14,4.74],[5.4,2.14,5.5],.013,C.metal);
 rod([5.4,.10,4.74],[5.4,.10,5.5],.008,C.metal);
 rod([5.37,.99,5.19],[5.37,1.33,5.19],.014,C.metal);
 rod([6.37,.12,5.15],[6.37,1.53,5.15],.02,C.metal);rod([6.37,1.53,5.15],[6.13,1.53,5.15],.02,C.metal);cyl(6.13,1.51,5.15,.085,.03,C.metal);
-// Child room: single bed and desk, no character yet.
-box(5.12,.25,6.72,1.1,.35,1.95,C.wood,.06);box(5.12,.51,6.72,1.1,.20,1.94,C.white,.055);box(5.12,.67,6.94,1.11,.13,1.48,'#c0ccbd',.05);box(5.12,.7,5.99,.72,.18,.37,'#f0dfb7',.07);box(5.12,.61,5.7,1.13,1.01,.11,C.woodlight,.03);box(5.12,.765,7.22,1.12,.04,.36,'#8fa8a0',.02);box(4.1,.72,7.18,.65,.09,1.05,C.woodlight,.03);for(let z of [6.74,7.61])box(4.1,.36,z,.055,.7,.055,C.wood);box(4.04,.78,7.0,.4,.018,.32,'#f4ebd7',.005);box(4.08,.81,7.35,.3,.04,.24,'#859b9a',.005);cyl(4.28,.46,7.22,.23,.08,'#b8bc9b');cyl(4.28,.24,7.22,.035,.4,C.wood);box(3.92,1.0,6.22,.3,1.86,.62,C.cab,.02);
+// Child room intentionally contains only the bed and its bedding.
+box(5.12,.25,6.72,1.1,.35,1.95,C.wood,.06);box(5.12,.51,6.72,1.1,.20,1.94,C.white,.055);box(5.12,.67,6.94,1.11,.13,1.48,'#c0ccbd',.05);box(5.12,.7,5.99,.72,.18,.37,'#f0dfb7',.07);box(5.12,.61,5.7,1.13,1.01,.11,C.woodlight,.03);box(5.12,.765,7.22,1.12,.04,.36,'#8fa8a0',.02);
 // Kitchen and appliances, preserving dark countertops and pale cabinetry.
 // The two kitchen counters stop at the short CAD wall beside the fridge cabinet.
 box(2.36,.45,9.68,1.2,.83,.61,C.cab,.02);box(2.36,.89,9.66,1.2,.07,.70,'#eee9db',.022);
@@ -124,7 +137,7 @@ box(6.89,.49,8.72,.65,.91,.66,C.white,.04);let drum=cyl(6.89,.5,8.36,.23,.035,'#
 plant(.51,.08,4.11,.62);box(1.7,.86,5.66,.20,.03,.26,'#ede4cc',.015);cyl(1.7,.92,5.66,.05,.10,C.white);
 let night=false,tv=true,curtainClosed=true,wallLow=false,topView=false;
 let theta=.77,phi=.76,dist=19.5,target=new T.Vector3(2.9,.2,5),desiredTarget=target.clone(),desiredDist=19.5;
-const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃、灰色 Bergamo 三人座沙發，還有窗邊的一點綠意。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'單人床、書桌與收納空間，留給下一章的小主人。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},entry:{name:'玄關 · 歡迎回家',desc:'鞋櫃、穿鞋椅和深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
+const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃、灰色 Bergamo 三人座沙發，還有窗邊的一點綠意。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},entry:{name:'玄關 · 歡迎回家',desc:'鞋櫃、穿鞋椅和深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
 let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{tv=!tv;tvMat.color.set(tv?'#60878b':'#263b3e');tvMat.emissiveIntensity=tv?.45:0;tvArt.visible=tv;selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
 document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');lampMat.emissiveIntensity=night?3:.5;renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
 // Touch-first camera controls: one pointer orbits, two pointers zoom.
