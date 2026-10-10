@@ -34,8 +34,8 @@ partition(5.4,5.45,2.15,.13); // bath / child-room boundary
 partition(3.3,7.05,.13,1.4); // child-room wall after its doorway
 partition(4.265,7.75,3.19,.13); // child room against the kitchen
 partition(5.75,7.0,.13,1.5); // child room against the utility balcony
-// Exterior balcony edges remain parapets in this roofless cutaway.
-wall(6.87,5.64,1.0,.13,.6);wall(7.36,7.5,.13,3.85,.55);
+// Only the utility balcony has a parapet; the shower has a glass enclosure.
+wall(7.36,7.5,.13,3.85,.55);
 const doorFrames=[];
 function doorway(x,z,width,alongZ=true){const g=new T.Group();g.position.set(x,0,z);if(alongZ)g.rotation.y=Math.PI/2;root.add(g);const h=2.1;
 for(const side of [-1,1])box(side*(width/2-.025),h/2,0,.05,h,.18,'#454c57',.008,g);
@@ -68,7 +68,16 @@ box(3.07,.96,6.09,.38,1.86,1.1,C.cab,.018);for(let z of [5.8,6.34]){box(2.869,.9
 // Master bedroom, window-side bed, wardrobe and small bedside tables.
 box(4.96,.08,1.64,2.28,.06,2.6,'#c7cbbb',.06);box(5.84,.54,1.64,.16,.94,2.05,'#b0ad98',.08);box(4.94,.29,1.64,1.85,.35,1.94,C.wood,.045);box(4.94,.52,1.64,1.90,.22,1.95,C.white,.08);box(4.63,.67,1.64,1.25,.15,1.94,C.bed,.075);for(let z of [1.12,2.15]){let p=box(5.54,.70,z,.45,.17,.71,'#f3ecda',.07);p.rotation.z=-.04}box(4.24,.77,1.64,.33,.07,1.95,'#8ea48d',.03);for(let z of [.39,2.98]){cyl(5.68,.32,z,.23,.58,C.woodlight);cyl(5.68,.63,z,.24,.05,C.cream);ball(5.68,.79,z,.12,lampMat)}box(5.22,.82,3.37,1.96,1.57,.43,C.cab,.02);for(let x of [4.59,5.23,5.87]){box(x,.83,3.143,.61,1.48,.02,'#75777c');box(x+.23,.83,3.126,.018,.2,.018,C.dark)}plant(3.68,.08,.4,.6);
 // Bathroom tiled floor, basin, mirror, toilet and glass shower partition.
-box(5.4,.07,4.58,1.91,.06,1.64,'#becdc5');for(let x=4.5;x<6.4;x+=.32)box(x,.105,4.58,.01,.004,1.64,'#a6bcb2');for(let z=3.8;z<5.4;z+=.32)box(5.4,.105,z,1.9,.004,.01,'#a6bcb2');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,C.white,.08);ball(4.73,.827,4.1,.21,'#acbfb9',[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);box(6.75,.1,5.15,1.0,.10,.8,'#d5dfd3',.03);box(6.4,.84,5.13,.025,1.4,.81,new T.MeshStandardMaterial({color:'#bddee0',transparent:true,opacity:.25,roughness:.2}));rod([7.22,.12,4.85],[7.22,1.53,4.85],.02,C.metal);rod([7.22,1.53,4.85],[6.98,1.53,4.85],.02,C.metal);cyl(6.98,1.51,4.85,.085,.03,C.metal);
+box(5.4,.07,4.58,1.91,.06,1.64,'#55585b');for(let x=4.5;x<6.4;x+=.32)box(x,.105,4.58,.01,.004,1.64,'#777b7c');for(let z=3.8;z<5.4;z+=.32)box(5.4,.105,z,1.9,.004,.01,'#777b7c');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
+// Floor-level shower tiles, clear full-height side panel and glass door.
+box(6.75,.07,5.15,1.0,.06,.8,'#55585b');
+const showerGlass=new T.MeshPhysicalMaterial({color:'#d9eeee',transparent:true,opacity:.17,roughness:.08,metalness:0,depthWrite:false,side:T.DoubleSide});
+box(6.4,1.08,5.13,.018,2.05,.81,showerGlass);box(6.78,1.08,5.61,.74,2.05,.018,showerGlass);
+for(const x of [6.4,7.15])rod([x,.08,5.61],[x,2.13,5.61],.012,C.metal);
+rod([6.4,2.14,5.61],[7.15,2.14,5.61],.013,C.metal);
+rod([6.4,.10,5.61],[7.15,.10,5.61],.008,C.metal);
+rod([6.95,.99,5.64],[6.95,1.33,5.64],.014,C.metal);
+rod([7.22,.12,4.85],[7.22,1.53,4.85],.02,C.metal);rod([7.22,1.53,4.85],[6.98,1.53,4.85],.02,C.metal);cyl(6.98,1.51,4.85,.085,.03,C.metal);
 // Child room: single bed and desk, no character yet.
 box(5.12,.25,6.72,1.1,.35,1.95,C.wood,.06);box(5.12,.51,6.72,1.1,.20,1.94,C.white,.055);box(5.12,.67,6.94,1.11,.13,1.48,'#c0ccbd',.05);box(5.12,.7,5.99,.72,.18,.37,'#f0dfb7',.07);box(5.12,.61,5.7,1.13,1.01,.11,C.woodlight,.03);box(5.12,.765,7.22,1.12,.04,.36,'#8fa8a0',.02);box(3.8,.72,7.18,.65,.09,1.05,C.woodlight,.03);for(let z of [6.74,7.61])box(3.8,.36,z,.055,.7,.055,C.wood);box(3.74,.78,7.0,.4,.018,.32,'#f4ebd7',.005);box(3.78,.81,7.35,.3,.04,.24,'#859b9a',.005);cyl(4.18,.46,7.22,.23,.08,'#b8bc9b');cyl(4.18,.24,7.22,.035,.4,C.wood);box(3.55,1.0,6.22,.3,1.86,.62,C.cab,.02);
 // Kitchen and appliances, preserving dark countertops and pale cabinetry.
