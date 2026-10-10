@@ -26,7 +26,7 @@ const interiorWalls=[];
 function partition(x,z,w,d){const g=wall(x,z,w,d,ROOM_WALL_HEIGHT);g.userData.fullHeight=ROOM_WALL_HEIGHT;interiorWalls.push(g);return g}
 // CAD's thick purple lines set the walls; its door arcs set the openings.
 // In plan view model X runs downward and model Z runs from right to left.
-partition(3.35,1.665,.14,3.33); // living/master divider ends at the recessed bedroom entrance
+partition(3.35,2.25,.14,4.5); // uninterrupted living wall ends at the marked master entry
 partition(5.46,3.65,2.02,.14); // master/bath wall, x 4.45–6.47
 partition(4.45,4.125,.13,.75); // bathroom front wall, z 3.75–4.50
 partition(5.35,5.55,1.8,.13); // bath/child wall below the child door
@@ -53,10 +53,9 @@ for(const side of [-1,1])box(side*(width/2-.025),h/2,0,.05,h,.18,'#454c57',.008,
 box(0,h+.035,0,width,.07,.18,'#454c57',.008,g);
 box(0,(h+.07+ROOM_WALL_HEIGHT)/2,0,width,ROOM_WALL_HEIGHT-h-.07,.14,C.wall,.008,g);
 doorFrames.push(g)}
-// The plan's swing belongs at the end of the living/master divider. Keep the
-// opening clear: a solid door leaf on the living face reads as a door in the
-// sofa wall, where the reference interior shows a continuous finish.
-doorway(3.35,3.85,1.04);
+// The marked master entrance crosses the short passage beside the bathroom.
+// Its opening faces the passage, while the sofa-side wall remains continuous.
+doorway(3.90,4.5,1.10,false);
 doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
 doorway(3.95,5.55,1.0,false); // child door, x 3.45–4.45 beside the bath
 // Window frames and sheer curtain folds at the two north windows.
@@ -83,12 +82,17 @@ ball(3.22,1.10,3.05,.16,'#957e57',[.25,1.1,.75]);ball(3.22,1.27,3.05,.12,'#a58a5
 // Dining table, curved backs, oak seats and peninsula with oven niches.
 function chair(x,z){for(let dx of [-.20,.20])for(let dz of [-.20,.20])rod([x+dx*1.2,.07,z+dz*1.2],[x+dx,.49,z+dz],.027,C.wood);box(x,.49,z,.49,.08,.48,'#c6c5af',.07);const back=box(x-.21,.78,z,.075,.34,.5,C.woodlight,.05);rod([x-.20,.61,z-.23],[x+.18,.68,z-.23],.023,C.woodlight);rod([x-.20,.61,z+.23],[x+.18,.68,z+.23],.023,C.woodlight)}
 box(1.36,.76,6.15,1.03,.12,1.65,C.woodlight,.16);box(1.36,.39,6.15,.59,.69,.88,'#c8b493',.18);chair(.55,5.76);chair(.55,6.52);plant(1.36,.83,6.1,.39);
-// The peninsula runs across the dining/kitchen axis. Its oven niches face the
-// entry, as in the plan and interior perspectives, with the drawers at its end.
-const peninsula=new T.Group();peninsula.position.set(1.45,0,7.30);root.add(peninsula);
-box(0,.44,0,2.28,.85,.59,C.cab,.03,peninsula);box(0,.89,0,2.4,.075,.68,'#303237',.028,peninsula);
-for(const x of [-.66,.01]){box(x,.55,.314,.57,.38,.024,'#303e3d',0,peninsula);box(x,.54,.34,.44,.29,.05,'#e1dfcf',.02,peninsula);box(x,.54,.37,.31,.19,.006,'#697877',0,peninsula);box(x,.65,.387,.29,.018,.025,C.metal,0,peninsula)}
-for(const yy of [.22,.49,.71]){box(.77,yy,.31,.53,.21,.025,'#b5aa91',.009,peninsula);box(.77,yy+.065,.33,.30,.013,.017,C.dark,0,peninsula)}
+// A 1.39 m island runs across the dining/kitchen axis. Its left end begins
+// about .9 m from the outer wall, leaving the entry-side circulation clear.
+// Oven and open shelf face the entry; three drawers occupy the right end.
+const peninsula=new T.Group();peninsula.position.set(1.60,0,7.30);root.add(peninsula);
+box(0,.44,0,1.34,.85,.59,C.cab,.03,peninsula);box(0,.89,0,1.42,.075,.68,'#303237',.028,peninsula);
+box(-.38,.55,.314,.46,.38,.024,'#303e3d',0,peninsula);
+box(-.38,.54,.34,.38,.29,.05,'#e1dfcf',.02,peninsula);
+box(-.38,.54,.37,.29,.19,.006,'#697877',0,peninsula);
+box(-.38,.65,.387,.25,.018,.025,C.metal,0,peninsula);
+box(.095,.55,.314,.43,.38,.024,'#303e3d',0,peninsula);
+for(const yy of [.22,.49,.71]){box(.5,yy,.31,.30,.21,.025,'#b5aa91',.009,peninsula);box(.5,yy+.065,.33,.20,.013,.017,C.dark,0,peninsula)}
 // Full-height built-in cabinets beside dining room.
 box(3.07,.96,6.21,.38,1.86,1.1,C.cab,.018);for(let z of [5.92,6.46]){box(2.869,.96,z,.015,1.78,.51,'#686b72',.006);box(2.85,.86,z-.16,.022,.28,.016,C.dark)}
 // Master bedroom, window-side bed, wardrobe and small bedside tables.
