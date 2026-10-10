@@ -35,18 +35,20 @@ partition(5.35,5.55,1.8,.13); // bath/child wall below the child door
 partition(3.05,5.55,.8,.13); // short wall above the child door
 partition(2.65,6.875,.13,2.65); // child-room wall along the dining area
 partition(4.24,8.2,3.18,.13); // child-room wall along the kitchen
-partition(5.83,7.82,.13,.76); // child room / balcony, left of the window
-partition(5.83,6.015,.13,.93); // child room / balcony, right of the window
+partition(5.83,5.98,.13,.86); // solid wall from bath to the balcony-side window
+partition(5.83,6.805,.13,.79); // continuous upper part of child-room balcony wall
+partition(5.83,8.15,.13,.10); // short jamb at the kitchen-side corner
 partition(5.83,9.635,.13,.87); // kitchen / balcony wall after the balcony door
 partition(3.05,9.68,.13,.78); // short kitchen return beside the fridge cabinet
-// Glazing between the child room and utility balcony occupies the CAD opening.
-const childWindow=new T.Group();childWindow.position.set(5.83,0,6.96);root.add(childWindow);
-box(0,.46,0,.13,.92,.96,C.wall,.008,childWindow);
-box(0,2.36,0,.13,.48,.96,C.wall,.008,childWindow);
+// The floor finish plan locates this window at the kitchen end of the child
+// room's balcony wall; the bath end remains a solid full-height wall.
+const childWindow=new T.Group();childWindow.position.set(5.83,0,7.65);root.add(childWindow);
+box(0,.46,0,.13,.92,.90,C.wall,.008,childWindow);
+box(0,2.36,0,.13,.48,.90,C.wall,.008,childWindow);
 const childGlass=new T.MeshPhysicalMaterial({color:'#bed9d7',transparent:true,opacity:.38,roughness:.17,depthWrite:false,side:T.DoubleSide});
-box(0,1.55,0,.018,1.2,.91,childGlass,0,childWindow);
-for(const z of [-.47,.47])box(0,1.55,z,.08,1.25,.035,C.trim,0,childWindow);
-box(0,.94,0,.1,.05,.96,C.trim,0,childWindow);box(0,2.16,0,.1,.05,.96,C.trim,0,childWindow);
+box(0,1.55,0,.018,1.2,.88,childGlass,0,childWindow);
+for(const z of [-.45,.45])box(0,1.55,z,.08,1.25,.035,C.trim,0,childWindow);
+box(0,.94,0,.1,.05,.90,C.trim,0,childWindow);box(0,2.16,0,.1,.05,.90,C.trim,0,childWindow);
 walls.push(childWindow);interiorWalls.push(childWindow);
 // Only the utility balcony has a parapet; the shower has a glass enclosure.
 wall(7.36,7.5,.13,3.85,.55);
