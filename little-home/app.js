@@ -404,10 +404,12 @@ box(1.36,1.36,9.064,.003,.10,.002,'#a5a9aa');
 // shallow drawers, three lower doors, and a continuous shoe void at the floor.
 const entryFace='#f2f1ec',entryDark='#303838';
 const entryX=-1.06,entryZ=8.065,entryW=1.90,entryD=.40;
-for(const x of [-2.02,-.10])box(x,1.28,entryZ,.035,2.55,entryD,entryDark,.006);
-box(entryX,2.56,entryZ,entryW,.035,entryD,entryDark);
-box(entryX,1.88,entryZ,entryW,.76,entryD,'#626866');
-for(const x of [-1.69,-1.06,-.43])box(x,1.88,8.277,.615,.74,.018,entryFace,.004);
+for(const x of [-2.02,-.10])box(x,1.30,entryZ,.035,2.60,entryD,entryDark,.006);
+box(entryX,2.585,entryZ,entryW,.03,entryD,entryDark);
+// Upper carcass and all three doors reach the ceiling; the display niche
+// below stays open, as in the entry photograph.
+box(entryX,2.035,entryZ,entryW,1.07,entryD,'#626866');
+for(const x of [-1.69,-1.06,-.43])box(x,2.035,8.277,.615,1.055,.018,entryFace,.004);
 box(entryX,1.48,entryZ,entryW,.035,entryD,'#e2d3a9');
 for(const x of [-1.83,-.29])cyl(x,1.452,8.17,.035,.015,'#fff0cd');
 // Set the niche backing at the rear so the display shelf has real depth.
