@@ -53,7 +53,8 @@ partition(4.24,8.2,3.18,.13); // child-room wall along the kitchen
 partition(5.83,6.275,.13,1.45); // single solid wall from bath corner to window
 partition(5.83,8.01,.13,.22); // jamb beside the opposite kitchen wall
 partition(5.83,9.595,.13,.95); // tiled return between balcony door and hob
-partition(3.05,9.68,.13,.78); // short kitchen return beside the fridge cabinet
+const applianceDivider=partition(3.05,9.68,.13,.78); // shared kitchen/appliance wall
+applianceDivider.children.forEach(part=>part.material=mat('#696b6a'));
 // The solid service shaft touches the child-room corner. Beyond it, the
 // shower projects as far as the outside edge of the utility balcony.
 const serviceShaft=wall(6.15,6.00,.64,.90,2.6);
@@ -103,6 +104,9 @@ doorFrames.push(frontDoor);
 // toward the opposite tiled wall, leaving a tiled return beside the hob.
 const balconyDoor=new T.Group();balconyDoor.position.set(5.83,0,8.62);root.add(balconyDoor);
 for(const z of [-.48,.48])box(0,1.12,z,.12,2.24,.07,'#24272a',.008,balconyDoor);
+// The left jamb faces the kitchen and sits proud of the tiled end wall.
+box(-.092,1.12,-.49,.045,2.24,.105,'#151b1d',.003,balconyDoor);
+box(-.092,2.20,0,.045,.085,1.08,'#151b1d',.003,balconyDoor);
 box(0,2.20,0,.12,.10,1.02,'#24272a',.008,balconyDoor);
 box(0,2.425,0,.14,.35,1.02,C.wall,.008,balconyDoor); // lintel to the 2.6 m wall top
 box(0,.045,0,.15,.09,1.02,'#24272a',.005,balconyDoor);
@@ -229,25 +233,41 @@ box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x
 // Cabinet above the refrigerator, with its face aligned to the fridge.
 box(1.35,2.24,9.55,.78,.65,.78,'#77736e',.012);
 for(const x of [1.17,1.53])box(x,2.24,9.145,.35,.61,.018,'#9a9690',.005);
-// The cabinetry to the refrigerator's kitchen side in the supplied render.
-for(const x of [1.77,2.95])box(x,1.30,9.59,.045,2.55,.79,'#81796f',.005);
-box(2.29,2.28,9.63,.94,.55,.72,'#92908b',.01);
-for(const x of [2.05,2.52])box(x,2.28,9.26,.45,.52,.018,'#aaa6a0',.005);
-// Narrow open display shelves at the kitchen-opening end of the 103 cm bay.
-for(const y of [2.03,2.25,2.47])box(2.83,y,9.48,.23,.025,.40,'#aba79f',.004);
-box(2.72,2.27,9.47,.025,.52,.43,'#837f79',.004);
-box(2.36,1.86,9.60,1.10,.055,.63,'#6d716f',.006);
-box(2.36,1.67,9.94,1.10,.32,.035,'#343c3c',.005);
-box(2.36,1.49,9.60,1.08,.035,.65,'#c8beb0',.006);
-box(2.36,1.20,9.60,1.12,.06,.73,'#c8beb0',.008);
-box(2.36,.98,9.22,1.08,.035,.045,'#e9d8a9',.002);
-// Microwave niche and the lower pull-out drawers.
-box(2.13,.70,9.12,.56,.39,.035,'#303437',.01);
-box(2.12,.72,9.097,.42,.24,.008,'#66767a',.008);
-box(2.43,.70,9.085,.025,.28,.018,'#c0c5bb');
-for(const y of [.79,.55,.32]){box(2.70,y,9.11,.43,.18,.02,'#a39887',.005);box(2.70,y+.03,9.085,.27,.014,.018,C.dark)}
-box(2.36,.18,9.12,1.08,.23,.025,'#76746e',.005);
-box(2.03,1.35,9.58,.21,.23,.22,C.white,.04);box(2.60,1.33,9.58,.18,.20,.19,C.white,.05);
+// Refrigerator-side appliance cabinet, front at z=9.17. From the kitchen
+// opening toward the fridge: a narrow three-tier open shelf, two overhead
+// doors, a cup niche, an open appliance counter, a microwave and robot bay,
+// with drawers in the narrower bay next to the refrigerator.
+const cabinetLinen='#9c9b96',cabinetOak='#a49b88',cabinetInterior='#263535';
+for(const x of [1.76,2.96])box(x,1.30,9.56,.035,2.60,.76,'#797b77',.004);
+box(2.36,2.57,9.56,1.18,.05,.76,'#777b78',.004);
+box(2.24,2.30,9.55,.93,.55,.72,'#858983',.005);
+for(const x of [2.005,2.475])box(x,2.30,9.181,.455,.52,.012,cabinetLinen,.003);
+box(2.71,2.28,9.56,.022,.60,.69,'#626967');
+for(const y of [1.79,2.06,2.33])box(2.83,y,9.51,.23,.026,.62,'#92928a',.003);
+box(2.83,1.83,9.89,.23,.46,.012,'#555e5b');
+// Open horizontal cup shelf below the two overhead doors.
+box(2.24,2.01,9.55,.93,.03,.69,'#858981');
+box(2.24,1.77,9.55,.93,.04,.69,cabinetOak);
+box(2.24,1.88,9.89,.91,.18,.014,'#394846');
+for(const x of [2.02,2.20,2.38,2.55])cyl(x,1.815,9.45,.045,.12,'#bfc6c2');
+// Grey wall above the counter and the slim under-cabinet light.
+box(2.36,1.49,9.928,1.16,.51,.008,'#737775');
+box(2.24,1.745,9.28,.93,.018,.055,'#e8e9e3');
+box(2.36,1.20,9.54,1.18,.06,.76,'#d0cabd',.007);
+// Microwave left and shallow drawer stack right, per the elevation photo.
+box(2.25,.60,9.54,.028,1.16,.73,cabinetInterior);
+box(2.59,.88,9.89,.69,.55,.018,cabinetInterior);
+box(2.59,.61,9.54,.70,.045,.72,cabinetOak);
+box(2.59,.87,9.14,.58,.42,.04,'#202b2f',.008);
+box(2.56,.88,9.112,.43,.27,.01,'#606d71',.004);
+box(2.83,.87,9.106,.025,.31,.015,'#aeb6b3');
+box(2.59,.19,9.89,.69,.36,.018,cabinetInterior);
+box(2.59,.09,9.53,.69,.035,.72,'#555d59');
+box(2.59,.26,9.53,.43,.26,.44,'#343b3b',.03);
+for(const y of [.92,.67,.42,.17]){box(2.005,y,9.167,.455,.21,.016,cabinetOak,.004);box(2.005,y+.045,9.149,.28,.012,.012,'#3d4947')}
+// Small countertop appliances preserve the open work surface.
+box(2.66,1.34,9.55,.22,.22,.20,'#f1f0eb',.035);
+box(2.27,1.32,9.50,.30,.18,.18,'#f1f0eb',.04);
 box(1.35,.95,9.52,.73,1.85,.83,'#87928b',.045);for(let yy of [1.39,.85,.34])box(1.35,yy,9.08,.67,yy>1?.88:.32,.035,'#a2aaa0',.018);box(1.36,1.39,9.048,.016,.87,.025,'#6a7b73');box(1.37,.73,9.04,.5,.025,.04,C.dark);box(1.55,1.6,9.045,.14,.2,.01,'#e3e4c8');
 // Entry cabinet facing the front door: three upper panels, lit open niche,
 // shallow drawers, lower doors and an open shoe space near the floor.
@@ -278,14 +298,7 @@ box(.40,1.61,9.970,.88,1.98,.008,'#37494a',.002);
 for(let x=.02;x<.80;x+=.11)for(let y=.72;y<2.52;y+=.11)ball(x,y,9.962,.008,'#1f2d2e');
 box(-.48,.42,8.38,.70,.22,.5,'#adb9a5',.09);
 for(const x of [-.73,-.23])box(x,.2,8.38,.05,.36,.28,C.wood);
-// Utility balcony: washer near the shaft/shower stop; small plants at the
-// kitchen end leave the door clear. The outdoor AC is beyond the structure.
-box(6.60,.49,6.95,.65,.91,.66,C.white,.04);
-let drum=cyl(6.60,.5,6.60,.23,.035,'#839b9b');drum.rotation.x=Math.PI/2;
-let glass=cyl(6.60,.5,6.57,.17,.04,'#405e60');glass.rotation.x=Math.PI/2;
-box(6.60,.82,6.60,.49,.08,.025,'#cfdbd0',.01);
-box(6.60,1.33,6.96,.72,.66,.26,C.cab,.025);
-plant(6.94,.08,8.07,.36);plant(6.94,.08,8.67,.30);
+// Leave the walkable utility balcony completely clear.
 // AC platform at the kitchen end: the column occupies the inner half and
 // the platform's outer edge aligns with the unbroken balcony parapet.
 box(6.82,-.13,9.72,.72,.22,1.05,'#a9aba4',.02);
@@ -301,7 +314,7 @@ for(const x of [6.51,6.83,7.16])rod([x,.08,9.20],[x,.55,9.20],.012,'#899893');
 plant(.51,.08,4.11,.62);
 let night=false,tv=true,curtainClosed=true,wallLow=false,topView=false;
 let theta=.77,phi=.76,dist=19.5,target=new T.Vector3(2.9,.2,5),desiredTarget=target.clone(),desiredDist=19.5;
-const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃、灰色 Bergamo 三人座沙發，還有窗邊的一點綠意。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 洗衣與日光',desc:'靠浴室端是洗衣機，另一端經玻璃門接回廚房。冷氣室外機在柱外小平台。',pos:[6.55,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'鞋櫃、穿鞋椅和深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
+const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃、灰色 Bergamo 三人座沙發，還有窗邊的一點綠意。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 日光',desc:'陽台內已清空，經廚房玻璃門進出。冷氣室外機在柱外獨立小平台。',pos:[6.55,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'鞋櫃、穿鞋椅和深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
 let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台門',()=>{desiredTarget.set(5.76,1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{tv=!tv;tvMat.color.set(tv?'#60878b':'#263b3e');tvMat.emissiveIntensity=tv?.45:0;tvArt.visible=tv;selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
 document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');lampMat.emissiveIntensity=night?3:.5;renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
 // One finger pans by default; the visible switch restores orbit rotation.
