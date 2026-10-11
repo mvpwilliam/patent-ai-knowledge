@@ -23,7 +23,18 @@ floor(6.825,5.50,.71,1.90,'#55585b');
 box(2.55,-.52,5,9.7,.28,12.2,'#d3dac4',.13);box(2.55,-.72,5,10,.18,12.5,'#bdcbae',.06);
 const ground=new T.Mesh(new T.PlaneGeometry(200,200),new T.ShadowMaterial({color:0x536e48,opacity:.15}));ground.rotation.x=-Math.PI/2;ground.position.y=-.82;ground.receiveShadow=true;scene.add(ground);
 const walls=[];function wall(x,z,w,d,h=1.15){let g=new T.Group();g.position.set(x,0,z);root.add(g);box(0,h/2,0,w,h,d,C.wall,.018,g);box(0,h+.025,0,w+.045,.05,d+.045,C.trim,.012,g);walls.push(g);return g}
-wall(3.2,-.07,6.55,.15,1.75);wall(-.07,3.9,.15,7.9,2.6);
+// Two north-facing windows each have a sill and a full-height header. The
+// old continuous 1.75 m wall covered the glazing but left the top open.
+for(const [a,b] of [[-.075,.42],[2.92,3.645],[6.195,6.475]])wall((a+b)/2,-.07,b-a,.15,2.6);
+for(const [a,b] of [[.42,2.92],[3.645,6.195]]){
+  const x=(a+b)/2,w=b-a;
+  wall(x,-.07,w,.15,.30);
+  const header=new T.Group();header.position.set(x,0,-.07);root.add(header);
+  box(0,2.25,0,w,.70,.15,C.wall,.018,header);
+  box(0,2.625,0,w+.045,.05,.195,C.trim,.012,header);
+  walls.push(header);
+}
+wall(-.07,3.9,.15,7.9,2.6);
 wall(6.47,2.25,.15,4.5,2.6); // master and toilet side, ending at the shower glass
 wall(7.18,5.50,.13,1.90,2.6); // projecting shower exterior
 wall(7.18,8.335,.13,3.77,.55); // continuous outer parapet, shower stop to AC platform
@@ -169,31 +180,34 @@ for(const z of [1.12,2.15]){const pillow=box(6.04,.70,z,.45,.17,.71,'#f3ecda',.0
 box(4.74,.77,1.64,.33,.07,1.95,'#8ea48d',.03);
 // Bathroom tiled floor, basin, mirror, toilet and glass shower partition.
 box(5.4,.07,4.58,1.91,.06,1.64,'#55585b');for(let x=4.5;x<6.4;x+=.32)box(x,.105,4.58,.01,.004,1.64,'#777b7c');for(let z=3.8;z<5.4;z+=.32)box(5.4,.105,z,1.9,.004,.01,'#777b7c');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
-// The shower projects beyond the bath toward the balcony. The L-shaped
-// enclosure has a fixed shaft-side pane, an inward-swinging glass door and
-// a 15 cm return that seals to the end of the wall behind the toilet.
+// The shower projects beyond the bath toward the balcony. In local plan
+// coordinates the toilet-side wall end A=(0,0), C=(15,0), B=(15,79) cm.
+// The short leg A-C is perpendicular to that wall; C-B runs parallel to it.
 box(6.825,.07,5.50,.65,.06,1.76,'#55585b');
 const showerGlass=new T.MeshPhysicalMaterial({color:'#c7e0df',transparent:true,opacity:.34,roughness:.08,metalness:0,depthWrite:false,side:T.DoubleSide});
-// Long side follows x=6.62, z=4.76–5.55 (79 cm). The little fixed pane
-// and its slim seal reach the solid shaft wall at the far end.
-box(6.62,1.08,5.485,.018,2.05,.13,showerGlass);
-box(6.585,1.08,5.55,.070,2.05,.018,showerGlass);
-// The short leg is 15 cm, approximately one fifth of the long leg.
-box(6.545,1.08,4.76,.15,2.05,.018,showerGlass);
-for(const x of [6.47,6.62])rod([x,.08,4.76],[x,2.12,4.76],.010,C.metal);
-rod([6.47,2.12,4.76],[6.62,2.12,4.76],.010,C.metal);
-// Hinge at the toilet-side corner. The resting view opens 18 degrees into
-// the shower; the 0–54 degree floor arc stays north of the outer window.
-const showerDoor=new T.Group();showerDoor.position.set(6.62,0,4.76);showerDoor.rotation.y=.314;root.add(showerDoor);
-box(0,1.08,.325,.018,2.05,.65,showerGlass,0,showerDoor);
-rod([-.04,.93,.55],[-.04,1.25,.55],.012,C.metal,showerDoor);
-rod([0,2.12,0],[0,2.12,.65],.011,C.metal,showerDoor);
-for(let j=0;j<18;j+=2){const a=j*Math.PI/60,b=(j+1)*Math.PI/60;rod([6.62+.65*Math.sin(a),.135,4.76+.65*Math.cos(a)],[6.62+.65*Math.sin(b),.135,4.76+.65*Math.cos(b)],.006,'#cfad7d')}
+const A={x:6.47,z:4.76},Ccorner={x:6.62,z:4.76},B={x:6.62,z:5.55};
+const showerH=2.00,doorW=.65,fixedW=B.z-Ccorner.z-doorW;
+// Short fixed pane, A to C: a 15 cm return without a gap at the toilet wall.
+box((A.x+Ccorner.x)/2,1.08,A.z,Ccorner.x-A.x,showerH,.012,showerGlass);
+for(const x of [A.x,Ccorner.x])rod([x,.08,A.z],[x,2.08,A.z],.008,'#232c2d');
+rod([A.x,2.08,A.z],[Ccorner.x,2.08,A.z],.008,'#232c2d');
+// Long side: a 65 cm door at C and the remaining 14 cm fixed at the shaft.
+box(Ccorner.x,1.08,Ccorner.z+doorW+fixedW/2,.012,showerH,fixedW,showerGlass);
+for(const z of [Ccorner.z+doorW,B.z])rod([Ccorner.x,.08,z],[Ccorner.x,2.08,z],.008,'#232c2d');
+rod([Ccorner.x,2.08,Ccorner.z+doorW],[Ccorner.x,2.08,B.z],.008,'#232c2d');
+const showerDoor=new T.Group();showerDoor.position.set(Ccorner.x,0,Ccorner.z);root.add(showerDoor);
+box(0,1.08,doorW/2,.012,showerH,doorW,showerGlass,0,showerDoor);
+rod([0,.08,0],[0,2.08,0],.008,'#232c2d',showerDoor);
+rod([0,2.08,0],[0,2.08,doorW],.008,'#232c2d',showerDoor);
+rod([0,.08,doorW],[0,2.08,doorW],.008,'#232c2d',showerDoor);
+rod([-.04,.93,.53],[-.04,1.25,.53],.010,'#232c2d',showerDoor);
+// The dashed plan arc shows the door opening inward, away from the outer
+// window at z=4.55. The door itself stays closed on the straight C-B line.
+for(let j=0;j<18;j+=2){const a=j*Math.PI/60,b=(j+1)*Math.PI/60;rod([Ccorner.x+doorW*Math.sin(a),.135,Ccorner.z+doorW*Math.cos(a)],[Ccorner.x+doorW*Math.sin(b),.135,Ccorner.z+doorW*Math.cos(b)],.006,'#cfad7d')}
 // Opaque return at the shaft end remains a solid service enclosure.
 box(6.552,1.30,6.00,.032,2.58,.90,'#51565b',.004);
-rod([6.62,.08,5.42],[6.62,2.13,5.42],.010,C.metal);
-rod([6.62,.08,5.55],[6.62,2.13,5.55],.010,C.metal);
-rod([6.62,2.13,5.42],[6.62,2.13,5.55],.010,C.metal);
+// A small cross seal closes the last centimetres to the shaft's end face.
+box(6.585,1.08,5.55,.07,showerH,.012,showerGlass);
 rod([7.04,.12,5.47],[7.04,1.53,5.47],.02,C.metal);rod([7.04,1.53,5.47],[6.84,1.53,5.47],.02,C.metal);cyl(6.84,1.51,5.47,.085,.03,C.metal);
 // Child room: only the bed; the headboard faces the opposite kitchen-side wall.
 box(5.12,.25,7.00,1.1,.35,1.95,C.wood,.06);
