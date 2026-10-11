@@ -22,7 +22,7 @@ floor(6.825,5.50,.71,1.90,'#55585b');
 // Foundation and soft ground beneath the miniature.
 box(2.8,-.52,5,9.2,.28,12.2,'#d3dac4',.13);box(2.8,-.72,5,9.5,.18,12.5,'#bdcbae',.06);
 const ground=new T.Mesh(new T.PlaneGeometry(200,200),new T.ShadowMaterial({color:0x536e48,opacity:.15}));ground.rotation.x=-Math.PI/2;ground.position.y=-.82;ground.receiveShadow=true;scene.add(ground);
-const walls=[];function wall(x,z,w,d,h=1.15){let g=new T.Group();g.position.set(x,0,z);root.add(g);box(0,h/2,0,w,h,d,C.wall,.018,g);box(0,h+.025,0,w+.045,.05,d+.045,C.trim,.012,g);box(0,.075,0,w+.035,.11,d+.035,'#545b66',.006,g);walls.push(g);return g}
+const walls=[];function wall(x,z,w,d,h=1.15){let g=new T.Group();g.position.set(x,0,z);root.add(g);box(0,h/2,0,w,h,d,C.wall,.018,g);box(0,h+.025,0,w+.045,.05,d+.045,C.trim,.012,g);walls.push(g);return g}
 wall(3.2,-.07,6.55,.15,1.75);wall(-.07,3.9,.15,7.9,2.6);
 wall(6.47,2.25,.15,4.5,2.6); // master and toilet side, ending at the shower glass
 wall(7.18,5.50,.13,1.90,2.6); // projecting shower exterior
@@ -32,10 +32,10 @@ wall(3.2,10.07,6.55,.15,2.6);
 // The square entry projects from the TV-wall side. Its room-facing edge
 // (x=0) is completely open to the dining area and kitchen passage.
 wall(-.65,7.85,1.35,.15,2.6); // continuous return from the TV exterior wall
-wall(-1.27,8.20,.15,.70,2.6); // exterior wall above the entry door
-wall(-.59,10.07,1.22,.15,2.6); // kitchen-side exterior return
-wall(-1.27,9.83,.15,.48,2.6); // short solid wall below the entry door
-wall(-1.03,9.82,.48,.50,2.6); // structural column before refrigerator run
+wall(-1.27,8.96,.15,2.23,2.6); // closed outward-facing front wall
+wall(-1.235,10.07,.07,.15,2.6); // short corner before kitchen-side door
+wall(-.17,10.07,.34,.15,2.6); // return beyond the door
+wall(-.12,9.94,.48,.42,2.6); // structural column before refrigerator run
 // Interior walls use a full 2.6 m height; low-wall mode is display-only.
 const ROOM_WALL_HEIGHT=2.6;
 const interiorWalls=[];
@@ -92,11 +92,11 @@ doorFrames.push(g)}
 doorway(3.90,4.5,1.10,false);
 doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
 doorway(3.95,5.55,1.0,false); // child door, x 3.45–4.45 beside the bath
-doorway(-1.27,9.03,1.0); // front entrance, toward the kitchen end
-// A dark inward-opening leaf and handle sit inside the exterior frame.
-const frontDoor=new T.Group();frontDoor.position.set(-1.18,0,8.56);frontDoor.rotation.y=-.30;root.add(frontDoor);
-box(.02,1.03,.46,.055,2.04,.89,'#292b2b',.01,frontDoor);
-box(.08,1.02,.76,.025,.045,.13,C.metal,.01,frontDoor);
+doorway(-.75,10.07,.90,false); // kitchen-side entry wall, x -1.20 to -.30
+// A dark leaf pivots inward toward the small entry square.
+const frontDoor=new T.Group();frontDoor.position.set(-1.18,0,10.00);frontDoor.rotation.y=-.34;root.add(frontDoor);
+box(.45,1.03,-.02,.89,2.04,.055,'#292b2b',.01,frontDoor);
+box(.76,1.02,-.09,.13,.045,.025,C.metal,.01,frontDoor);
 doorFrames.push(frontDoor);
 // Kitchen access to the utility balcony occupies z 8.2–9.2 beside the hob.
 // The real door has a black frame, dark glazed panel and short fabric curtain.
@@ -129,9 +129,8 @@ for(const z of [.85,3.21])box(2.67,.55,z,.91,.70,.16,sofaFabric,.055);
 for(let i=0;i<3;i++){let p=box(2.91,.79,1.36+i*.67,.24,.50,.62,sofaSeat,.065);p.rotation.z=-.07}
 // The living room has open floor space in front of the sofa: no coffee table.
 const lampMat=new T.MeshStandardMaterial({color:'#fff1ce',emissive:'#ffe0a1',emissiveIntensity:.5});cyl(2.85,.08,.42,.18,.06,C.metal);rod([2.85,.1,.42],[2.85,1.53,.42],.022,C.metal);ball(2.85,1.56,.42,.18,lampMat);plant(.45,.67,.57,.42);
-// Portrait artwork and wall-mounted guitar, simplified as game props.
+// Portrait artwork on the TV wall.
 box(.035,1.12,5.0,.065,.93,.59,'#c4b797',.01);box(.08,1.12,5,.02,.84,.50,C.white);ball(.097,1.21,5,.12,'#384440',[.08,1.25,.75]);box(.097,.96,5,.012,.26,.24,'#384440',.01);
-ball(3.22,1.10,3.05,.16,'#957e57',[.25,1.1,.75]);ball(3.22,1.27,3.05,.12,'#a58a5c',[.3,1,.8]);box(3.22,1.54,3.05,.045,.45,.05,C.wood);box(3.22,1.78,3.05,.05,.12,.09,C.dark,.012);
 // Dining table, curved backs, oak seats and peninsula with oven niches.
 function chair(x,z){for(let dx of [-.20,.20])for(let dz of [-.20,.20])rod([x+dx*1.2,.07,z+dz*1.2],[x+dx,.49,z+dz],.027,C.wood);box(x,.49,z,.49,.08,.48,'#c6c5af',.07);const back=box(x-.21,.78,z,.075,.34,.5,C.woodlight,.05);rod([x-.20,.61,z-.23],[x+.18,.68,z-.23],.023,C.woodlight);rod([x-.20,.61,z+.23],[x+.18,.68,z+.23],.023,C.woodlight)}
 // 135 × 75 cm dining table: its kitchen-side edge (z=6.975) lines up with
@@ -189,6 +188,16 @@ box(5.12,.765,6.40,1.12,.04,.36,'#8fa8a0',.02);
 // Kitchen and appliances. The refrigerator-side built-in is a separate tall
 // unit: overhead doors, open display shelf, appliance counter and microwave.
 box(2.36,.45,9.68,1.2,.83,.61,C.cab,.02);
+// White-veined wall tile continues along the left return and behind the
+// kitchen worktop. White upper cupboards hang over the sink, below 2.6 m.
+const tile='#e5e5e2',grout='#bdc1c0';
+box(3.13,1.55,9.57,.027,2.08,.86,tile,.003);
+for(let y=.55;y<2.56;y+=.50)box(3.147,y,9.57,.004,.012,.86,grout);
+box(4.45,1.46,9.976,2.57,2.25,.018,tile,.003);
+for(let y=.56;y<2.55;y+=.50)box(4.45,y,9.962,2.57,.012,.004,grout);
+box(4.02,2.17,9.69,1.68,.65,.52,'#f2f2ed',.012);
+for(const x of [3.61,4.02,4.43])box(x,2.17,9.418,.53,.61,.024,'#fbfaf6',.008);
+box(4.02,1.82,9.43,1.68,.035,.04,'#e8e9e3',.005);
 box(4.5,.45,9.68,2.7,.83,.61,C.cab,.02);box(4.5,.89,9.66,2.75,.07,.70,'#eee9db',.022);
 for(const x of [3.43,4.05,4.68,5.31]){box(x,.46,9.363,.55,.70,.024,x>4?'#405153':'#707379',.009);box(x,.73,9.345,.38,.025,.025,C.metal)}box(3.95,.945,9.61,.72,.035,.43,C.metal,.07);box(3.95,.967,9.61,.59,.025,.32,'#a7b9b3',.06);rod([3.95,.96,9.86],[3.95,1.25,9.86],.022,C.metal);rod([3.95,1.25,9.86],[3.95,1.25,9.65],.022,C.metal);box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x,.984,9.59,.12,.02,C.metal);cyl(x,1,9.59,.08,.023,'#253b3b')}box(5.45,1.73,9.74,.89,.14,.49,'#dadbd0',.025);box(5.45,1.95,9.89,.5,.35,.23,C.white,.02);
 // Cabinet above the refrigerator, with its face aligned to the fridge.
@@ -196,8 +205,11 @@ box(1.35,2.24,9.55,.78,.65,.78,'#77736e',.012);
 for(const x of [1.17,1.53])box(x,2.24,9.145,.35,.61,.018,'#9a9690',.005);
 // The cabinetry to the refrigerator's kitchen side in the supplied render.
 for(const x of [1.77,2.95])box(x,1.30,9.59,.045,2.55,.79,'#81796f',.005);
-box(2.36,2.28,9.63,1.13,.55,.72,'#92908b',.01);
-for(const x of [2.08,2.64])box(x,2.28,9.26,.53,.52,.018,'#aaa6a0',.005);
+box(2.29,2.28,9.63,.94,.55,.72,'#92908b',.01);
+for(const x of [2.05,2.52])box(x,2.28,9.26,.45,.52,.018,'#aaa6a0',.005);
+// Narrow open display shelves at the kitchen-opening end of the 103 cm bay.
+for(const y of [2.03,2.25,2.47])box(2.83,y,9.48,.23,.025,.40,'#aba79f',.004);
+box(2.72,2.27,9.47,.025,.52,.43,'#837f79',.004);
 box(2.36,1.86,9.60,1.10,.055,.63,'#6d716f',.006);
 box(2.36,1.67,9.94,1.10,.32,.035,'#343c3c',.005);
 box(2.36,1.49,9.60,1.08,.035,.65,'#c8beb0',.006);
