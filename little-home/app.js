@@ -93,16 +93,15 @@ for(const [a,b] of [[.42,2.92],[3.645,6.195]]){
 wall(-.07,3.9,.15,7.9,2.6);
 wall(6.47,2.25,.15,4.5,2.6); // master and toilet side, ending at the shower glass
 wall(7.18,5.50,.13,1.90,2.6); // projecting shower exterior
-// The east edge of the enclosed balcony is a full-height wall with airtight
-// glazing above its sill. The AC platform continues beyond it behind a rail.
-wall(7.18,7.825,.13,2.75,.65);
+// Balcony elevation: roughly two thirds solid wall and one third airtight
+// glazing, reaching the same 2.6 m height as the adjoining rooms.
+wall(7.18,7.825,.13,2.75,1.73);
 wall(7.18,9.71,.13,1.02,.55);
 const balconyEastWindow=new T.Group();balconyEastWindow.position.set(7.18,0,7.825);root.add(balconyEastWindow);
-box(0,2.365,0,.13,.47,2.75,C.wall,.008,balconyEastWindow);
 const balconyPane=new T.MeshPhysicalMaterial({color:'#bed8d9',transparent:true,opacity:.35,roughness:.10,depthWrite:false,side:T.DoubleSide});
-box(0,1.39,0,.025,1.48,2.60,balconyPane,0,balconyEastWindow);
-for(const z of [-1.335,0,1.335])box(0,1.39,z,.065,1.50,.045,'#43494a',.002,balconyEastWindow);
-for(const y of [.65,2.13])box(0,y,0,.07,.055,2.70,'#43494a',.002,balconyEastWindow);
+box(0,2.165,0,.025,.82,2.60,balconyPane,0,balconyEastWindow);
+for(const z of [-1.335,0,1.335])box(0,2.165,z,.065,.87,.045,'#43494a',.002,balconyEastWindow);
+for(const y of [1.755,2.575])box(0,y,0,.07,.05,2.70,'#43494a',.002,balconyEastWindow);
 walls.push(balconyEastWindow);
 // The kitchen backsplash wall and the entrance enclosure reach the ceiling.
 wall(3.2,10.07,6.55,.15,2.6);
@@ -140,12 +139,11 @@ partition(6.47,4.63,.13,.26); // solid return on the bath-side corner of shower
 // The bath-facing end is solid. The airtight end window belongs opposite
 // it, at the kitchen/AC-platform end of the balcony.
 partition(6.825,6.45,.71,.13);
-wall(6.825,9.20,.71,.13,.65);
+wall(6.825,9.20,.71,.13,1.73);
 const balconySouthWindow=new T.Group();balconySouthWindow.position.set(6.825,0,9.20);root.add(balconySouthWindow);
-box(0,2.365,0,.71,.47,.13,C.wall,.008,balconySouthWindow);
-box(0,1.39,0,.62,1.48,.025,balconyPane,0,balconySouthWindow);
-for(const x of [-.335,.335])box(x,1.39,0,.045,1.50,.065,'#43494a',.002,balconySouthWindow);
-for(const y of [.65,2.13])box(0,y,0,.67,.055,.07,'#43494a',.002,balconySouthWindow);
+box(0,2.165,0,.62,.82,.025,balconyPane,0,balconySouthWindow);
+for(const x of [-.335,.335])box(x,2.165,0,.045,.87,.065,'#43494a',.002,balconySouthWindow);
+for(const y of [1.755,2.575])box(0,y,0,.67,.05,.07,'#43494a',.002,balconySouthWindow);
 walls.push(balconySouthWindow);
 // Full-height outward shower wall, aligned with the master-bedroom window
 // elevation. The 60 x 90 cm window has a 120 cm sill and a 50 cm header.
@@ -227,11 +225,11 @@ const print=new T.Mesh(new T.PlaneGeometry(.75,1.04),new T.MeshBasicMaterial({ma
 print.rotation.y=Math.PI/2;print.position.set(.061,1.39,7.22);root.add(print);
 // Dining table, curved backs, oak seats and peninsula with oven niches.
 function chair(x,z){for(let dx of [-.20,.20])for(let dz of [-.20,.20])rod([x+dx*1.2,.07,z+dz*1.2],[x+dx,.49,z+dz],.027,C.wood);box(x,.49,z,.49,.08,.48,'#c6c5af',.07);const back=box(x-.21,.78,z,.075,.34,.5,C.woodlight,.05);rod([x-.20,.61,z-.23],[x+.18,.68,z-.23],.023,C.woodlight);rod([x-.20,.61,z+.23],[x+.18,.68,z+.23],.023,C.woodlight)}
-// 135 × 75 cm dining table: its kitchen-side edge (z=6.975) lines up with
-// the island's dining-side edge (z=6.96), with no oversized overhang.
-box(1.36,.76,6.30,.75,.12,1.35,C.woodlight,.10);
-box(1.36,.39,6.30,.52,.69,.76,'#c8b493',.12);
-chair(.55,5.94);chair(.55,6.63);
+// Move the 135 × 75 cm table toward the child-room wall, aligning that edge
+// with the island while preserving their existing alignment along Z.
+box(2.22,.76,6.30,.75,.12,1.35,C.woodlight,.10);
+box(2.22,.39,6.30,.52,.69,.76,'#c8b493',.12);
+chair(1.41,5.94);chair(1.41,6.63);
 // A 1.39 m island runs across the dining/kitchen axis, with its right end
 // against the bedroom-side wall and circulation to its left.
 // Oven and open shelf face the entry; three drawers occupy the right end.
