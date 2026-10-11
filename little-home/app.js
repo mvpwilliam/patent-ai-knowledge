@@ -181,6 +181,34 @@ doorway(3.90,4.5,1.10,false);
 doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
 doorway(3.95,5.55,1.0,false); // child door, x 3.45–4.45 beside the bath
 doorway(-1.45,10.07,.90,false); // kitchen-side wall, x -1.90 to -1.00
+// The three interior leaves share the dark walnut finish and raised moulding
+// seen in the reference photo. They rest open into their rooms, leaving the
+// hall and the character's paths unobstructed.
+function walnutDoor(x,z,w,angle,vent=false){
+  const g=new T.Group();g.position.set(x,0,z);g.rotation.y=angle;root.add(g);
+  box(w/2,1.04,0,w-.035,2.06,.052,'#261916',.006,g);
+  for(const face of [-1,1]){
+    const depth=face*.031;
+    for(const cx of [w*.27,w*.73])for(const [cy,h] of [[1.62,.58],[1.01,.49],...(vent?[]:[[.37,.46]])]){
+      const pw=w*.37;
+      box(cx,cy,depth,pw,h,.006,'#32211d',.002,g);
+      for(const edge of [-1,1]){
+        box(cx+edge*pw/2,cy,depth+face*.006,.010,h+.025,.009,'#5b4033',.002,g);
+        box(cx,cy+edge*h/2,depth+face*.006,pw+.015,.010,.009,'#5b4033',.002,g);
+      }
+    }
+    if(vent)for(const cx of [w*.27,w*.73])for(let i=0;i<8;i++){
+      box(cx,.23+i*.054,depth+face*.006,w*.30,.018,.012,'#171313',.002,g);
+      box(cx,.22+i*.054,depth+face*.011,w*.30,.006,.014,'#594035',.002,g);
+    }
+    ball(w-.12,1.02,depth+face*.04,.042,'#adb1ac',[1,.65,.42],g);
+    rod([w-.12,1.02,depth+face*.055],[w-.28,1.02,depth+face*.055],.014,'#b9bdb7',g);
+  }
+  doorFrames.push(g);
+}
+walnutDoor(3.38,4.5,1.04,.92);             // master bedroom
+walnutDoor(4.45,5.52,.99,1.35,true);          // bathroom, with lower vents
+walnutDoor(3.47,5.55,.95,-.85);             // second bedroom
 // A dark leaf pivots inward toward the small entry square.
 const frontDoor=new T.Group();frontDoor.position.set(-1.88,0,10.00);frontDoor.rotation.y=-.34;root.add(frontDoor);
 box(.45,1.03,-.02,.89,2.04,.055,'#292b2b',.01,frontDoor);
@@ -218,7 +246,7 @@ box(3.00,.64,2.03,.22,.69,2.08,sofaFabric,.065);
 for(const z of [.85,3.21])box(2.67,.55,z,.91,.70,.16,sofaFabric,.055);
 for(let i=0;i<3;i++){let p=box(2.91,.79,1.36+i*.67,.24,.50,.62,sofaSeat,.065);p.rotation.z=-.07}
 // The living room has open floor space in front of the sofa: no coffee table.
-const lampMat=new T.MeshStandardMaterial({color:'#fff1ce',emissive:'#ffe0a1',emissiveIntensity:.5});cyl(2.85,.08,.42,.18,.06,C.metal);rod([2.85,.1,.42],[2.85,1.53,.42],.022,C.metal);ball(2.85,1.56,.42,.18,lampMat);plant(.45,.67,.57,.42);
+// Keep the living room clear of the former standing lamp and plants.
 // The supplied black-and-white print faces the peninsula on the continuous
 // living/dining wall. Its earlier decorative panel has been removed.
 box(.035,1.39,7.22,.046,1.09,.79,'#e7e7e4',.004);
@@ -441,12 +469,11 @@ box(6.82,.73,9.72,.61,.035,.67,'#979d98',.005);
 rod([6.51,.55,9.20],[7.16,.55,9.20],.018,'#899893');
 for(const x of [6.51,6.83,7.16])rod([x,.08,9.20],[x,.55,9.20],.012,'#899893');
 // Small welcoming detail away from the clear dining tabletop.
-plant(.51,.08,4.11,.62);
 let night=false,tv=true,curtainClosed=true,wallLow=false,topView=false;
 let theta=.77,phi=.76,dist=19.5,target=new T.Vector3(2.9,.2,5),desiredTarget=target.clone(),desiredDist=19.5;
-const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃、灰色 Bergamo 三人座沙發，還有窗邊的一點綠意。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 日光',desc:'浴室側放 Panasonic 黑色洗脫烘，冷氣室外機位在柱外獨立小平台。',pos:[6.55,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'滿牆玄關櫃、展示層與深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
+const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃與灰色 Bergamo 三人座沙發。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 日光',desc:'浴室側放 Panasonic 黑色洗脫烘，冷氣室外機位在柱外獨立小平台。',pos:[6.55,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'滿牆玄關櫃、展示層與深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
 let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台門',()=>{desiredTarget.set(5.76,1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{tv=!tv;tvMat.color.set(tv?'#60878b':'#263b3e');tvMat.emissiveIntensity=tv?.45:0;tvArt.visible=tv;selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
-document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');lampMat.emissiveIntensity=night?3:.5;renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
+document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
 // One finger pans by default; the visible switch restores orbit rotation.
 // Two fingers pan by their midpoint and pinch to zoom.
 function clampPan(){desiredTarget.x=Math.max(-1.5,Math.min(8.5,desiredTarget.x));desiredTarget.z=Math.max(-.5,Math.min(10.5,desiredTarget.z))}

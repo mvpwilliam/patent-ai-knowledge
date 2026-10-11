@@ -5,7 +5,6 @@ const radius=.19,cell=.16;
 const obstacles=[
   [0,.47,.60,3.94],       // television cabinet
   [2.20,3.14,.77,3.30],   // sofa and armrests
-  [2.64,3.06,.20,.64],    // standing lamp
   [1.13,2.62,5.57,7.00], // dining table and both chairs
   [1.22,2.66,6.95,7.66], // kitchen island
   [1.00,3.07,9.04,10.10],// refrigerator and appliance cabinet

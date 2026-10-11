@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js';
-import {findPath} from './navigation.js?v=47';
+import {findPath} from './navigation.js?v=48';
 
 const scene=window.homeScene?.scene;
 const $=s=>document.querySelector(s);
@@ -146,24 +146,27 @@ function clock(){
 function renderTasks(){
   const list=$('#task-list');list.replaceChildren();
   for(const t of tasks){
+    if(claims[t.id])continue;
     const row=document.createElement('div');row.className='task-row';
     const label=document.createElement('span');label.textContent=t.label;
-    const button=document.createElement('button');button.textContent=claims[t.id]?`✓ ${claims[t.id].name} 完成`:'前往';
-    button.disabled=!!claims[t.id]||!!activity||(mode==='online'&&!user);
+    const button=document.createElement('button');button.textContent='前往';
+    button.disabled=!!activity||(mode==='online'&&!user);
     button.onclick=()=>startTask(t);
     row.append(label,button);list.append(row);
   }
+  if(!list.children.length){const message=document.createElement('p');message.className='task-intro';message.textContent='這個遊戲日的家事都完成了，下一小時會重置。';list.append(message)}
   renderMarkers();
 }
 function renderMarkers(){
   const layer=$('#chore-markers');layer.replaceChildren();
   if(!scene)return;
   for(const t of tasks){
+    if(claims[t.id])continue;
     const info=placement(t),button=document.createElement('button');
     button.className='chore-marker';button.dataset.task=t.id;
-    button.textContent=claims[t.id]?`✓ ${t.label}`:`${info.icon} ${t.label}`;
-    button.title=claims[t.id]?`${claims[t.id].name} 已完成`:t.label;
-    button.disabled=!!claims[t.id]||!!activity||(mode==='online'&&!user);
+    button.textContent=`${info.icon} ${t.label}`;
+    button.title=t.label;
+    button.disabled=!!activity||(mode==='online'&&!user);
     button.onclick=e=>{e.stopPropagation();startTask(t)};
     layer.append(button);
   }
