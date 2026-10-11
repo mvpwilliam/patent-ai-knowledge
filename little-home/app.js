@@ -14,12 +14,19 @@ function rod(a,b,r,c,parent=root){let aa=new T.Vector3(...a),bb=new T.Vector3(..
 function plant(x,y,z,scale=1){const p=new T.Group();root.add(p);p.position.set(x,y,z);p.scale.setScalar(scale);cyl(0,.16,0,.19,.32,'#d7c9ab',.14,p);cyl(0,.32,0,.16,.02,'#605c43',.16,p);rod([0,.3,0],[0,1.1,0],.017,'#7b7b52',p);for(let i=0;i<9;i++){let a=i*2.4,yy=.48+i*.074,xx=Math.cos(a)*(.32-i*.014),zz=Math.sin(a)*(.32-i*.014);rod([0,yy-.12,0],[xx,yy,zz],.009,'#7b7b52',p);let leaf=ball(xx,yy,zz,.17,i%2?'#809b65':'#9caa76',[1,.27,.5],p);leaf.rotation.y=-a;}return p}
 const floorGroup=new T.Group();root.add(floorGroup);
 function floor(x,z,w,d,color=C.floor){box(x,-.18,z,w,.32,d,'#c9baa0',.04);box(x,.005,z,w,.06,d,color);for(let zz=z-d/2+.28;zz<z+d/2;zz+=.29){box(x,.04,zz,w,.007,.012,'#cabfa9');for(let xx=x-w/2+(((zz*100)|0)%2?.6:1.3);xx<x+w/2;xx+=1.6)box(xx,.041,zz-.14,.012,.005,.27,'#d2c7b1')}}
-floor(3.2,5,6.4,10);floor(-.6,8.95,1.2,2.1,'#c9c8b9');floor(6.85,7.5,.9,3.8,'#b9c2b0');
+floor(3.2,5,6.4,10);floor(-.6,8.95,1.2,2.1,'#c9c8b9');
+// The utility balcony begins directly outside the child-room wall at x=5.83.
+// Its bath end stops at z=6.45; the shower fills the projecting corner.
+floor(6.505,7.825,1.35,2.75,'#b9c2b0');
+floor(6.825,5.50,.71,1.90,'#55585b');
 // Foundation and soft ground beneath the miniature.
 box(2.8,-.52,5,9.2,.28,12.2,'#d3dac4',.13);box(2.8,-.72,5,9.5,.18,12.5,'#bdcbae',.06);
 const ground=new T.Mesh(new T.PlaneGeometry(200,200),new T.ShadowMaterial({color:0x536e48,opacity:.15}));ground.rotation.x=-Math.PI/2;ground.position.y=-.82;ground.receiveShadow=true;scene.add(ground);
 const walls=[];function wall(x,z,w,d,h=1.15){let g=new T.Group();g.position.set(x,0,z);root.add(g);box(0,h/2,0,w,h,d,C.wall,.018,g);box(0,h+.025,0,w+.045,.05,d+.045,C.trim,.012,g);box(0,.075,0,w+.035,.11,d+.035,'#545b66',.006,g);walls.push(g);return g}
-wall(3.2,-.07,6.55,.15,1.75);wall(-.07,3.9,.15,7.9,2.6);wall(6.47,2.75,.15,5.7,.62);wall(6.47,7.7,.15,4.6,.62);
+wall(3.2,-.07,6.55,.15,1.75);wall(-.07,3.9,.15,7.9,2.6);
+wall(6.47,2.25,.15,4.5,2.6); // master and toilet side, ending at the shower glass
+wall(7.18,5.50,.13,1.90,2.6); // projecting shower exterior
+wall(7.18,7.825,.13,2.75,.55); // one outer balcony parapet, no inner passage wall
 // The kitchen backsplash wall and the entrance enclosure reach the ceiling.
 wall(3.2,10.07,6.55,.15,2.6);wall(-1.27,8.95,.15,2.25,2.6);wall(-.65,7.85,1.35,.15,2.6);wall(-.93,10.07,.65,.15,2.6);
 // Interior walls use a full 2.6 m height; low-wall mode is display-only.
@@ -31,18 +38,22 @@ function partition(x,z,w,d){const g=wall(x,z,w,d,ROOM_WALL_HEIGHT);g.userData.fu
 partition(3.35,2.25,.14,4.5); // uninterrupted living wall ends at the marked master entry
 partition(5.46,3.65,2.02,.14); // master/bath wall, x 4.45–6.47
 partition(4.45,4.125,.13,.75); // bathroom front wall, z 3.75–4.50
-partition(5.35,5.55,1.8,.13); // bath/child wall below the child door
+partition(5.14,5.55,1.38,.13); // one shared bath/child wall, x 4.45–5.83
 partition(3.05,5.55,.8,.13); // short wall above the child door
 partition(2.65,6.875,.13,2.65); // child-room wall along the dining area
 partition(4.24,8.2,3.18,.13); // child-room wall along the kitchen
-partition(5.83,5.98,.13,.86); // solid wall from bath to the balcony-side window
-partition(5.83,6.805,.13,.79); // continuous upper part of child-room balcony wall
-partition(5.83,8.15,.13,.10); // short jamb at the kitchen-side corner
+partition(5.83,6.275,.13,1.45); // single solid wall from bath corner to window
+partition(5.83,8.05,.13,.30); // solid jamb at the kitchen-side corner
 partition(5.83,9.635,.13,.87); // kitchen / balcony wall after the balcony door
 partition(3.05,9.68,.13,.78); // short kitchen return beside the fridge cabinet
+// The solid service shaft touches the child-room corner. Beyond it, the
+// shower projects as far as the outside edge of the utility balcony.
+const serviceShaft=wall(6.15,6.00,.64,.90,2.6);
+partition(6.47,6.00,.13,.90); // shaft / projecting shower side
+partition(6.825,6.45,.71,.13); // solid stop at the balcony's bath end
 // The floor finish plan locates this window at the kitchen end of the child
 // room's balcony wall; the bath end remains a solid full-height wall.
-const childWindow=new T.Group();childWindow.position.set(5.83,0,7.65);root.add(childWindow);
+const childWindow=new T.Group();childWindow.position.set(5.83,0,7.45);root.add(childWindow);
 box(0,.46,0,.13,.92,.90,C.wall,.008,childWindow);
 box(0,2.36,0,.13,.48,.90,C.wall,.008,childWindow);
 const childGlass=new T.MeshPhysicalMaterial({color:'#bed9d7',transparent:true,opacity:.38,roughness:.17,depthWrite:false,side:T.DoubleSide});
@@ -51,7 +62,6 @@ for(const z of [-.45,.45])box(0,1.55,z,.08,1.25,.035,C.trim,0,childWindow);
 box(0,.94,0,.1,.05,.90,C.trim,0,childWindow);box(0,2.16,0,.1,.05,.90,C.trim,0,childWindow);
 walls.push(childWindow);interiorWalls.push(childWindow);
 // Only the utility balcony has a parapet; the shower has a glass enclosure.
-wall(7.36,7.5,.13,3.85,.55);
 const doorFrames=[];
 function doorway(x,z,width,alongZ=true){const g=new T.Group();g.position.set(x,0,z);if(alongZ)g.rotation.y=Math.PI/2;root.add(g);const h=2.1;
 for(const side of [-1,1])box(side*(width/2-.025),h/2,0,.05,h,.18,'#454c57',.008,g);
@@ -116,15 +126,16 @@ box(3.07,.96,6.21,.38,1.86,1.1,C.cab,.018);for(let z of [5.92,6.46]){box(2.869,.
 box(4.96,.08,1.64,2.28,.06,2.6,'#c7cbbb',.06);box(5.84,.54,1.64,.16,.94,2.05,'#b0ad98',.08);box(4.94,.29,1.64,1.85,.35,1.94,C.wood,.045);box(4.94,.52,1.64,1.90,.22,1.95,C.white,.08);box(4.63,.67,1.64,1.25,.15,1.94,C.bed,.075);for(let z of [1.12,2.15]){let p=box(5.54,.70,z,.45,.17,.71,'#f3ecda',.07);p.rotation.z=-.04}box(4.24,.77,1.64,.33,.07,1.95,'#8ea48d',.03);for(let z of [.39,2.98]){cyl(5.68,.32,z,.23,.58,C.woodlight);cyl(5.68,.63,z,.24,.05,C.cream);ball(5.68,.79,z,.12,lampMat)}box(5.22,.82,3.37,1.96,1.57,.43,C.cab,.02);for(let x of [4.59,5.23,5.87]){box(x,.83,3.143,.61,1.48,.02,'#75777c');box(x+.23,.83,3.126,.018,.2,.018,C.dark)}plant(3.68,.08,.4,.6);
 // Bathroom tiled floor, basin, mirror, toilet and glass shower partition.
 box(5.4,.07,4.58,1.91,.06,1.64,'#55585b');for(let x=4.5;x<6.4;x+=.32)box(x,.105,4.58,.01,.004,1.64,'#777b7c');for(let z=3.8;z<5.4;z+=.32)box(5.4,.105,z,1.9,.004,.01,'#777b7c');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
-// The wet area sits inside the bathroom, separated by glass rather than a low wall.
-box(5.9,.07,5.1,1.0,.06,.8,'#55585b');
+// Shower projects beyond the bath toward the balcony and shares its outside
+// x=7.18 wall. It meets the bathroom at x=6.47 through transparent glazing.
+box(6.825,.07,5.50,.65,.06,1.76,'#55585b');
 const showerGlass=new T.MeshPhysicalMaterial({color:'#d9eeee',transparent:true,opacity:.17,roughness:.08,metalness:0,depthWrite:false,side:T.DoubleSide});
-box(5.9,1.08,4.7,1.0,2.05,.018,showerGlass);box(5.4,1.08,5.12,.018,2.05,.76,showerGlass);
-for(const z of [4.74,5.5])rod([5.4,.08,z],[5.4,2.13,z],.012,C.metal);
-rod([5.4,2.14,4.74],[5.4,2.14,5.5],.013,C.metal);
-rod([5.4,.10,4.74],[5.4,.10,5.5],.008,C.metal);
-rod([5.37,.99,5.19],[5.37,1.33,5.19],.014,C.metal);
-rod([6.37,.12,5.15],[6.37,1.53,5.15],.02,C.metal);rod([6.37,1.53,5.15],[6.13,1.53,5.15],.02,C.metal);cyl(6.13,1.51,5.15,.085,.03,C.metal);
+box(6.47,1.08,5.025,.018,2.05,1.03,showerGlass);
+for(const z of [4.51,5.54])rod([6.47,.08,z],[6.47,2.13,z],.012,C.metal);
+rod([6.47,2.14,4.51],[6.47,2.14,5.54],.013,C.metal);
+rod([6.47,.10,4.51],[6.47,.10,5.54],.008,C.metal);
+rod([6.43,.99,5.15],[6.43,1.33,5.15],.014,C.metal);
+rod([7.04,.12,5.47],[7.04,1.53,5.47],.02,C.metal);rod([7.04,1.53,5.47],[6.84,1.53,5.47],.02,C.metal);cyl(6.84,1.51,5.47,.085,.03,C.metal);
 // Child room intentionally contains only the bed and its bedding.
 box(5.12,.25,6.72,1.1,.35,1.95,C.wood,.06);box(5.12,.51,6.72,1.1,.20,1.94,C.white,.055);box(5.12,.67,6.94,1.11,.13,1.48,'#c0ccbd',.05);box(5.12,.7,5.99,.72,.18,.37,'#f0dfb7',.07);box(5.12,.61,5.7,1.13,1.01,.11,C.woodlight,.03);box(5.12,.765,7.22,1.12,.04,.36,'#8fa8a0',.02);
 // Kitchen and appliances, preserving dark countertops and pale cabinetry.
@@ -150,7 +161,7 @@ for(const x of [-.83,-.47])box(x,.11,8.29,.21,.075,.30,'#6b5b48',.025);
 box(-.71,.07,9.64,.64,.035,.43,'#9da993',.03);
 box(.37,.91,9.98,.75,1.0,.04,'#42625e',.02);for(let x=.1;x<.7;x+=.12)for(let y=.5;y<1.35;y+=.12)ball(x,y,9.948,.012,'#273f3e');box(.38,.42,9.60,.7,.22,.5,'#adb9a5',.09);for(let x of [.13,.63])box(x,.2,9.6,.05,.36,.28,C.wood);box(-1.16,.94,9.06,.04,1.46,.66,'#829b95',.025);
 // Utility balcony: washing machine, storage, herb pots.
-box(6.89,.49,8.72,.65,.91,.66,C.white,.04);let drum=cyl(6.89,.5,8.36,.23,.035,'#839b9b');drum.rotation.x=Math.PI/2;let glass=cyl(6.89,.5,8.33,.17,.04,'#405e60');glass.rotation.x=Math.PI/2;box(6.89,.82,8.37,.49,.08,.025,'#cfdbd0',.01);box(6.89,1.33,8.96,.72,.66,.26,C.cab,.025);plant(6.9,.08,6.08,.62);plant(6.87,.08,6.68,.40);
+box(6.78,.49,8.72,.65,.91,.66,C.white,.04);let drum=cyl(6.78,.5,8.36,.23,.035,'#839b9b');drum.rotation.x=Math.PI/2;let glass=cyl(6.78,.5,8.33,.17,.04,'#405e60');glass.rotation.x=Math.PI/2;box(6.78,.82,8.37,.49,.08,.025,'#cfdbd0',.01);box(6.78,1.33,8.96,.72,.66,.26,C.cab,.025);plant(6.79,.08,6.68,.40);
 // Small welcoming details.
 plant(.51,.08,4.11,.62);box(1.7,.86,5.66,.20,.03,.26,'#ede4cc',.015);cyl(1.7,.92,5.66,.05,.10,C.white);
 let night=false,tv=true,curtainClosed=true,wallLow=false,topView=false;
