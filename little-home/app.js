@@ -6,7 +6,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(34,1,.1,100);const root=new T.Group();scene.add(root);
 const hemi=new T.HemisphereLight(0xf1f4fa,0x747982,1.35);scene.add(hemi);const sun=new T.DirectionalLight(0xfff6eb,2.1);sun.position.set(-3,12,6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-12,right:12,top:12,bottom:-12,near:1,far:40});sun.shadow.bias=-.0005;sun.shadow.normalBias=.035;sun.shadow.radius=3;scene.add(sun);const fill=new T.DirectionalLight(0xdce7ff,.65);fill.position.set(7,8,-9);scene.add(fill);
 const mats=new Map(),geos=new Map();function mat(c){if(!mats.has(c))mats.set(c,new T.MeshStandardMaterial({color:c,roughness:.8}));return mats.get(c)}
-const C={wall:'#777e8b',trim:'#9298a1',wood:'#a58b6c',woodlight:'#c4ae8b',floor:'#d2c8b7',navy:'#354e63',cream:'#e3e1d9',cab:'#62656b',dark:'#394746',metal:'#6d7773',green:'#789377',white:'#f4f1e6',bed:'#b6c3ac'};
+const C={wall:'#b8b9ba',trim:'#979b9d',wood:'#a58b6c',woodlight:'#c4ae8b',floor:'#d2c8b7',navy:'#354e63',cream:'#e3e1d9',cab:'#62656b',dark:'#394746',metal:'#6d7773',green:'#789377',white:'#f4f1e6',bed:'#b6c3ac'};
 function box(x,y,z,w,h,d,c,round=0,parent=root){let key=[w,h,d,round].join(',');if(!geos.has(key))geos.set(key,round?new RoundedBoxGeometry(w,h,d,2,Math.min(round,w/3,h/3,d/3)):new T.BoxGeometry(w,h,d));let m=new T.Mesh(geos.get(key),typeof c==='string'?mat(c):c);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
 function cyl(x,y,z,r,h,c,r2=r,parent=root){let m=new T.Mesh(new T.CylinderGeometry(r,r2,h,20),mat(c));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
 function ball(x,y,z,r,c,s=[1,1,1],parent=root){let m=new T.Mesh(new T.SphereGeometry(r,16,12),typeof c==='string'?mat(c):c);m.position.set(x,y,z);m.scale.set(...s);m.castShadow=true;parent.add(m);return m}
@@ -103,7 +103,7 @@ box(2.54,.465,2.03,.68,.22,2.06,sofaSeat,.075);
 box(3.00,.64,2.03,.22,.69,2.08,sofaFabric,.065);
 for(const z of [.85,3.21])box(2.67,.55,z,.91,.70,.16,sofaFabric,.055);
 for(let i=0;i<3;i++){let p=box(2.91,.79,1.36+i*.67,.24,.50,.62,sofaSeat,.065);p.rotation.z=-.07}
-cyl(1.55,.35,2.16,.43,.1,'#e8dfca');cyl(1.55,.2,2.16,.25,.25,C.wood);box(1.5,.413,2.18,.23,.025,.27,'#9ba68b',.01);cyl(1.74,.44,2.09,.055,.1,'#f9f4e7');
+// The living room has open floor space in front of the sofa: no coffee table.
 const lampMat=new T.MeshStandardMaterial({color:'#fff1ce',emissive:'#ffe0a1',emissiveIntensity:.5});cyl(2.85,.08,.42,.18,.06,C.metal);rod([2.85,.1,.42],[2.85,1.53,.42],.022,C.metal);ball(2.85,1.56,.42,.18,lampMat);plant(.45,.67,.57,.42);
 // Portrait artwork and wall-mounted guitar, simplified as game props.
 box(.035,1.12,5.0,.065,.93,.59,'#c4b797',.01);box(.08,1.12,5,.02,.84,.50,C.white);ball(.097,1.21,5,.12,'#384440',[.08,1.25,.75]);box(.097,.96,5,.012,.26,.24,'#384440',.01);
@@ -114,7 +114,7 @@ function chair(x,z){for(let dx of [-.20,.20])for(let dz of [-.20,.20])rod([x+dx*
 // the island's dining-side edge (z=6.96), with no oversized overhang.
 box(1.36,.76,6.30,.75,.12,1.35,C.woodlight,.10);
 box(1.36,.39,6.30,.52,.69,.76,'#c8b493',.12);
-chair(.55,5.94);chair(.55,6.63);plant(1.36,.83,6.30,.28);
+chair(.55,5.94);chair(.55,6.63);
 // A 1.39 m island runs across the dining/kitchen axis, with its right end
 // against the bedroom-side wall and circulation to its left.
 // Oven and open shelf face the entry; three drawers occupy the right end.
@@ -152,8 +152,13 @@ rod([6.47,2.14,4.76],[6.47,2.14,5.54],.013,C.metal);
 rod([6.47,.10,4.76],[6.47,.10,5.54],.008,C.metal);
 rod([6.43,.99,5.15],[6.43,1.33,5.15],.014,C.metal);
 rod([7.04,.12,5.47],[7.04,1.53,5.47],.02,C.metal);rod([7.04,1.53,5.47],[6.84,1.53,5.47],.02,C.metal);cyl(6.84,1.51,5.47,.085,.03,C.metal);
-// Child room contains only its bed and bedding; there is no wardrobe.
-box(5.12,.25,6.72,1.1,.35,1.95,C.wood,.06);box(5.12,.51,6.72,1.1,.20,1.94,C.white,.055);box(5.12,.67,6.94,1.11,.13,1.48,'#c0ccbd',.05);box(5.12,.7,5.99,.72,.18,.37,'#f0dfb7',.07);box(5.12,.46,5.7,1.13,.55,.11,C.woodlight,.03);box(5.12,.765,7.22,1.12,.04,.36,'#8fa8a0',.02);
+// Child room: only the bed; the headboard faces the opposite kitchen-side wall.
+box(5.12,.25,7.00,1.1,.35,1.95,C.wood,.06);
+box(5.12,.51,7.00,1.1,.20,1.94,C.white,.055);
+box(5.12,.67,6.73,1.11,.13,1.48,'#c0ccbd',.05);
+box(5.12,.70,7.76,.72,.18,.37,'#f0dfb7',.07);
+box(5.12,.46,8.08,1.13,.55,.11,C.woodlight,.03);
+box(5.12,.765,6.40,1.12,.04,.36,'#8fa8a0',.02);
 // Kitchen and appliances. The refrigerator-side built-in is a separate tall
 // unit: overhead doors, open display shelf, appliance counter and microwave.
 box(2.36,.45,9.68,1.2,.83,.61,C.cab,.02);
@@ -211,8 +216,8 @@ box(7.70,.36,9.355,.68,.53,.025,'#e3e5de',.008);
 const outdoorFan=cyl(7.70,.36,9.33,.22,.025,'#657471');outdoorFan.rotation.x=Math.PI/2;
 for(let i=0;i<8;i++){const a=i*Math.PI/4;rod([7.70,.36,9.31],[7.70+.18*Math.cos(a),.36+.18*Math.sin(a),9.31],.012,'#d0d7d3')}
 box(7.70,.73,9.64,.82,.035,.58,'#979d98',.005);
-// Small welcoming details.
-plant(.51,.08,4.11,.62);box(1.7,.86,5.66,.20,.03,.26,'#ede4cc',.015);cyl(1.7,.92,5.66,.05,.10,C.white);
+// Small welcoming detail away from the clear dining tabletop.
+plant(.51,.08,4.11,.62);
 let night=false,tv=true,curtainClosed=true,wallLow=false,topView=false;
 let theta=.77,phi=.76,dist=19.5,target=new T.Vector3(2.9,.2,5),desiredTarget=target.clone(),desiredDist=19.5;
 const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃、灰色 Bergamo 三人座沙發，還有窗邊的一點綠意。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 洗衣與日光',desc:'靠浴室端是洗衣機，另一端經玻璃門接回廚房。冷氣室外機在柱外小平台。',pos:[6.55,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'鞋櫃、穿鞋椅和深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
