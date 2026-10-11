@@ -283,23 +283,27 @@ for(const y of [.92,.67,.42,.17]){box(2.005,y,9.167,.455,.21,.016,cabinetOak,.00
 box(2.66,1.34,9.55,.22,.22,.20,'#f1f0eb',.035);
 box(2.27,1.32,9.50,.30,.18,.18,'#f1f0eb',.04);
 box(1.35,.95,9.52,.73,1.85,.83,'#87928b',.045);for(let yy of [1.39,.85,.34])box(1.35,yy,9.08,.67,yy>1?.88:.32,.035,'#a2aaa0',.018);box(1.36,1.39,9.048,.016,.87,.025,'#6a7b73');box(1.37,.73,9.04,.5,.025,.04,C.dark);box(1.55,1.6,9.045,.14,.2,.01,'#e3e4c8');
-// Entry cabinet facing the front door: three upper panels, lit open niche,
-// shallow drawers, lower doors and an open shoe space near the floor.
-const entryWood='#8f8071',entryFace='#9d8c79',entryDark='#313a38';
-const shoeBox=(x,y,z,w,h,d,c,r=0)=>box(x-.8,y,z,w,h,d,c,r);
-for(const x of [-1.13,-.17])shoeBox(x,1.22,8.045,.055,2.38,.40,entryDark,.008);
-shoeBox(-.65,1.87,8.045,.94,.78,.38,entryWood,.016);
-for(const x of [-.96,-.65,-.34])shoeBox(x,1.87,8.245,.295,.73,.018,entryFace,.005);
-shoeBox(-.65,1.47,8.24,.91,.025,.40,'#f2deaf',.008);
-shoeBox(-.65,1.24,8.02,.90,.43,.035,entryDark,.005);
-shoeBox(-.65,1.00,8.22,.94,.06,.42,'#3a4644',.012);
-for(const y of [.84,.69])shoeBox(-.65,y,8.245,.89,.135,.025,entryFace,.006);
-shoeBox(-.65,.395,8.05,.94,.44,.36,entryWood,.008);
-for(const x of [-.88,-.42])shoeBox(x,.395,8.245,.44,.42,.018,entryFace,.005);
-shoeBox(-.65,.115,8.04,.91,.035,.39,'#65594a',.005);
-// Soft rounded end of the shoe cabinet facing the open dining passage.
-shoeBox(-.19,.58,8.045,.14,1.10,.40,entryWood,.065);
-for(const x of [-.83,-.47])shoeBox(x,.11,8.29,.21,.075,.30,'#6b5b48',.025);
+// Full-width entry cabinet from the door-side corner to the dining return.
+// The reference has three upper doors, a lit display niche, one row of three
+// shallow drawers, three lower doors, and a continuous shoe void at the floor.
+const entryFace='#777875',entryDark='#303838';
+const entryX=-1.06,entryZ=8.065,entryW=1.90,entryD=.40;
+for(const x of [-2.02,-.10])box(x,1.28,entryZ,.035,2.55,entryD,entryDark,.006);
+box(entryX,2.56,entryZ,entryW,.035,entryD,entryDark);
+box(entryX,1.88,entryZ,entryW,.76,entryD,'#626866');
+for(const x of [-1.69,-1.06,-.43])box(x,1.88,8.277,.615,.74,.018,entryFace,.004);
+box(entryX,1.48,entryZ,entryW,.035,entryD,'#e2d3a9');
+for(const x of [-1.83,-.29])cyl(x,1.452,8.17,.035,.015,'#fff0cd');
+box(entryX,1.25,8.25,entryW-.06,.42,.02,'#596160');
+box(entryX,1.02,entryZ,entryW,.05,entryD,entryDark);
+for(const x of [-1.69,-1.06,-.43]){
+  box(x,.91,8.277,.615,.17,.018,entryFace,.004);
+  box(x,.55,8.277,.615,.58,.018,entryFace,.004);
+}
+box(entryX,.25,entryZ,entryW,.035,entryD,entryDark,.004);
+for(const x of [-1.63,-.50])box(x,.09,8.27,.25,.07,.23,'#575d58',.022);
+// The open dining end is slightly softened without creating a seat niche.
+box(-.10,.60,entryZ,.055,1.20,entryD,entryFace,.018);
 box(-1.50,.07,9.64,.64,.035,.43,'#9da993',.03);
 // On entering, the full-length mirror is on the left side wall. Its width
 // is 80% of the 90 cm entry door and its top sits just above the door.
@@ -308,10 +312,8 @@ const mirrorMat=new T.MeshPhysicalMaterial({color:'#c9dcda',metalness:.58,roughn
 box(-1.948,1.10,9.13,.006,2.16,.69,mirrorMat);
 // Pegboard belongs to the wall between the door and refrigerator, from
 // ceiling height down to about one third of the refrigerator height.
-box(.40,1.61,9.970,.88,1.98,.008,'#37494a',.002);
-for(let x=.02;x<.80;x+=.11)for(let y=.72;y<2.52;y+=.11)ball(x,y,9.962,.008,'#1f2d2e');
-box(-.48,.42,8.38,.70,.22,.5,'#adb9a5',.09);
-for(const x of [-.73,-.23])box(x,.2,8.38,.05,.36,.28,C.wood);
+box(.40,1.907,9.970,.88,1.386,.008,'#37494a',.002);
+for(let x=.02;x<.80;x+=.11)for(let y=1.25;y<2.56;y+=.11)ball(x,y,9.962,.008,'#1f2d2e');
 // Leave the walkable utility balcony completely clear.
 // AC platform at the kitchen end: the column occupies the inner half and
 // the platform's outer edge aligns with the unbroken balcony parapet.
@@ -328,7 +330,7 @@ for(const x of [6.51,6.83,7.16])rod([x,.08,9.20],[x,.55,9.20],.012,'#899893');
 plant(.51,.08,4.11,.62);
 let night=false,tv=true,curtainClosed=true,wallLow=false,topView=false;
 let theta=.77,phi=.76,dist=19.5,target=new T.Vector3(2.9,.2,5),desiredTarget=target.clone(),desiredDist=19.5;
-const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃、灰色 Bergamo 三人座沙發，還有窗邊的一點綠意。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 日光',desc:'陽台內已清空，經廚房玻璃門進出。冷氣室外機在柱外獨立小平台。',pos:[6.55,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'鞋櫃、穿鞋椅和深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
+const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃、灰色 Bergamo 三人座沙發，還有窗邊的一點綠意。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 日光',desc:'陽台內已清空，經廚房玻璃門進出。冷氣室外機在柱外獨立小平台。',pos:[6.55,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'滿牆玄關櫃、展示層與深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
 let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台門',()=>{desiredTarget.set(5.76,1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{tv=!tv;tvMat.color.set(tv?'#60878b':'#263b3e');tvMat.emissiveIntensity=tv?.45:0;tvArt.visible=tv;selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
 document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');lampMat.emissiveIntensity=night?3:.5;renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
 // One finger pans by default; the visible switch restores orbit rotation.
