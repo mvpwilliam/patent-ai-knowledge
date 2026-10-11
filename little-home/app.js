@@ -51,8 +51,8 @@ partition(3.05,5.55,.8,.13); // short wall above the child door
 partition(2.65,6.875,.13,2.65); // child-room wall along the dining area
 partition(4.24,8.2,3.18,.13); // child-room wall along the kitchen
 partition(5.83,6.275,.13,1.45); // single solid wall from bath corner to window
-partition(5.83,8.05,.13,.30); // solid jamb at the kitchen-side corner
-partition(5.83,9.635,.13,.87); // kitchen / balcony wall after the balcony door
+partition(5.83,8.01,.13,.22); // jamb beside the opposite kitchen wall
+partition(5.83,9.595,.13,.95); // tiled return between balcony door and hob
 partition(3.05,9.68,.13,.78); // short kitchen return beside the fridge cabinet
 // The solid service shaft touches the child-room corner. Beyond it, the
 // shower projects as far as the outside edge of the utility balcony.
@@ -99,18 +99,18 @@ const frontDoor=new T.Group();frontDoor.position.set(-1.88,0,10.00);frontDoor.ro
 box(.45,1.03,-.02,.89,2.04,.055,'#292b2b',.01,frontDoor);
 box(.76,1.02,-.09,.13,.045,.025,C.metal,.01,frontDoor);
 doorFrames.push(frontDoor);
-// Kitchen access to the utility balcony occupies z 8.2–9.2 beside the hob.
-// The real door has a black frame, dark glazed panel and short fabric curtain.
-const balconyDoor=new T.Group();balconyDoor.position.set(5.83,0,8.70);root.add(balconyDoor);
+// Kitchen access to the utility balcony occupies z 8.12–9.12, biased
+// toward the opposite tiled wall, leaving a tiled return beside the hob.
+const balconyDoor=new T.Group();balconyDoor.position.set(5.83,0,8.62);root.add(balconyDoor);
 for(const z of [-.48,.48])box(0,1.12,z,.12,2.24,.07,'#24272a',.008,balconyDoor);
 box(0,2.20,0,.12,.10,1.02,'#24272a',.008,balconyDoor);
 box(0,2.425,0,.14,.35,1.02,C.wall,.008,balconyDoor); // lintel to the 2.6 m wall top
 box(0,.045,0,.15,.09,1.02,'#24272a',.005,balconyDoor);
-const balconyGlass=new T.MeshPhysicalMaterial({color:'#263a3c',transparent:true,opacity:.62,roughness:.19,metalness:.1,depthWrite:false,side:T.DoubleSide});
-box(0,1.13,0,.035,2.02,.91,balconyGlass,0,balconyDoor);
-box(-.027,.37,0,.024,.70,.89,'#323638',.008,balconyDoor);
+const balconyGlass=new T.MeshPhysicalMaterial({color:'#a8c4c5',transparent:true,opacity:.45,roughness:.13,metalness:.08,depthWrite:false,side:T.DoubleSide});
+box(0,1.46,0,.035,1.36,.91,balconyGlass,0,balconyDoor);
+box(-.027,.37,0,.024,.70,.89,'#25292a',.008,balconyDoor);
+for(let y=.14;y<.66;y+=.075)box(-.051,y,0,.026,.027,.85,'#3b4142',.003,balconyDoor);
 box(-.08,1.08,-.35,.04,.35,.025,C.metal,.009,balconyDoor);
-for(const z of [-.23,.23])box(-.045,1.82,z,.012,.69,.43,'#285a9b',.015,balconyDoor);
 doorFrames.push(balconyDoor);
 // Window frames and sheer curtain folds at the two north windows.
 const curtains=new T.Group();root.add(curtains);function windowAt(x,w){box(x,1.1,.015,w,1.6,.075,'#607779',.015);box(x,1.12,.062,w-.12,1.38,.018,new T.MeshStandardMaterial({color:'#b9d3d1',roughness:.25,emissive:'#9dbabc',emissiveIntensity:.2}));box(x,1.13,.083,.035,1.38,.025,C.dark);box(x,.53,.083,w,.035,.025,C.dark);for(let i=0;i<14;i++){let xx=x-w/2+.055+i*(w-.11)/13;let m=cyl(xx,1.07,.18,.035,1.68,i%2?'#eeeddf':'#d9dfd3',.035,curtains);m.scale.z=.8}box(x,1.95,.16,w+.14,.06,.1,C.cream,.02)}windowAt(1.67,2.5);windowAt(4.92,2.55);
@@ -189,18 +189,31 @@ box(5.12,.765,6.40,1.12,.04,.36,'#8fa8a0',.02);
 // Kitchen and appliances. The refrigerator-side built-in is a separate tall
 // unit: overhead doors, open display shelf, appliance counter and microwave.
 box(2.36,.45,9.68,1.2,.83,.61,C.cab,.02);
-// White-veined wall tile continues along the left return and behind the
-// kitchen worktop. White upper cupboards hang over the sink, below 2.6 m.
-const tile='#e5e5e2',grout='#bdc1c0';
-box(3.13,1.55,9.57,.027,2.08,.86,tile,.003);
-for(let y=.55;y<2.56;y+=.50)box(3.147,y,9.57,.004,.012,.86,grout);
-box(4.45,1.46,9.976,2.57,2.25,.018,tile,.003);
-for(let y=.56;y<2.55;y+=.50)box(4.45,y,9.962,2.57,.012,.004,grout);
-box(4.02,2.17,9.69,1.68,.65,.52,'#f2f2ed',.012);
-for(const x of [3.61,4.02,4.43])box(x,2.17,9.418,.53,.61,.024,'#fbfaf6',.008);
-box(4.02,1.82,9.43,1.68,.035,.04,'#e8e9e3',.005);
-box(4.5,.45,9.68,2.7,.83,.61,C.cab,.02);box(4.5,.89,9.66,2.75,.07,.70,'#eee9db',.022);
-for(const x of [3.43,4.05,4.68,5.31]){box(x,.46,9.363,.55,.70,.024,x>4?'#405153':'#707379',.009);box(x,.73,9.345,.38,.025,.025,C.metal)}box(3.95,.945,9.61,.72,.035,.43,C.metal,.07);box(3.95,.967,9.61,.59,.025,.32,'#a7b9b3',.06);rod([3.95,.96,9.86],[3.95,1.25,9.86],.022,C.metal);rod([3.95,1.25,9.86],[3.95,1.25,9.65],.022,C.metal);box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x,.984,9.59,.12,.02,C.metal);cyl(x,1,9.59,.08,.023,'#253b3b')}box(5.45,1.73,9.74,.89,.14,.49,'#dadbd0',.025);box(5.45,1.95,9.89,.5,.35,.23,C.white,.02);
+// White marble is a 6 mm surface on the existing walls, in 60 x 120 cm
+// portrait courses. It does not change the kitchen's footprint.
+const marbleCanvas=document.createElement('canvas');marbleCanvas.width=256;marbleCanvas.height=512;
+const mctx=marbleCanvas.getContext('2d');mctx.fillStyle='#f4f4f1';mctx.fillRect(0,0,256,512);
+for(let i=0;i<16;i++){mctx.beginPath();mctx.moveTo(-30+i*23,-30);mctx.bezierCurveTo(80+i*12,140,40+i*15,290,280+i*5,540);mctx.strokeStyle=i%3?'rgba(137,143,145,.12)':'rgba(116,124,128,.23)';mctx.lineWidth=i%3?1:2;mctx.stroke()}
+const marbleTexture=new T.CanvasTexture(marbleCanvas);marbleTexture.colorSpace=T.SRGBColorSpace;
+const marble=new T.MeshStandardMaterial({map:marbleTexture,roughness:.27});
+for(let x=2.65;x<5.83;x+=.6){const w=Math.min(.6,5.83-x);for(let y=0;y<2.6;y+=1.2){const h=Math.min(1.2,2.6-y);box(x+w/2,y+h/2,8.269,w-.005,h-.005,.006,marble)}}
+for(const [z0,z1] of [[7.90,8.12],[9.12,10.07]])for(let z=z0;z<z1;z+=.6){const d=Math.min(.6,z1-z);for(let y=0;y<2.6;y+=1.2){const h=Math.min(1.2,2.6-y);box(5.761,y+h/2,z+d/2,.006,h-.005,d-.005,marble)}}
+// The continuous black glass splashback is flush with the wall behind the
+// sink and hob, directly between the counter and handle-free uppers.
+const blackGlass=new T.MeshPhysicalMaterial({color:'#101719',metalness:.12,roughness:.08,clearcoat:1,clearcoatRoughness:.06});
+box(4.475,1.275,9.989,2.71,.68,.006,blackGlass);
+box(4.475,2.11,9.68,2.71,.98,.53,'#f3f4f1',.008);
+for(const x of [3.46,4.14,4.82,5.50])box(x,2.11,9.406,.665,.955,.012,'#fbfbf9',.003);
+// The slim stainless hood is concealed beneath the cupboard above the hob.
+box(5.45,1.594,9.45,.73,.055,.36,'#b7bdba',.005);
+box(5.45,1.562,9.36,.43,.009,.03,'#626b6b');
+box(4.5,.45,9.68,2.7,.83,.61,'#463b34',.012);
+box(4.5,.89,9.66,2.75,.07,.70,'#eeefec',.012);
+for(const x of [3.43,4.05,4.68,5.31]){box(x,.46,9.363,.55,.70,.018,'#40352e',.004);box(x,.73,9.344,.40,.025,.025,'#aeb4b1')}
+// Fine pale flecks on the white stone, deliberately subtle at room scale.
+for(let i=0;i<96;i++){const x=3.14+(i*0.437%2.68),z=9.35+(i*0.173%.59);box(x,.928,z,.008,.001,.005,i%3?'#d6d8d5':'#c5c9c7')}
+box(3.95,.945,9.61,.72,.035,.43,C.metal,.07);box(3.95,.967,9.61,.59,.025,.32,'#a7b9b3',.06);rod([3.95,.96,9.86],[3.95,1.25,9.86],.022,C.metal);rod([3.95,1.25,9.86],[3.95,1.25,9.65],.022,C.metal);
+box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x,.984,9.59,.12,.02,C.metal);cyl(x,1,9.59,.08,.023,'#253b3b')}
 // Cabinet above the refrigerator, with its face aligned to the fridge.
 box(1.35,2.24,9.55,.78,.65,.78,'#77736e',.012);
 for(const x of [1.17,1.53])box(x,2.24,9.145,.35,.61,.018,'#9a9690',.005);
@@ -242,10 +255,15 @@ shoeBox(-.65,.115,8.04,.91,.035,.39,'#65594a',.005);
 shoeBox(-.19,.58,8.045,.14,1.10,.40,entryWood,.065);
 for(const x of [-.83,-.47])shoeBox(x,.11,8.29,.21,.075,.30,'#6b5b48',.025);
 box(-1.50,.07,9.64,.64,.035,.43,'#9da993',.03);
-// The bench and pegboard share the door-opposite side, clear of the long
-// door-column-fridge-sink wall.
-box(-.48,.91,8.03,.75,1.0,.04,'#42625e',.02);
-for(let x=-.76;x<-.16;x+=.12)for(let y=.5;y<1.35;y+=.12)ball(x,y,8.06,.012,'#273f3e');
+// On entering, the full-length mirror is on the left side wall. Its width
+// is 80% of the 90 cm entry door and its top sits just above the door.
+box(-1.961,1.10,9.13,.018,2.20,.72,'#343c3a',.006);
+const mirrorMat=new T.MeshPhysicalMaterial({color:'#c9dcda',metalness:.58,roughness:.08,clearcoat:1});
+box(-1.948,1.10,9.13,.006,2.16,.69,mirrorMat);
+// Pegboard belongs to the wall between the door and refrigerator, from
+// ceiling height down to about one third of the refrigerator height.
+box(.40,1.61,9.970,.88,1.98,.008,'#37494a',.002);
+for(let x=.02;x<.80;x+=.11)for(let y=.72;y<2.52;y+=.11)ball(x,y,9.962,.008,'#1f2d2e');
 box(-.48,.42,8.38,.70,.22,.5,'#adb9a5',.09);
 for(const x of [-.73,-.23])box(x,.2,8.38,.05,.36,.28,C.wood);
 // Utility balcony: washer near the shaft/shower stop; small plants at the
