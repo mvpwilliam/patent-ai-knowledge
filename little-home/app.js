@@ -122,8 +122,14 @@ box(.095,.55,.314,.43,.38,.024,'#303e3d',0,peninsula);
 for(const yy of [.22,.49,.71]){box(.5,yy,.31,.30,.21,.025,'#b5aa91',.009,peninsula);box(.5,yy+.065,.33,.20,.013,.017,C.dark,0,peninsula)}
 // Full-height built-in cabinets beside dining room.
 box(3.07,.96,6.21,.38,1.86,1.1,C.cab,.018);for(let z of [5.92,6.46]){box(2.869,.96,z,.015,1.78,.51,'#686b72',.006);box(2.85,.86,z-.16,.022,.28,.016,C.dark)}
-// Master bedroom, window-side bed, wardrobe and small bedside tables.
-box(4.96,.08,1.64,2.28,.06,2.6,'#c7cbbb',.06);box(5.84,.54,1.64,.16,.94,2.05,'#b0ad98',.08);box(4.94,.29,1.64,1.85,.35,1.94,C.wood,.045);box(4.94,.52,1.64,1.90,.22,1.95,C.white,.08);box(4.63,.67,1.64,1.25,.15,1.94,C.bed,.075);for(let z of [1.12,2.15]){let p=box(5.54,.70,z,.45,.17,.71,'#f3ecda',.07);p.rotation.z=-.04}box(4.24,.77,1.64,.33,.07,1.95,'#8ea48d',.03);for(let z of [.39,2.98]){cyl(5.68,.32,z,.23,.58,C.woodlight);cyl(5.68,.63,z,.24,.05,C.cream);ball(5.68,.79,z,.12,lampMat)}box(5.22,.82,3.37,1.96,1.57,.43,C.cab,.02);for(let x of [4.59,5.23,5.87]){box(x,.83,3.143,.61,1.48,.02,'#75777c');box(x+.23,.83,3.126,.018,.2,.018,C.dark)}plant(3.68,.08,.4,.6);
+// Master bedroom: bed only, with the headboard against the exterior wall.
+box(5.31,.08,1.64,2.28,.06,2.6,'#c7cbbb',.06);
+box(6.34,.54,1.64,.16,.94,2.05,'#b0ad98',.08);
+box(5.44,.29,1.64,1.85,.35,1.94,C.wood,.045);
+box(5.44,.52,1.64,1.90,.22,1.95,C.white,.08);
+box(5.13,.67,1.64,1.25,.15,1.94,C.bed,.075);
+for(const z of [1.12,2.15]){const pillow=box(6.04,.70,z,.45,.17,.71,'#f3ecda',.07);pillow.rotation.z=-.04}
+box(4.74,.77,1.64,.33,.07,1.95,'#8ea48d',.03);
 // Bathroom tiled floor, basin, mirror, toilet and glass shower partition.
 box(5.4,.07,4.58,1.91,.06,1.64,'#55585b');for(let x=4.5;x<6.4;x+=.32)box(x,.105,4.58,.01,.004,1.64,'#777b7c');for(let z=3.8;z<5.4;z+=.32)box(5.4,.105,z,1.9,.004,.01,'#777b7c');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
 // Shower projects beyond the bath toward the balcony and shares its outside
@@ -136,13 +142,32 @@ rod([6.47,2.14,4.51],[6.47,2.14,5.54],.013,C.metal);
 rod([6.47,.10,4.51],[6.47,.10,5.54],.008,C.metal);
 rod([6.43,.99,5.15],[6.43,1.33,5.15],.014,C.metal);
 rod([7.04,.12,5.47],[7.04,1.53,5.47],.02,C.metal);rod([7.04,1.53,5.47],[6.84,1.53,5.47],.02,C.metal);cyl(6.84,1.51,5.47,.085,.03,C.metal);
-// Child room intentionally contains only the bed and its bedding.
+// Child room contains only its bed and bedding; there is no wardrobe.
 box(5.12,.25,6.72,1.1,.35,1.95,C.wood,.06);box(5.12,.51,6.72,1.1,.20,1.94,C.white,.055);box(5.12,.67,6.94,1.11,.13,1.48,'#c0ccbd',.05);box(5.12,.7,5.99,.72,.18,.37,'#f0dfb7',.07);box(5.12,.61,5.7,1.13,1.01,.11,C.woodlight,.03);box(5.12,.765,7.22,1.12,.04,.36,'#8fa8a0',.02);
-// Kitchen and appliances, preserving dark countertops and pale cabinetry.
-// The two kitchen counters stop at the short CAD wall beside the fridge cabinet.
-box(2.36,.45,9.68,1.2,.83,.61,C.cab,.02);box(2.36,.89,9.66,1.2,.07,.70,'#eee9db',.022);
+// Kitchen and appliances. The refrigerator-side built-in is a separate tall
+// unit: overhead doors, open display shelf, appliance counter and microwave.
+box(2.36,.45,9.68,1.2,.83,.61,C.cab,.02);
 box(4.5,.45,9.68,2.7,.83,.61,C.cab,.02);box(4.5,.89,9.66,2.75,.07,.70,'#eee9db',.022);
-for(const x of [2.05,2.65,3.43,4.05,4.68,5.31]){box(x,.46,9.363,.55,.70,.024,x>4?'#405153':'#707379',.009);box(x,.73,9.345,.38,.025,.025,C.metal)}box(3.95,.945,9.61,.72,.035,.43,C.metal,.07);box(3.95,.967,9.61,.59,.025,.32,'#a7b9b3',.06);rod([3.95,.96,9.86],[3.95,1.25,9.86],.022,C.metal);rod([3.95,1.25,9.86],[3.95,1.25,9.65],.022,C.metal);box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x,.984,9.59,.12,.02,C.metal);cyl(x,1,9.59,.08,.023,'#253b3b')}box(5.45,1.73,9.74,.89,.14,.49,'#dadbd0',.025);box(5.45,1.95,9.89,.5,.35,.23,C.white,.02);box(2.36,1.65,9.89,1.18,.73,.27,C.cab,.012);box(2.36,1.24,9.9,1.18,.025,.28,'#f9e5ae');box(2.03,1.08,9.58,.32,.3,.26,C.white,.04);box(2.52,1.07,9.61,.28,.29,.31,C.white,.05);cyl(2.75,1.03,9.62,.10,.15,C.white);cyl(2.75,1.19,9.62,.09,.2,'#afc4bd');
+for(const x of [3.43,4.05,4.68,5.31]){box(x,.46,9.363,.55,.70,.024,x>4?'#405153':'#707379',.009);box(x,.73,9.345,.38,.025,.025,C.metal)}box(3.95,.945,9.61,.72,.035,.43,C.metal,.07);box(3.95,.967,9.61,.59,.025,.32,'#a7b9b3',.06);rod([3.95,.96,9.86],[3.95,1.25,9.86],.022,C.metal);rod([3.95,1.25,9.86],[3.95,1.25,9.65],.022,C.metal);box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x,.984,9.59,.12,.02,C.metal);cyl(x,1,9.59,.08,.023,'#253b3b')}box(5.45,1.73,9.74,.89,.14,.49,'#dadbd0',.025);box(5.45,1.95,9.89,.5,.35,.23,C.white,.02);
+// Cabinet above the refrigerator, with its face aligned to the fridge.
+box(1.35,2.24,9.55,.78,.65,.78,'#77736e',.012);
+for(const x of [1.17,1.53])box(x,2.24,9.145,.35,.61,.018,'#9a9690',.005);
+// The cabinetry to the refrigerator's kitchen side in the supplied render.
+for(const x of [1.77,2.95])box(x,1.30,9.59,.045,2.55,.79,'#81796f',.005);
+box(2.36,2.28,9.63,1.13,.55,.72,'#92908b',.01);
+for(const x of [2.08,2.64])box(x,2.28,9.26,.53,.52,.018,'#aaa6a0',.005);
+box(2.36,1.86,9.60,1.10,.055,.63,'#6d716f',.006);
+box(2.36,1.67,9.94,1.10,.32,.035,'#343c3c',.005);
+box(2.36,1.49,9.60,1.08,.035,.65,'#c8beb0',.006);
+box(2.36,1.20,9.60,1.12,.06,.73,'#c8beb0',.008);
+box(2.36,.98,9.22,1.08,.035,.045,'#e9d8a9',.002);
+// Microwave niche and the lower pull-out drawers.
+box(2.13,.70,9.12,.56,.39,.035,'#303437',.01);
+box(2.12,.72,9.097,.42,.24,.008,'#66767a',.008);
+box(2.43,.70,9.085,.025,.28,.018,'#c0c5bb');
+for(const y of [.79,.55,.32]){box(2.70,y,9.11,.43,.18,.02,'#a39887',.005);box(2.70,y+.03,9.085,.27,.014,.018,C.dark)}
+box(2.36,.18,9.12,1.08,.23,.025,'#76746e',.005);
+box(2.03,1.35,9.58,.21,.23,.22,C.white,.04);box(2.60,1.33,9.58,.18,.20,.19,C.white,.05);
 box(1.35,.95,9.52,.73,1.85,.83,'#87928b',.045);for(let yy of [1.39,.85,.34])box(1.35,yy,9.08,.67,yy>1?.88:.32,.035,'#a2aaa0',.018);box(1.36,1.39,9.048,.016,.87,.025,'#6a7b73');box(1.37,.73,9.04,.5,.025,.04,C.dark);box(1.55,1.6,9.045,.14,.2,.01,'#e3e4c8');
 // Entry cabinet facing the front door: three upper panels, lit open niche,
 // shallow drawers, lower doors and an open shoe space near the floor.
@@ -160,8 +185,22 @@ box(-.65,.115,8.04,.91,.035,.39,'#65594a',.005);
 for(const x of [-.83,-.47])box(x,.11,8.29,.21,.075,.30,'#6b5b48',.025);
 box(-.71,.07,9.64,.64,.035,.43,'#9da993',.03);
 box(.37,.91,9.98,.75,1.0,.04,'#42625e',.02);for(let x=.1;x<.7;x+=.12)for(let y=.5;y<1.35;y+=.12)ball(x,y,9.948,.012,'#273f3e');box(.38,.42,9.60,.7,.22,.5,'#adb9a5',.09);for(let x of [.13,.63])box(x,.2,9.6,.05,.36,.28,C.wood);box(-1.16,.94,9.06,.04,1.46,.66,'#829b95',.025);
-// Utility balcony: washing machine, storage, herb pots.
-box(6.78,.49,8.72,.65,.91,.66,C.white,.04);let drum=cyl(6.78,.5,8.36,.23,.035,'#839b9b');drum.rotation.x=Math.PI/2;let glass=cyl(6.78,.5,8.33,.17,.04,'#405e60');glass.rotation.x=Math.PI/2;box(6.78,.82,8.37,.49,.08,.025,'#cfdbd0',.01);box(6.78,1.33,8.96,.72,.66,.26,C.cab,.025);plant(6.79,.08,6.68,.40);
+// Utility balcony: washer near the shaft/shower stop; small plants at the
+// kitchen end leave the door clear. The outdoor AC is beyond the structure.
+box(6.60,.49,6.95,.65,.91,.66,C.white,.04);
+let drum=cyl(6.60,.5,6.60,.23,.035,'#839b9b');drum.rotation.x=Math.PI/2;
+let glass=cyl(6.60,.5,6.57,.17,.04,'#405e60');glass.rotation.x=Math.PI/2;
+box(6.60,.82,6.60,.49,.08,.025,'#cfdbd0',.01);
+box(6.60,1.33,6.96,.72,.66,.26,C.cab,.025);
+plant(6.94,.08,8.07,.36);plant(6.94,.08,8.67,.30);
+// Independent service platform outside the kitchen-end structural column.
+box(7.70,-.13,9.64,.98,.22,.90,'#a9aba4',.02);
+box(7.38,-.22,9.61,.12,.36,.70,'#898f87',.01);
+box(7.70,.34,9.64,.78,.67,.55,'#c6c9c5',.025);
+box(7.70,.36,9.355,.68,.53,.025,'#e3e5de',.008);
+const outdoorFan=cyl(7.70,.36,9.33,.22,.025,'#657471');outdoorFan.rotation.x=Math.PI/2;
+for(let i=0;i<8;i++){const a=i*Math.PI/4;rod([7.70,.36,9.31],[7.70+.18*Math.cos(a),.36+.18*Math.sin(a),9.31],.012,'#d0d7d3')}
+box(7.70,.73,9.64,.82,.035,.58,'#979d98',.005);
 // Small welcoming details.
 plant(.51,.08,4.11,.62);box(1.7,.86,5.66,.20,.03,.26,'#ede4cc',.015);cyl(1.7,.92,5.66,.05,.10,C.white);
 let night=false,tv=true,curtainClosed=true,wallLow=false,topView=false;
