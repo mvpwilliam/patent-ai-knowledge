@@ -44,6 +44,7 @@ function makeCharacter(v){
   g.userData.body=body;g.userData.step=Math.random()*8;return g;
 }
 function setCharacter(v){
+  if(!scene)return;
   if(character)scene.remove(character);
   character=makeCharacter(v);scene.add(character);character.position.set(1.35,.07,4.3);
   if(pose!=='walk')setPose(pose);
@@ -51,6 +52,7 @@ function setCharacter(v){
 function setPose(next){
   pose=next;poseStarted=performance.now();
   document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===next));
+  if(!character){toast('角色姿勢已選好，請在支援 3D 的瀏覽器觀看');return}
   if(next==='sit'){character.position.set(2.48,.52,2.03);character.rotation.y=Math.PI/2}
   if(next==='lie'){character.position.set(4.86,.47,1.7);character.rotation.y=0}
   if(next==='stand'){character.position.set(1.55,.07,5.9);character.rotation.y=0}
@@ -141,7 +143,7 @@ async function saveAvatar(){
 function clearSubscriptions(){
   for(const fn of [unsubscribeTasks,unsubscribeClaims,unsubscribeProfiles])fn?.();
   unsubscribeTasks=unsubscribeClaims=unsubscribeProfiles=null;
-  for(const item of characters.values())scene.remove(item.mesh);characters.clear();
+  for(const item of characters.values())scene?.remove(item.mesh);characters.clear();
 }
 function subscribeClaims(){
   unsubscribeClaims?.();if(!db||!homeId||!user)return;
@@ -159,6 +161,7 @@ function subscribeHome(){
   },()=>toast('任務設定讀取失敗'));
   subscribeClaims();
   unsubscribeProfiles=api.onSnapshot(api.collection(db,'homes',homeId,'profiles'),snap=>{
+    if(!scene)return;
     const present=new Set();
     snap.forEach(d=>{
       if(d.id===user.uid)return;present.add(d.id);
@@ -202,7 +205,7 @@ async function connect(){
   }catch(e){$('#game-mode').textContent='家庭資料庫連線失敗，請檢查網路與 Firebase 設定。';$('#account-state').textContent='無法登入';}
 }
 
-if(scene){
+{
   $('#home-code').value=localStorage.getItem('little-home-code')||'';
   fillAvatar();setCharacter(avatar);readLocalClaims();renderTasks();clock();setInterval(clock,1000);
   $('#game-open').onclick=()=>$('#game-dialog').showModal();
