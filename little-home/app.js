@@ -131,7 +131,7 @@ partition(5.83,6.275,.13,1.45); // single solid wall from bath corner to window
 partition(5.83,8.08,.13,.36); // jamb closes the child-room edge before balcony door
 partition(5.83,9.595,.13,.95); // tiled return between balcony door and hob
 const applianceDivider=partition(3.05,9.68,.13,.78); // shared kitchen/appliance wall
-applianceDivider.children.forEach(part=>part.material=mat('#696b6a'));
+applianceDivider.children.forEach(part=>part.material=mat(C.wall));
 // The solid service shaft touches the child-room corner. Beyond it, the
 // shower projects as far as the outside edge of the utility balcony.
 const serviceShaft=wall(6.15,6.00,.64,.90,2.6);
@@ -319,7 +319,7 @@ for(let i=0;i<96;i++){const x=3.14+(i*0.437%2.68),z=9.35+(i*0.173%.59);box(x,.92
 box(3.95,.945,9.61,.72,.035,.43,C.metal,.07);box(3.95,.967,9.61,.59,.025,.32,'#a7b9b3',.06);rod([3.95,.96,9.86],[3.95,1.25,9.86],.022,C.metal);rod([3.95,1.25,9.86],[3.95,1.25,9.65],.022,C.metal);
 box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x,.984,9.59,.12,.02,C.metal);cyl(x,1,9.59,.08,.023,'#253b3b')}
 // Cabinet above the refrigerator, with its face aligned to the fridge.
-const lightCabinet='#d8dadd';
+const lightCabinet=C.wall;
 box(1.35,2.24,9.55,.78,.65,.78,lightCabinet,.012);
 for(const x of [1.17,1.53])box(x,2.24,9.145,.35,.61,.018,'#f2f1ec',.005);
 // Refrigerator-side appliance cabinet, front at z=9.17. From the kitchen
@@ -459,6 +459,6 @@ canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;p
 function release(e){pointers.delete(e.pointerId);pinch=0;if(pointers.size){const p=[...pointers.values()][0];lastX=p.x;lastY=p.y}}
 canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
-let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
+let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
 window.homeScene={scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,get currentRoom(){return current}};
