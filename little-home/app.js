@@ -50,6 +50,7 @@ partition(3.05,9.68,.13,.78); // short kitchen return beside the fridge cabinet
 // shower projects as far as the outside edge of the utility balcony.
 const serviceShaft=wall(6.15,6.00,.64,.90,2.6);
 partition(6.47,6.00,.13,.90); // shaft / projecting shower side
+partition(6.47,4.63,.13,.26); // solid return on the bath-side corner of shower
 partition(6.825,6.45,.71,.13); // solid stop at the balcony's bath end
 // The floor finish plan locates this window at the kitchen end of the child
 // room's balcony wall; the bath end remains a solid full-height wall.
@@ -108,7 +109,11 @@ box(.035,1.12,5.0,.065,.93,.59,'#c4b797',.01);box(.08,1.12,5,.02,.84,.50,C.white
 ball(3.22,1.10,3.05,.16,'#957e57',[.25,1.1,.75]);ball(3.22,1.27,3.05,.12,'#a58a5c',[.3,1,.8]);box(3.22,1.54,3.05,.045,.45,.05,C.wood);box(3.22,1.78,3.05,.05,.12,.09,C.dark,.012);
 // Dining table, curved backs, oak seats and peninsula with oven niches.
 function chair(x,z){for(let dx of [-.20,.20])for(let dz of [-.20,.20])rod([x+dx*1.2,.07,z+dz*1.2],[x+dx,.49,z+dz],.027,C.wood);box(x,.49,z,.49,.08,.48,'#c6c5af',.07);const back=box(x-.21,.78,z,.075,.34,.5,C.woodlight,.05);rod([x-.20,.61,z-.23],[x+.18,.68,z-.23],.023,C.woodlight);rod([x-.20,.61,z+.23],[x+.18,.68,z+.23],.023,C.woodlight)}
-box(1.36,.76,6.15,1.03,.12,1.65,C.woodlight,.16);box(1.36,.39,6.15,.59,.69,.88,'#c8b493',.18);chair(.55,5.76);chair(.55,6.52);plant(1.36,.83,6.1,.39);
+// 135 × 75 cm dining table: its kitchen-side edge (z=6.975) lines up with
+// the island's dining-side edge (z=6.96), with no oversized overhang.
+box(1.36,.76,6.30,.75,.12,1.35,C.woodlight,.10);
+box(1.36,.39,6.30,.52,.69,.76,'#c8b493',.12);
+chair(.55,5.94);chair(.55,6.63);plant(1.36,.83,6.30,.28);
 // A 1.39 m island runs across the dining/kitchen axis, with its right end
 // against the bedroom-side wall and circulation to its left.
 // Oven and open shelf face the entry; three drawers occupy the right end.
@@ -120,8 +125,7 @@ box(-.38,.54,.37,.29,.19,.006,'#697877',0,peninsula);
 box(-.38,.65,.387,.25,.018,.025,C.metal,0,peninsula);
 box(.095,.55,.314,.43,.38,.024,'#303e3d',0,peninsula);
 for(const yy of [.22,.49,.71]){box(.5,yy,.31,.30,.21,.025,'#b5aa91',.009,peninsula);box(.5,yy+.065,.33,.20,.013,.017,C.dark,0,peninsula)}
-// Full-height built-in cabinets beside dining room.
-box(3.07,.96,6.21,.38,1.86,1.1,C.cab,.018);for(let z of [5.92,6.46]){box(2.869,.96,z,.015,1.78,.51,'#686b72',.006);box(2.85,.86,z-.16,.022,.28,.016,C.dark)}
+// Keep the second-bedroom boundary clear of the former tall wardrobe block.
 // Master bedroom: bed only, with the headboard against the exterior wall.
 box(5.31,.08,1.64,2.28,.06,2.6,'#c7cbbb',.06);
 box(6.34,.54,1.64,.16,.94,2.05,'#b0ad98',.08);
@@ -135,15 +139,20 @@ box(5.4,.07,4.58,1.91,.06,1.64,'#55585b');for(let x=4.5;x<6.4;x+=.32)box(x,.105,
 // Shower projects beyond the bath toward the balcony and shares its outside
 // x=7.18 wall. It meets the bathroom at x=6.47 through transparent glazing.
 box(6.825,.07,5.50,.65,.06,1.76,'#55585b');
-const showerGlass=new T.MeshPhysicalMaterial({color:'#d9eeee',transparent:true,opacity:.17,roughness:.08,metalness:0,depthWrite:false,side:T.DoubleSide});
-box(6.47,1.08,5.025,.018,2.05,1.03,showerGlass);
-for(const z of [4.51,5.54])rod([6.47,.08,z],[6.47,2.13,z],.012,C.metal);
-rod([6.47,2.14,4.51],[6.47,2.14,5.54],.013,C.metal);
-rod([6.47,.10,4.51],[6.47,.10,5.54],.008,C.metal);
+const showerGlass=new T.MeshPhysicalMaterial({color:'#c7e0df',transparent:true,opacity:.34,roughness:.08,metalness:0,depthWrite:false,side:T.DoubleSide});
+box(6.47,1.08,5.15,.018,2.05,.78,showerGlass);
+// Opaque return at the shaft end forms the shower's left rear side; the
+// bathroom-facing front section remains a framed glass enclosure.
+box(6.552,1.30,6.00,.032,2.58,.90,'#51565b',.004);
+box(6.465,1.08,4.76,.055,2.14,.04,C.trim,.004);
+box(6.465,1.08,5.54,.055,2.14,.04,C.trim,.004);
+for(const z of [4.76,5.54])rod([6.47,.08,z],[6.47,2.13,z],.012,C.metal);
+rod([6.47,2.14,4.76],[6.47,2.14,5.54],.013,C.metal);
+rod([6.47,.10,4.76],[6.47,.10,5.54],.008,C.metal);
 rod([6.43,.99,5.15],[6.43,1.33,5.15],.014,C.metal);
 rod([7.04,.12,5.47],[7.04,1.53,5.47],.02,C.metal);rod([7.04,1.53,5.47],[6.84,1.53,5.47],.02,C.metal);cyl(6.84,1.51,5.47,.085,.03,C.metal);
 // Child room contains only its bed and bedding; there is no wardrobe.
-box(5.12,.25,6.72,1.1,.35,1.95,C.wood,.06);box(5.12,.51,6.72,1.1,.20,1.94,C.white,.055);box(5.12,.67,6.94,1.11,.13,1.48,'#c0ccbd',.05);box(5.12,.7,5.99,.72,.18,.37,'#f0dfb7',.07);box(5.12,.61,5.7,1.13,1.01,.11,C.woodlight,.03);box(5.12,.765,7.22,1.12,.04,.36,'#8fa8a0',.02);
+box(5.12,.25,6.72,1.1,.35,1.95,C.wood,.06);box(5.12,.51,6.72,1.1,.20,1.94,C.white,.055);box(5.12,.67,6.94,1.11,.13,1.48,'#c0ccbd',.05);box(5.12,.7,5.99,.72,.18,.37,'#f0dfb7',.07);box(5.12,.46,5.7,1.13,.55,.11,C.woodlight,.03);box(5.12,.765,7.22,1.12,.04,.36,'#8fa8a0',.02);
 // Kitchen and appliances. The refrigerator-side built-in is a separate tall
 // unit: overhead doors, open display shelf, appliance counter and microwave.
 box(2.36,.45,9.68,1.2,.83,.61,C.cab,.02);
