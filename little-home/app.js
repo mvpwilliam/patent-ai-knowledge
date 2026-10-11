@@ -6,19 +6,44 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(34,1,.1,100);const root=new T.Group();scene.add(root);
 const hemi=new T.HemisphereLight(0xf1f4fa,0x747982,1.35);scene.add(hemi);const sun=new T.DirectionalLight(0xfff6eb,2.1);sun.position.set(-3,12,6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-12,right:12,top:12,bottom:-12,near:1,far:40});sun.shadow.bias=-.0005;sun.shadow.normalBias=.035;sun.shadow.radius=3;scene.add(sun);const fill=new T.DirectionalLight(0xdce7ff,.65);fill.position.set(7,8,-9);scene.add(fill);
 const mats=new Map(),geos=new Map();function mat(c){if(!mats.has(c))mats.set(c,new T.MeshStandardMaterial({color:c,roughness:.8}));return mats.get(c)}
-const C={wall:'#b8b9ba',trim:'#979b9d',wood:'#a58b6c',woodlight:'#c4ae8b',floor:'#d2c8b7',navy:'#354e63',cream:'#e3e1d9',cab:'#62656b',dark:'#394746',metal:'#6d7773',green:'#789377',white:'#f4f1e6',bed:'#b6c3ac'};
+const C={wall:'#b8b9ba',trim:'#979b9d',wood:'#a58b6c',woodlight:'#c4ae8b',floor:'#e8d9bd',navy:'#354e63',cream:'#e3e1d9',cab:'#62656b',dark:'#394746',metal:'#6d7773',green:'#789377',white:'#f4f1e6',bed:'#b6c3ac'};
 function box(x,y,z,w,h,d,c,round=0,parent=root){let key=[w,h,d,round].join(',');if(!geos.has(key))geos.set(key,round?new RoundedBoxGeometry(w,h,d,2,Math.min(round,w/3,h/3,d/3)):new T.BoxGeometry(w,h,d));let m=new T.Mesh(geos.get(key),typeof c==='string'?mat(c):c);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
 function cyl(x,y,z,r,h,c,r2=r,parent=root){let m=new T.Mesh(new T.CylinderGeometry(r,r2,h,20),mat(c));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
 function ball(x,y,z,r,c,s=[1,1,1],parent=root){let m=new T.Mesh(new T.SphereGeometry(r,16,12),typeof c==='string'?mat(c):c);m.position.set(x,y,z);m.scale.set(...s);m.castShadow=true;parent.add(m);return m}
 function rod(a,b,r,c,parent=root){let aa=new T.Vector3(...a),bb=new T.Vector3(...b);let m=cyl(0,0,0,r,aa.distanceTo(bb),c,r,parent);m.position.copy(aa.add(bb).multiplyScalar(.5));m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),new T.Vector3(...b).sub(new T.Vector3(...a)).normalize());return m}
 function plant(x,y,z,scale=1){const p=new T.Group();root.add(p);p.position.set(x,y,z);p.scale.setScalar(scale);cyl(0,.16,0,.19,.32,'#d7c9ab',.14,p);cyl(0,.32,0,.16,.02,'#605c43',.16,p);rod([0,.3,0],[0,1.1,0],.017,'#7b7b52',p);for(let i=0;i<9;i++){let a=i*2.4,yy=.48+i*.074,xx=Math.cos(a)*(.32-i*.014),zz=Math.sin(a)*(.32-i*.014);rod([0,yy-.12,0],[xx,yy,zz],.009,'#7b7b52',p);let leaf=ball(xx,yy,zz,.17,i%2?'#809b65':'#9caa76',[1,.27,.5],p);leaf.rotation.y=-a;}return p}
 const floorGroup=new T.Group();root.add(floorGroup);
-function floor(x,z,w,d,color=C.floor){box(x,-.18,z,w,.32,d,'#c9baa0',.04);box(x,.005,z,w,.06,d,color);for(let zz=z-d/2+.28;zz<z+d/2;zz+=.29){box(x,.04,zz,w,.007,.012,'#cabfa9');for(let xx=x-w/2+(((zz*100)|0)%2?.6:1.3);xx<x+w/2;xx+=1.6)box(xx,.041,zz-.14,.012,.005,.27,'#d2c7b1')}}
-floor(3.2,5,6.4,10);floor(-1.025,8.95,2.05,2.1,'#c9c8b9');
+const woodShades=['#eadcc1','#e6d7b9','#e9dbbe','#e2d2b3','#ecddc2','#e7d8bb'];
+function woodBoards(x,z,w,d,alongZ=true,y=.041){
+  const span=alongZ?w:d,run=alongZ?d:w,strip=.19,board=1.38;
+  for(let i=0;i<Math.ceil(span/strip);i++){
+    const s0=-span/2+i*strip,sw=Math.min(strip,span/2-s0);
+    if(sw<=0)continue;
+    const shift=(i%3)*board/3;
+    for(let t=-run/2-shift,j=0;t<run/2;t+=board,j++){
+      const lo=Math.max(t,-run/2),hi=Math.min(t+board,run/2);
+      if(hi-lo<.02)continue;
+      const a=s0+sw/2,b=(lo+hi)/2;
+      const p=alongZ?box(x+a,y,z+b,sw-.004,.008,hi-lo-.005,woodShades[(i*3+j)%woodShades.length]):box(x+b,y,z+a,hi-lo-.005,.008,sw-.004,woodShades[(i*3+j)%woodShades.length]);
+      // Subtle lengthwise grain follows each plank without dark stripes.
+      const grain=(i*7+j*11)%5;
+      if(grain<3){if(alongZ)box(x+a+(grain-1)*.035,y+.005,z+b,.003,.001,Math.max(.05,(hi-lo)*.55),'#dac9ab');else box(x+b,y+.005,z+a+(grain-1)*.035,Math.max(.05,(hi-lo)*.55),.001,.003,'#dac9ab')}
+    }
+  }
+}
+function floor(x,z,w,d,color=C.floor,finish='wood'){
+  box(x,-.18,z,w,.32,d,'#c9baa0',.04);box(x,.005,z,w,.06,d,color);
+  if(finish==='wood')woodBoards(x,z,w,d,true);
+  else{for(let xx=x-w/2+.60;xx<x+w/2;xx+=.60)box(xx,.038,z,.006,.002,d,'#77756e');for(let zz=z-d/2+.60;zz<z+d/2;zz+=.60)box(x,.038,zz,w,.002,.006,'#77756e')}
+}
+floor(3.2,5,6.4,10);
+// The second-bedroom boards turn 90 degrees, following the flooring plan.
+box(4.24,.042,6.84,3.08,.004,2.52,C.floor);woodBoards(4.24,6.84,3.08,2.52,false,.048);
+floor(-1.025,8.95,2.05,2.1,'#85847d','tile');
 // The utility balcony begins directly outside the child-room wall at x=5.83.
 // Its bath end stops at z=6.45; the shower fills the projecting corner.
-floor(6.505,7.825,1.35,2.75,'#b9c2b0');
-floor(6.825,5.50,.71,1.90,'#55585b');
+floor(6.505,7.825,1.35,2.75,'#b9c2b0','tile');
+floor(6.825,5.50,.71,1.90,'#55585b','tile');
 // Foundation and soft ground beneath the miniature.
 box(2.55,-.52,5,9.7,.28,12.2,'#d3dac4',.13);box(2.55,-.72,5,10,.18,12.5,'#bdcbae',.06);
 const ground=new T.Mesh(new T.PlaneGeometry(200,200),new T.ShadowMaterial({color:0x536e48,opacity:.15}));ground.rotation.x=-Math.PI/2;ground.position.y=-.82;ground.receiveShadow=true;scene.add(ground);
@@ -129,8 +154,7 @@ box(-.08,1.08,-.35,.04,.35,.025,C.metal,.009,balconyDoor);
 doorFrames.push(balconyDoor);
 // Window frames and sheer curtain folds at the two north windows.
 const curtains=new T.Group();root.add(curtains);function windowAt(x,w){box(x,1.1,.015,w,1.6,.075,'#607779',.015);box(x,1.12,.062,w-.12,1.38,.018,new T.MeshStandardMaterial({color:'#b9d3d1',roughness:.25,emissive:'#9dbabc',emissiveIntensity:.2}));box(x,1.13,.083,.035,1.38,.025,C.dark);box(x,.53,.083,w,.035,.025,C.dark);for(let i=0;i<14;i++){let xx=x-w/2+.055+i*(w-.11)/13;let m=cyl(xx,1.07,.18,.035,1.68,i%2?'#eeeddf':'#d9dfd3',.035,curtains);m.scale.z=.8}box(x,1.95,.16,w+.14,.06,.1,C.cream,.02)}windowAt(1.67,2.5);windowAt(4.92,2.55);
-// Living area: blue-gray floating console, television, consoles and soundbar.
-box(1.65,.07,2.32,2.7,.06,3.35,'#d6d4bf',.03);for(let i=0;i<12;i++)box(1.65,.107,.75+i*.27,2.65,.006,.011,'#c5c7b5');
+// Living area: the continuous pale oak remains visible around the seating.
 box(.23,.4,2.25,.44,.42,3.2,C.navy,.035);box(.465,.42,1.2,.025,.26,.75,C.white,.008);box(.465,.42,3.25,.025,.26,.75,C.white,.008);box(.465,.42,2.23,.03,.16,.95,C.dark);box(.24,.64,2.28,.43,.045,3.32,C.navy,.014);
 box(.15,1.18,2.1,.095,.93,1.65,'#293b3e',.022);const tvMat=new T.MeshStandardMaterial({color:'#60878b',emissive:'#496b70',emissiveIntensity:.45,roughness:.28});box(.204,1.18,2.1,.012,.83,1.54,tvMat,.009);const tvArt=new T.Group();root.add(tvArt);box(.215,1.18,2.1,.007,.055,.9,'#cadcc8',.002,tvArt);box(.216,1.37,2.1,.006,.11,.41,'#d2d9ad',.01,tvArt);box(.216,1.06,2.1,.006,.04,.65,'#9cb9ac',0,tvArt);
 box(.36,.7,2.1,.13,.09,1.0,C.dark,.025);box(.27,.83,3.36,.13,.35,.19,'#f4f2e8',.026);box(.272,.83,3.25,.10,.34,.018,'#293b3e');box(.32,.72,1.03,.13,.16,.24,'#263f43',.013);box(.32,.72,.885,.14,.17,.07,'#60a7a6',.02);box(.32,.72,1.175,.14,.17,.07,'#ca7064',.02);
@@ -246,39 +270,39 @@ box(3.95,.945,9.61,.72,.035,.43,C.metal,.07);box(3.95,.967,9.61,.59,.025,.32,'#a
 box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x,.984,9.59,.12,.02,C.metal);cyl(x,1,9.59,.08,.023,'#253b3b')}
 // Cabinet above the refrigerator, with its face aligned to the fridge.
 box(1.35,2.24,9.55,.78,.65,.78,'#77736e',.012);
-for(const x of [1.17,1.53])box(x,2.24,9.145,.35,.61,.018,'#9a9690',.005);
+for(const x of [1.17,1.53])box(x,2.24,9.145,.35,.61,.018,'#f2f1ec',.005);
 // Refrigerator-side appliance cabinet, front at z=9.17. From the kitchen
 // opening toward the fridge: a narrow three-tier open shelf, two overhead
 // doors, a cup niche, an open appliance counter, a microwave and robot bay,
 // with drawers in the narrower bay next to the refrigerator.
-const cabinetLinen='#9c9b96',cabinetOak='#a49b88',cabinetInterior='#263535';
+const cabinetFace='#f2f1ec',cabinetInterior='#263535';
 for(const x of [1.76,2.96])box(x,1.30,9.56,.035,2.60,.76,'#797b77',.004);
 box(2.36,2.57,9.56,1.18,.05,.76,'#777b78',.004);
 box(2.24,2.30,9.55,.93,.55,.72,'#858983',.005);
-for(const x of [2.005,2.475])box(x,2.30,9.181,.455,.52,.012,cabinetLinen,.003);
+for(const x of [2.005,2.475])box(x,2.30,9.181,.455,.52,.012,cabinetFace,.003);
 box(2.71,2.28,9.56,.022,.60,.69,'#626967');
 for(const y of [1.79,2.06,2.33])box(2.83,y,9.51,.23,.026,.62,'#92928a',.003);
 box(2.83,1.83,9.89,.23,.46,.012,'#555e5b');
 // Open horizontal cup shelf below the two overhead doors.
 box(2.24,2.01,9.55,.93,.03,.69,'#858981');
-box(2.24,1.77,9.55,.93,.04,.69,cabinetOak);
+box(2.24,1.77,9.55,.93,.04,.69,'#858981');
 box(2.24,1.88,9.89,.91,.18,.014,'#394846');
 for(const x of [2.02,2.20,2.38,2.55])cyl(x,1.815,9.45,.045,.12,'#bfc6c2');
 // Grey wall above the counter and the slim under-cabinet light.
 box(2.36,1.49,9.928,1.16,.51,.008,'#737775');
 box(2.24,1.745,9.28,.93,.018,.055,'#e8e9e3');
-box(2.36,1.20,9.54,1.18,.06,.76,'#d0cabd',.007);
+box(2.36,1.20,9.54,1.18,.06,.76,'#303237',.007);
 // Microwave left and shallow drawer stack right, per the elevation photo.
 box(2.25,.60,9.54,.028,1.16,.73,cabinetInterior);
 box(2.59,.88,9.89,.69,.55,.018,cabinetInterior);
-box(2.59,.61,9.54,.70,.045,.72,cabinetOak);
+box(2.59,.61,9.54,.70,.045,.72,'#454b4b');
 box(2.59,.87,9.14,.58,.42,.04,'#202b2f',.008);
 box(2.56,.88,9.112,.43,.27,.01,'#606d71',.004);
 box(2.83,.87,9.106,.025,.31,.015,'#aeb6b3');
 box(2.59,.19,9.89,.69,.36,.018,cabinetInterior);
 box(2.59,.09,9.53,.69,.035,.72,'#555d59');
 box(2.59,.26,9.53,.43,.26,.44,'#343b3b',.03);
-for(const y of [.92,.67,.42,.17]){box(2.005,y,9.167,.455,.21,.016,cabinetOak,.004);box(2.005,y+.045,9.149,.28,.012,.012,'#3d4947')}
+for(const y of [.92,.67,.42,.17]){box(2.005,y,9.167,.455,.21,.016,cabinetFace,.004);box(2.005,y+.045,9.149,.28,.012,.012,'#d8dad7')}
 // Small countertop appliances preserve the open work surface.
 box(2.66,1.34,9.55,.22,.22,.20,'#f1f0eb',.035);
 box(2.27,1.32,9.50,.30,.18,.18,'#f1f0eb',.04);
