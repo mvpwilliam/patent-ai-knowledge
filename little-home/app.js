@@ -130,8 +130,12 @@ for(const z of [.85,3.21])box(2.67,.55,z,.91,.70,.16,sofaFabric,.055);
 for(let i=0;i<3;i++){let p=box(2.91,.79,1.36+i*.67,.24,.50,.62,sofaSeat,.065);p.rotation.z=-.07}
 // The living room has open floor space in front of the sofa: no coffee table.
 const lampMat=new T.MeshStandardMaterial({color:'#fff1ce',emissive:'#ffe0a1',emissiveIntensity:.5});cyl(2.85,.08,.42,.18,.06,C.metal);rod([2.85,.1,.42],[2.85,1.53,.42],.022,C.metal);ball(2.85,1.56,.42,.18,lampMat);plant(.45,.67,.57,.42);
-// Portrait artwork on the TV wall.
-box(.035,1.12,5.0,.065,.93,.59,'#c4b797',.01);box(.08,1.12,5,.02,.84,.50,C.white);ball(.097,1.21,5,.12,'#384440',[.08,1.25,.75]);box(.097,.96,5,.012,.26,.24,'#384440',.01);
+// The supplied black-and-white print faces the peninsula on the continuous
+// living/dining wall. Its earlier decorative panel has been removed.
+box(.035,1.39,6.69,.046,1.09,.79,'#e7e7e4',.004);
+const artTexture=new T.TextureLoader().load('./assets/black-white-art.jpg');artTexture.colorSpace=T.SRGBColorSpace;
+const print=new T.Mesh(new T.PlaneGeometry(.75,1.04),new T.MeshBasicMaterial({map:artTexture,side:T.DoubleSide}));
+print.rotation.y=Math.PI/2;print.position.set(.061,1.39,6.69);root.add(print);
 // Dining table, curved backs, oak seats and peninsula with oven niches.
 function chair(x,z){for(let dx of [-.20,.20])for(let dz of [-.20,.20])rod([x+dx*1.2,.07,z+dz*1.2],[x+dx,.49,z+dz],.027,C.wood);box(x,.49,z,.49,.08,.48,'#c6c5af',.07);const back=box(x-.21,.78,z,.075,.34,.5,C.woodlight,.05);rod([x-.20,.61,z-.23],[x+.18,.68,z-.23],.023,C.woodlight);rod([x-.20,.61,z+.23],[x+.18,.68,z+.23],.023,C.woodlight)}
 // 135 × 75 cm dining table: its kitchen-side edge (z=6.975) lines up with
@@ -161,23 +165,31 @@ for(const z of [1.12,2.15]){const pillow=box(6.04,.70,z,.45,.17,.71,'#f3ecda',.0
 box(4.74,.77,1.64,.33,.07,1.95,'#8ea48d',.03);
 // Bathroom tiled floor, basin, mirror, toilet and glass shower partition.
 box(5.4,.07,4.58,1.91,.06,1.64,'#55585b');for(let x=4.5;x<6.4;x+=.32)box(x,.105,4.58,.01,.004,1.64,'#777b7c');for(let z=3.8;z<5.4;z+=.32)box(5.4,.105,z,1.9,.004,.01,'#777b7c');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
-// Shower projects beyond the bath toward the balcony and shares its outside
-// x=7.18 wall. It meets the bathroom at x=6.47 through transparent glazing.
+// The shower projects beyond the bath toward the balcony. The L-shaped
+// enclosure has a fixed shaft-side pane, an inward-swinging glass door and
+// a 15 cm return that seals to the end of the wall behind the toilet.
 box(6.825,.07,5.50,.65,.06,1.76,'#55585b');
 const showerGlass=new T.MeshPhysicalMaterial({color:'#c7e0df',transparent:true,opacity:.34,roughness:.08,metalness:0,depthWrite:false,side:T.DoubleSide});
-box(6.47,1.08,5.15,.018,2.05,.78,showerGlass);
-// Two visible glass leaves: a fixed pane and a clear shower door with handle.
-rod([6.47,.1,5.10],[6.47,2.12,5.10],.012,C.metal);
-rod([6.41,.95,5.36],[6.41,1.25,5.36],.013,C.metal);
-// Opaque return at the shaft end forms the shower's left rear side; the
-// bathroom-facing front section remains a framed glass enclosure.
+// Long side follows x=6.62, z=4.76–5.55 (79 cm). The little fixed pane
+// and its slim seal reach the solid shaft wall at the far end.
+box(6.62,1.08,5.485,.018,2.05,.13,showerGlass);
+box(6.585,1.08,5.55,.070,2.05,.018,showerGlass);
+// The short leg is 15 cm, approximately one fifth of the long leg.
+box(6.545,1.08,4.76,.15,2.05,.018,showerGlass);
+for(const x of [6.47,6.62])rod([x,.08,4.76],[x,2.12,4.76],.010,C.metal);
+rod([6.47,2.12,4.76],[6.62,2.12,4.76],.010,C.metal);
+// Hinge at the toilet-side corner. The resting view opens 18 degrees into
+// the shower; the 0–54 degree floor arc stays north of the outer window.
+const showerDoor=new T.Group();showerDoor.position.set(6.62,0,4.76);showerDoor.rotation.y=.314;root.add(showerDoor);
+box(0,1.08,.325,.018,2.05,.65,showerGlass,0,showerDoor);
+rod([-.04,.93,.55],[-.04,1.25,.55],.012,C.metal,showerDoor);
+rod([0,2.12,0],[0,2.12,.65],.011,C.metal,showerDoor);
+for(let j=0;j<18;j+=2){const a=j*Math.PI/60,b=(j+1)*Math.PI/60;rod([6.62+.65*Math.sin(a),.135,4.76+.65*Math.cos(a)],[6.62+.65*Math.sin(b),.135,4.76+.65*Math.cos(b)],.006,'#cfad7d')}
+// Opaque return at the shaft end remains a solid service enclosure.
 box(6.552,1.30,6.00,.032,2.58,.90,'#51565b',.004);
-box(6.465,1.08,4.76,.055,2.14,.04,C.trim,.004);
-box(6.465,1.08,5.54,.055,2.14,.04,C.trim,.004);
-for(const z of [4.76,5.54])rod([6.47,.08,z],[6.47,2.13,z],.012,C.metal);
-rod([6.47,2.14,4.76],[6.47,2.14,5.54],.013,C.metal);
-rod([6.47,.10,4.76],[6.47,.10,5.54],.008,C.metal);
-rod([6.43,.99,5.15],[6.43,1.33,5.15],.014,C.metal);
+rod([6.62,.08,5.42],[6.62,2.13,5.42],.010,C.metal);
+rod([6.62,.08,5.55],[6.62,2.13,5.55],.010,C.metal);
+rod([6.62,2.13,5.42],[6.62,2.13,5.55],.010,C.metal);
 rod([7.04,.12,5.47],[7.04,1.53,5.47],.02,C.metal);rod([7.04,1.53,5.47],[6.84,1.53,5.47],.02,C.metal);cyl(6.84,1.51,5.47,.085,.03,C.metal);
 // Child room: only the bed; the headboard faces the opposite kitchen-side wall.
 box(5.12,.25,7.00,1.1,.35,1.95,C.wood,.06);
