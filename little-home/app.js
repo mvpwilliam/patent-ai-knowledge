@@ -14,28 +14,29 @@ function rod(a,b,r,c,parent=root){let aa=new T.Vector3(...a),bb=new T.Vector3(..
 function plant(x,y,z,scale=1){const p=new T.Group();root.add(p);p.position.set(x,y,z);p.scale.setScalar(scale);cyl(0,.16,0,.19,.32,'#d7c9ab',.14,p);cyl(0,.32,0,.16,.02,'#605c43',.16,p);rod([0,.3,0],[0,1.1,0],.017,'#7b7b52',p);for(let i=0;i<9;i++){let a=i*2.4,yy=.48+i*.074,xx=Math.cos(a)*(.32-i*.014),zz=Math.sin(a)*(.32-i*.014);rod([0,yy-.12,0],[xx,yy,zz],.009,'#7b7b52',p);let leaf=ball(xx,yy,zz,.17,i%2?'#809b65':'#9caa76',[1,.27,.5],p);leaf.rotation.y=-a;}return p}
 const floorGroup=new T.Group();root.add(floorGroup);
 function floor(x,z,w,d,color=C.floor){box(x,-.18,z,w,.32,d,'#c9baa0',.04);box(x,.005,z,w,.06,d,color);for(let zz=z-d/2+.28;zz<z+d/2;zz+=.29){box(x,.04,zz,w,.007,.012,'#cabfa9');for(let xx=x-w/2+(((zz*100)|0)%2?.6:1.3);xx<x+w/2;xx+=1.6)box(xx,.041,zz-.14,.012,.005,.27,'#d2c7b1')}}
-floor(3.2,5,6.4,10);floor(-.6,8.95,1.2,2.1,'#c9c8b9');
+floor(3.2,5,6.4,10);floor(-1.025,8.95,2.05,2.1,'#c9c8b9');
 // The utility balcony begins directly outside the child-room wall at x=5.83.
 // Its bath end stops at z=6.45; the shower fills the projecting corner.
 floor(6.505,7.825,1.35,2.75,'#b9c2b0');
 floor(6.825,5.50,.71,1.90,'#55585b');
 // Foundation and soft ground beneath the miniature.
-box(2.8,-.52,5,9.2,.28,12.2,'#d3dac4',.13);box(2.8,-.72,5,9.5,.18,12.5,'#bdcbae',.06);
+box(2.55,-.52,5,9.7,.28,12.2,'#d3dac4',.13);box(2.55,-.72,5,10,.18,12.5,'#bdcbae',.06);
 const ground=new T.Mesh(new T.PlaneGeometry(200,200),new T.ShadowMaterial({color:0x536e48,opacity:.15}));ground.rotation.x=-Math.PI/2;ground.position.y=-.82;ground.receiveShadow=true;scene.add(ground);
 const walls=[];function wall(x,z,w,d,h=1.15){let g=new T.Group();g.position.set(x,0,z);root.add(g);box(0,h/2,0,w,h,d,C.wall,.018,g);box(0,h+.025,0,w+.045,.05,d+.045,C.trim,.012,g);walls.push(g);return g}
 wall(3.2,-.07,6.55,.15,1.75);wall(-.07,3.9,.15,7.9,2.6);
 wall(6.47,2.25,.15,4.5,2.6); // master and toilet side, ending at the shower glass
 wall(7.18,5.50,.13,1.90,2.6); // projecting shower exterior
-wall(7.18,7.825,.13,2.75,.55); // one outer balcony parapet, no inner passage wall
+wall(7.18,8.335,.13,3.77,.55); // continuous outer parapet, shower stop to AC platform
 // The kitchen backsplash wall and the entrance enclosure reach the ceiling.
 wall(3.2,10.07,6.55,.15,2.6);
 // The square entry projects from the TV-wall side. Its room-facing edge
 // (x=0) is completely open to the dining area and kitchen passage.
-wall(-.65,7.85,1.35,.15,2.6); // continuous return from the TV exterior wall
-wall(-1.27,8.96,.15,2.23,2.6); // closed outward-facing front wall
-wall(-1.235,10.07,.07,.15,2.6); // short corner before kitchen-side door
-wall(-.17,10.07,.34,.15,2.6); // return beyond the door
-wall(-.12,9.94,.48,.42,2.6); // structural column before refrigerator run
+wall(-1.06,7.85,2.12,.15,2.6); // shoe side turns into the TV exterior wall
+wall(-2.05,8.96,.15,2.23,2.6); // solid inner face of the square entry
+wall(-2.0,10.07,.10,.15,2.6); // short corner before the front door
+wall(-.50,10.07,1.0,.15,2.6); // long kitchen wall after the door
+wall(-.67,9.86,.56,.42,2.6); // solid column: door, column, then refrigerator
+wall(6.16,9.635,.66,.87,2.6); // balcony-end column fills the recessed floor
 // Interior walls use a full 2.6 m height; low-wall mode is display-only.
 const ROOM_WALL_HEIGHT=2.6;
 const interiorWalls=[];
@@ -92,9 +93,9 @@ doorFrames.push(g)}
 doorway(3.90,4.5,1.10,false);
 doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
 doorway(3.95,5.55,1.0,false); // child door, x 3.45–4.45 beside the bath
-doorway(-.75,10.07,.90,false); // kitchen-side entry wall, x -1.20 to -.30
+doorway(-1.45,10.07,.90,false); // kitchen-side wall, x -1.90 to -1.00
 // A dark leaf pivots inward toward the small entry square.
-const frontDoor=new T.Group();frontDoor.position.set(-1.18,0,10.00);frontDoor.rotation.y=-.34;root.add(frontDoor);
+const frontDoor=new T.Group();frontDoor.position.set(-1.88,0,10.00);frontDoor.rotation.y=-.34;root.add(frontDoor);
 box(.45,1.03,-.02,.89,2.04,.055,'#292b2b',.01,frontDoor);
 box(.76,1.02,-.09,.13,.045,.025,C.metal,.01,frontDoor);
 doorFrames.push(frontDoor);
@@ -226,21 +227,27 @@ box(1.35,.95,9.52,.73,1.85,.83,'#87928b',.045);for(let yy of [1.39,.85,.34])box(
 // Entry cabinet facing the front door: three upper panels, lit open niche,
 // shallow drawers, lower doors and an open shoe space near the floor.
 const entryWood='#8f8071',entryFace='#9d8c79',entryDark='#313a38';
-for(const x of [-1.13,-.17])box(x,1.22,8.045,.055,2.38,.40,entryDark,.008);
-box(-.65,1.87,8.045,.94,.78,.38,entryWood,.016);
-for(const x of [-.96,-.65,-.34])box(x,1.87,8.245,.295,.73,.018,entryFace,.005);
-box(-.65,1.47,8.24,.91,.025,.40,'#f2deaf',.008);
-box(-.65,1.24,8.02,.90,.43,.035,entryDark,.005);
-box(-.65,1.00,8.22,.94,.06,.42,'#3a4644',.012);
-for(const y of [.84,.69])box(-.65,y,8.245,.89,.135,.025,entryFace,.006);
-box(-.65,.395,8.05,.94,.44,.36,entryWood,.008);
-for(const x of [-.88,-.42])box(x,.395,8.245,.44,.42,.018,entryFace,.005);
-box(-.65,.115,8.04,.91,.035,.39,'#65594a',.005);
+const shoeBox=(x,y,z,w,h,d,c,r=0)=>box(x-.8,y,z,w,h,d,c,r);
+for(const x of [-1.13,-.17])shoeBox(x,1.22,8.045,.055,2.38,.40,entryDark,.008);
+shoeBox(-.65,1.87,8.045,.94,.78,.38,entryWood,.016);
+for(const x of [-.96,-.65,-.34])shoeBox(x,1.87,8.245,.295,.73,.018,entryFace,.005);
+shoeBox(-.65,1.47,8.24,.91,.025,.40,'#f2deaf',.008);
+shoeBox(-.65,1.24,8.02,.90,.43,.035,entryDark,.005);
+shoeBox(-.65,1.00,8.22,.94,.06,.42,'#3a4644',.012);
+for(const y of [.84,.69])shoeBox(-.65,y,8.245,.89,.135,.025,entryFace,.006);
+shoeBox(-.65,.395,8.05,.94,.44,.36,entryWood,.008);
+for(const x of [-.88,-.42])shoeBox(x,.395,8.245,.44,.42,.018,entryFace,.005);
+shoeBox(-.65,.115,8.04,.91,.035,.39,'#65594a',.005);
 // Soft rounded end of the shoe cabinet facing the open dining passage.
-box(-.19,.58,8.045,.14,1.10,.40,entryWood,.065);
-for(const x of [-.83,-.47])box(x,.11,8.29,.21,.075,.30,'#6b5b48',.025);
-box(-.71,.07,9.64,.64,.035,.43,'#9da993',.03);
-box(.37,.91,9.98,.75,1.0,.04,'#42625e',.02);for(let x=.1;x<.7;x+=.12)for(let y=.5;y<1.35;y+=.12)ball(x,y,9.948,.012,'#273f3e');box(.38,.42,9.60,.7,.22,.5,'#adb9a5',.09);for(let x of [.13,.63])box(x,.2,9.6,.05,.36,.28,C.wood);
+shoeBox(-.19,.58,8.045,.14,1.10,.40,entryWood,.065);
+for(const x of [-.83,-.47])shoeBox(x,.11,8.29,.21,.075,.30,'#6b5b48',.025);
+box(-1.50,.07,9.64,.64,.035,.43,'#9da993',.03);
+// The bench and pegboard share the door-opposite side, clear of the long
+// door-column-fridge-sink wall.
+box(-.48,.91,8.03,.75,1.0,.04,'#42625e',.02);
+for(let x=-.76;x<-.16;x+=.12)for(let y=.5;y<1.35;y+=.12)ball(x,y,8.06,.012,'#273f3e');
+box(-.48,.42,8.38,.70,.22,.5,'#adb9a5',.09);
+for(const x of [-.73,-.23])box(x,.2,8.38,.05,.36,.28,C.wood);
 // Utility balcony: washer near the shaft/shower stop; small plants at the
 // kitchen end leave the door clear. The outdoor AC is beyond the structure.
 box(6.60,.49,6.95,.65,.91,.66,C.white,.04);
@@ -249,14 +256,17 @@ let glass=cyl(6.60,.5,6.57,.17,.04,'#405e60');glass.rotation.x=Math.PI/2;
 box(6.60,.82,6.60,.49,.08,.025,'#cfdbd0',.01);
 box(6.60,1.33,6.96,.72,.66,.26,C.cab,.025);
 plant(6.94,.08,8.07,.36);plant(6.94,.08,8.67,.30);
-// Independent service platform outside the kitchen-end structural column.
-box(7.70,-.13,9.64,.98,.22,.90,'#a9aba4',.02);
-box(7.38,-.22,9.61,.12,.36,.70,'#898f87',.01);
-box(7.70,.34,9.64,.78,.67,.55,'#c6c9c5',.025);
-box(7.70,.36,9.355,.68,.53,.025,'#e3e5de',.008);
-const outdoorFan=cyl(7.70,.36,9.33,.22,.025,'#657471');outdoorFan.rotation.x=Math.PI/2;
-for(let i=0;i<8;i++){const a=i*Math.PI/4;rod([7.70,.36,9.31],[7.70+.18*Math.cos(a),.36+.18*Math.sin(a),9.31],.012,'#d0d7d3')}
-box(7.70,.73,9.64,.82,.035,.58,'#979d98',.005);
+// AC platform at the kitchen end: the column occupies the inner half and
+// the platform's outer edge aligns with the unbroken balcony parapet.
+box(6.82,-.13,9.72,.72,.22,1.05,'#a9aba4',.02);
+box(6.82,.34,9.72,.56,.67,.66,'#c6c9c5',.025);
+box(6.82,.36,9.37,.52,.53,.025,'#e3e5de',.008);
+const outdoorFan=cyl(6.82,.36,9.35,.19,.025,'#657471');outdoorFan.rotation.x=Math.PI/2;
+for(let i=0;i<8;i++){const a=i*Math.PI/4;rod([6.82,.36,9.33],[6.82+.16*Math.cos(a),.36+.16*Math.sin(a),9.33],.012,'#d0d7d3')}
+box(6.82,.73,9.72,.61,.035,.67,'#979d98',.005);
+// Guard rail separates the appliance platform from the walkable balcony.
+rod([6.51,.55,9.20],[7.16,.55,9.20],.018,'#899893');
+for(const x of [6.51,6.83,7.16])rod([x,.08,9.20],[x,.55,9.20],.012,'#899893');
 // Small welcoming detail away from the clear dining tabletop.
 plant(.51,.08,4.11,.62);
 let night=false,tv=true,curtainClosed=true,wallLow=false,topView=false;
