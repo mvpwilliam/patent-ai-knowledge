@@ -93,15 +93,16 @@ for(const [a,b] of [[.42,2.92],[3.645,6.195]]){
 wall(-.07,3.9,.15,7.9,2.6);
 wall(6.47,2.25,.15,4.5,2.6); // master and toilet side, ending at the shower glass
 wall(7.18,5.50,.13,1.90,2.6); // projecting shower exterior
-// Balcony elevation: roughly two thirds solid wall and one third airtight
-// glazing, reaching the same 2.6 m height as the adjoining rooms.
-wall(7.18,7.825,.13,2.75,1.73);
+// Balcony elevation: the window sits between a lower wall and a solid
+// header. Together the two solid portions occupy about two thirds of 2.6 m.
+wall(7.18,7.825,.13,2.75,1.43);
 wall(7.18,9.71,.13,1.02,.55);
 const balconyEastWindow=new T.Group();balconyEastWindow.position.set(7.18,0,7.825);root.add(balconyEastWindow);
+box(0,2.45,0,.13,.30,2.75,C.wall,.008,balconyEastWindow);
 const balconyPane=new T.MeshPhysicalMaterial({color:'#bed8d9',transparent:true,opacity:.35,roughness:.10,depthWrite:false,side:T.DoubleSide});
-box(0,2.165,0,.025,.82,2.60,balconyPane,0,balconyEastWindow);
-for(const z of [-1.335,0,1.335])box(0,2.165,z,.065,.87,.045,'#43494a',.002,balconyEastWindow);
-for(const y of [1.755,2.575])box(0,y,0,.07,.05,2.70,'#43494a',.002,balconyEastWindow);
+box(0,1.865,0,.025,.82,2.60,balconyPane,0,balconyEastWindow);
+for(const z of [-1.335,0,1.335])box(0,1.865,z,.065,.87,.045,'#43494a',.002,balconyEastWindow);
+for(const y of [1.455,2.275])box(0,y,0,.07,.05,2.70,'#43494a',.002,balconyEastWindow);
 walls.push(balconyEastWindow);
 // The kitchen backsplash wall and the entrance enclosure reach the ceiling.
 wall(3.2,10.07,6.55,.15,2.6);
@@ -139,11 +140,12 @@ partition(6.47,4.63,.13,.26); // solid return on the bath-side corner of shower
 // The bath-facing end is solid. The airtight end window belongs opposite
 // it, at the kitchen/AC-platform end of the balcony.
 partition(6.825,6.45,.71,.13);
-wall(6.825,9.20,.71,.13,1.73);
+wall(6.825,9.20,.71,.13,1.43);
 const balconySouthWindow=new T.Group();balconySouthWindow.position.set(6.825,0,9.20);root.add(balconySouthWindow);
-box(0,2.165,0,.62,.82,.025,balconyPane,0,balconySouthWindow);
-for(const x of [-.335,.335])box(x,2.165,0,.045,.87,.065,'#43494a',.002,balconySouthWindow);
-for(const y of [1.755,2.575])box(0,y,0,.67,.05,.07,'#43494a',.002,balconySouthWindow);
+box(0,2.45,0,.71,.30,.13,C.wall,.008,balconySouthWindow);
+box(0,1.865,0,.62,.82,.025,balconyPane,0,balconySouthWindow);
+for(const x of [-.335,.335])box(x,1.865,0,.045,.87,.065,'#43494a',.002,balconySouthWindow);
+for(const y of [1.455,2.275])box(0,y,0,.67,.05,.07,'#43494a',.002,balconySouthWindow);
 walls.push(balconySouthWindow);
 // Full-height outward shower wall, aligned with the master-bedroom window
 // elevation. The 60 x 90 cm window has a 120 cm sill and a 50 cm header.
