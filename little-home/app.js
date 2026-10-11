@@ -132,10 +132,10 @@ for(let i=0;i<3;i++){let p=box(2.91,.79,1.36+i*.67,.24,.50,.62,sofaSeat,.065);p.
 const lampMat=new T.MeshStandardMaterial({color:'#fff1ce',emissive:'#ffe0a1',emissiveIntensity:.5});cyl(2.85,.08,.42,.18,.06,C.metal);rod([2.85,.1,.42],[2.85,1.53,.42],.022,C.metal);ball(2.85,1.56,.42,.18,lampMat);plant(.45,.67,.57,.42);
 // The supplied black-and-white print faces the peninsula on the continuous
 // living/dining wall. Its earlier decorative panel has been removed.
-box(.035,1.39,6.69,.046,1.09,.79,'#e7e7e4',.004);
+box(.035,1.39,7.22,.046,1.09,.79,'#e7e7e4',.004);
 const artTexture=new T.TextureLoader().load('./assets/black-white-art.jpg');artTexture.colorSpace=T.SRGBColorSpace;
 const print=new T.Mesh(new T.PlaneGeometry(.75,1.04),new T.MeshBasicMaterial({map:artTexture,side:T.DoubleSide}));
-print.rotation.y=Math.PI/2;print.position.set(.061,1.39,6.69);root.add(print);
+print.rotation.y=Math.PI/2;print.position.set(.061,1.39,7.22);root.add(print);
 // Dining table, curved backs, oak seats and peninsula with oven niches.
 function chair(x,z){for(let dx of [-.20,.20])for(let dz of [-.20,.20])rod([x+dx*1.2,.07,z+dz*1.2],[x+dx,.49,z+dz],.027,C.wood);box(x,.49,z,.49,.08,.48,'#c6c5af',.07);const back=box(x-.21,.78,z,.075,.34,.5,C.woodlight,.05);rod([x-.20,.61,z-.23],[x+.18,.68,z-.23],.023,C.woodlight);rod([x-.20,.61,z+.23],[x+.18,.68,z+.23],.023,C.woodlight)}
 // 135 × 75 cm dining table: its kitchen-side edge (z=6.975) lines up with
