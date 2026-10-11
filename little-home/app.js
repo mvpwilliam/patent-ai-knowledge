@@ -55,9 +55,25 @@ entryTileShape.computeVertexNormals();
 const entryTile=new T.Mesh(entryTileShape,new T.MeshStandardMaterial({color:'#85847d',roughness:.88,side:T.DoubleSide}));
 entryTile.receiveShadow=true;root.add(entryTile);
 rod([0,.058,8.15],[1.30,.058,9.30],.009,'#77776f');
-// The utility balcony begins directly outside the child-room wall at x=5.83.
-// Its bath end stops at z=6.45; the shower fills the projecting corner.
-floor(6.505,7.825,1.35,2.75,'#b9c2b0','tile');
+// Brown ceramic balcony squares with cool grey grout and soft horizontal
+// grain follow the actual floor photograph, independent of the indoor wood.
+const tileCanvas=document.createElement('canvas');tileCanvas.width=128;tileCanvas.height=128;
+const tileCtx=tileCanvas.getContext('2d'),tilePixels=tileCtx.createImageData(128,128);
+for(let py=0;py<128;py++)for(let px=0;px<128;px++){
+  const i=(py*128+px)*4,grain=6*Math.sin(py*.42)+3*Math.sin(py*.11+px*.03);
+  const fleck=(Math.sin(px*12.9898+py*78.233)*43758.5453)%1;
+  const shade=grain+fleck*7;
+  tilePixels.data[i]=143+shade;tilePixels.data[i+1]=125+shade;tilePixels.data[i+2]=106+shade;tilePixels.data[i+3]=255;
+}
+tileCtx.putImageData(tilePixels,0,0);
+const balconyTileTexture=new T.CanvasTexture(tileCanvas);balconyTileTexture.colorSpace=T.SRGBColorSpace;
+const balconyTileMat=new T.MeshStandardMaterial({map:balconyTileTexture,roughness:.85});
+box(6.505,-.18,7.825,1.35,.32,2.75,'#c9baa0',.04);
+box(6.505,.005,7.825,1.35,.06,2.75,'#a5aeb0');
+for(let tx=5.83;tx<7.18-.001;tx+=.45)for(let tz=6.45;tz<9.20-.001;tz+=.45){
+  const w=Math.min(.45,7.18-tx),d=Math.min(.45,9.20-tz);
+  box(tx+w/2,.042,tz+d/2,w-.018,.012,d-.018,balconyTileMat,.001);
+}
 floor(6.825,5.50,.71,1.90,'#55585b','tile');
 // Foundation and soft ground beneath the miniature.
 box(2.55,-.52,5,9.7,.28,12.2,'#d3dac4',.13);box(2.55,-.72,5,10,.18,12.5,'#bdcbae',.06);
@@ -112,7 +128,7 @@ partition(3.05,5.55,.8,.13); // short wall above the child door
 partition(2.65,6.875,.13,2.65); // child-room wall along the dining area
 partition(4.24,8.2,3.18,.13); // child-room wall along the kitchen
 partition(5.83,6.275,.13,1.45); // single solid wall from bath corner to window
-partition(5.83,8.01,.13,.22); // jamb beside the opposite kitchen wall
+partition(5.83,8.08,.13,.36); // jamb closes the child-room edge before balcony door
 partition(5.83,9.595,.13,.95); // tiled return between balcony door and hob
 const applianceDivider=partition(3.05,9.68,.13,.78); // shared kitchen/appliance wall
 applianceDivider.children.forEach(part=>part.material=mat('#696b6a'));
@@ -121,15 +137,16 @@ applianceDivider.children.forEach(part=>part.material=mat('#696b6a'));
 const serviceShaft=wall(6.15,6.00,.64,.90,2.6);
 partition(6.47,6.00,.13,.90); // shaft / projecting shower side
 partition(6.47,4.63,.13,.26); // solid return on the bath-side corner of shower
-// At the north end a matching airtight window closes the balcony against
-// the projecting bath wall; both elevations rise to the 2.6 m room height.
-wall(6.825,6.45,.71,.13,.65);
-const balconyNorthWindow=new T.Group();balconyNorthWindow.position.set(6.825,0,6.45);root.add(balconyNorthWindow);
-box(0,2.365,0,.71,.47,.13,C.wall,.008,balconyNorthWindow);
-box(0,1.39,0,.62,1.48,.025,balconyPane,0,balconyNorthWindow);
-for(const x of [-.335,.335])box(x,1.39,0,.045,1.50,.065,'#43494a',.002,balconyNorthWindow);
-for(const y of [.65,2.13])box(0,y,0,.67,.055,.07,'#43494a',.002,balconyNorthWindow);
-walls.push(balconyNorthWindow);
+// The bath-facing end is solid. The airtight end window belongs opposite
+// it, at the kitchen/AC-platform end of the balcony.
+partition(6.825,6.45,.71,.13);
+wall(6.825,9.20,.71,.13,.65);
+const balconySouthWindow=new T.Group();balconySouthWindow.position.set(6.825,0,9.20);root.add(balconySouthWindow);
+box(0,2.365,0,.71,.47,.13,C.wall,.008,balconySouthWindow);
+box(0,1.39,0,.62,1.48,.025,balconyPane,0,balconySouthWindow);
+for(const x of [-.335,.335])box(x,1.39,0,.045,1.50,.065,'#43494a',.002,balconySouthWindow);
+for(const y of [.65,2.13])box(0,y,0,.67,.055,.07,'#43494a',.002,balconySouthWindow);
+walls.push(balconySouthWindow);
 // Full-height outward shower wall, aligned with the master-bedroom window
 // elevation. The 60 x 90 cm window has a 120 cm sill and a 50 cm header.
 const showerWindowWall=new T.Group();showerWindowWall.position.set(6.825,0,4.55);root.add(showerWindowWall);
@@ -169,9 +186,9 @@ const frontDoor=new T.Group();frontDoor.position.set(-1.88,0,10.00);frontDoor.ro
 box(.45,1.03,-.02,.89,2.04,.055,'#292b2b',.01,frontDoor);
 box(.76,1.02,-.09,.13,.045,.025,C.metal,.01,frontDoor);
 doorFrames.push(frontDoor);
-// Kitchen access to the utility balcony occupies z 8.12–9.12, biased
-// toward the opposite tiled wall, leaving a tiled return beside the hob.
-const balconyDoor=new T.Group();balconyDoor.position.set(5.83,0,8.62);root.add(balconyDoor);
+// The full door frame stays within the kitchen segment of the shared wall,
+// past the child-room corner at z 8.20.
+const balconyDoor=new T.Group();balconyDoor.position.set(5.83,0,8.68);balconyDoor.scale.z=.88;root.add(balconyDoor);
 for(const z of [-.48,.48])box(0,1.12,z,.12,2.24,.07,'#24272a',.008,balconyDoor);
 // The left jamb faces the kitchen and sits proud of the tiled end wall.
 box(-.092,1.12,-.49,.045,2.24,.105,'#151b1d',.003,balconyDoor);
