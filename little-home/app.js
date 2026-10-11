@@ -28,7 +28,14 @@ wall(6.47,2.25,.15,4.5,2.6); // master and toilet side, ending at the shower gla
 wall(7.18,5.50,.13,1.90,2.6); // projecting shower exterior
 wall(7.18,7.825,.13,2.75,.55); // one outer balcony parapet, no inner passage wall
 // The kitchen backsplash wall and the entrance enclosure reach the ceiling.
-wall(3.2,10.07,6.55,.15,2.6);wall(-1.27,8.95,.15,2.25,2.6);wall(-.65,7.85,1.35,.15,2.6);wall(-.93,10.07,.65,.15,2.6);
+wall(3.2,10.07,6.55,.15,2.6);
+// The square entry projects from the TV-wall side. Its room-facing edge
+// (x=0) is completely open to the dining area and kitchen passage.
+wall(-.65,7.85,1.35,.15,2.6); // continuous return from the TV exterior wall
+wall(-1.27,8.20,.15,.70,2.6); // exterior wall above the entry door
+wall(-.59,10.07,1.22,.15,2.6); // kitchen-side exterior return
+wall(-1.27,9.83,.15,.48,2.6); // short solid wall below the entry door
+wall(-1.03,9.82,.48,.50,2.6); // structural column before refrigerator run
 // Interior walls use a full 2.6 m height; low-wall mode is display-only.
 const ROOM_WALL_HEIGHT=2.6;
 const interiorWalls=[];
@@ -52,6 +59,17 @@ const serviceShaft=wall(6.15,6.00,.64,.90,2.6);
 partition(6.47,6.00,.13,.90); // shaft / projecting shower side
 partition(6.47,4.63,.13,.26); // solid return on the bath-side corner of shower
 partition(6.825,6.45,.71,.13); // solid stop at the balcony's bath end
+// Full-height outward shower wall, aligned with the master-bedroom window
+// elevation. The 60 x 90 cm window has a 120 cm sill and a 50 cm header.
+const showerWindowWall=new T.Group();showerWindowWall.position.set(6.825,0,4.55);root.add(showerWindowWall);
+box(0,.60,0,.71,1.20,.13,C.wall,.008,showerWindowWall);
+box(0,2.35,0,.71,.50,.13,C.wall,.008,showerWindowWall);
+for(const x of [-.3275,.3275])box(x,1.65,0,.055,.90,.13,C.wall,.006,showerWindowWall);
+const showerWindowGlass=new T.MeshPhysicalMaterial({color:'#a7c5c9',transparent:true,opacity:.48,roughness:.1,depthWrite:false,side:T.DoubleSide});
+box(0,1.65,0,.60,.90,.025,showerWindowGlass,0,showerWindowWall);
+for(const x of [-.30,.30])box(x,1.65,0,.025,.90,.15,C.trim,.003,showerWindowWall);
+for(const y of [1.20,2.10])box(0,y,0,.62,.035,.15,C.trim,.003,showerWindowWall);
+walls.push(showerWindowWall);
 // The floor finish plan locates this window at the kitchen end of the child
 // room's balcony wall; the bath end remains a solid full-height wall.
 const childWindow=new T.Group();childWindow.position.set(5.83,0,7.45);root.add(childWindow);
@@ -74,6 +92,12 @@ doorFrames.push(g)}
 doorway(3.90,4.5,1.10,false);
 doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
 doorway(3.95,5.55,1.0,false); // child door, x 3.45–4.45 beside the bath
+doorway(-1.27,9.03,1.0); // front entrance, toward the kitchen end
+// A dark inward-opening leaf and handle sit inside the exterior frame.
+const frontDoor=new T.Group();frontDoor.position.set(-1.18,0,8.56);frontDoor.rotation.y=-.30;root.add(frontDoor);
+box(.02,1.03,.46,.055,2.04,.89,'#292b2b',.01,frontDoor);
+box(.08,1.02,.76,.025,.045,.13,C.metal,.01,frontDoor);
+doorFrames.push(frontDoor);
 // Kitchen access to the utility balcony occupies z 8.2–9.2 beside the hob.
 // The real door has a black frame, dark glazed panel and short fabric curtain.
 const balconyDoor=new T.Group();balconyDoor.position.set(5.83,0,8.70);root.add(balconyDoor);
@@ -142,6 +166,9 @@ box(5.4,.07,4.58,1.91,.06,1.64,'#55585b');for(let x=4.5;x<6.4;x+=.32)box(x,.105,
 box(6.825,.07,5.50,.65,.06,1.76,'#55585b');
 const showerGlass=new T.MeshPhysicalMaterial({color:'#c7e0df',transparent:true,opacity:.34,roughness:.08,metalness:0,depthWrite:false,side:T.DoubleSide});
 box(6.47,1.08,5.15,.018,2.05,.78,showerGlass);
+// Two visible glass leaves: a fixed pane and a clear shower door with handle.
+rod([6.47,.1,5.10],[6.47,2.12,5.10],.012,C.metal);
+rod([6.41,.95,5.36],[6.41,1.25,5.36],.013,C.metal);
 // Opaque return at the shaft end forms the shower's left rear side; the
 // bathroom-facing front section remains a framed glass enclosure.
 box(6.552,1.30,6.00,.032,2.58,.90,'#51565b',.004);
@@ -197,9 +224,11 @@ for(const y of [.84,.69])box(-.65,y,8.245,.89,.135,.025,entryFace,.006);
 box(-.65,.395,8.05,.94,.44,.36,entryWood,.008);
 for(const x of [-.88,-.42])box(x,.395,8.245,.44,.42,.018,entryFace,.005);
 box(-.65,.115,8.04,.91,.035,.39,'#65594a',.005);
+// Soft rounded end of the shoe cabinet facing the open dining passage.
+box(-.19,.58,8.045,.14,1.10,.40,entryWood,.065);
 for(const x of [-.83,-.47])box(x,.11,8.29,.21,.075,.30,'#6b5b48',.025);
 box(-.71,.07,9.64,.64,.035,.43,'#9da993',.03);
-box(.37,.91,9.98,.75,1.0,.04,'#42625e',.02);for(let x=.1;x<.7;x+=.12)for(let y=.5;y<1.35;y+=.12)ball(x,y,9.948,.012,'#273f3e');box(.38,.42,9.60,.7,.22,.5,'#adb9a5',.09);for(let x of [.13,.63])box(x,.2,9.6,.05,.36,.28,C.wood);box(-1.16,.94,9.06,.04,1.46,.66,'#829b95',.025);
+box(.37,.91,9.98,.75,1.0,.04,'#42625e',.02);for(let x=.1;x<.7;x+=.12)for(let y=.5;y<1.35;y+=.12)ball(x,y,9.948,.012,'#273f3e');box(.38,.42,9.60,.7,.22,.5,'#adb9a5',.09);for(let x of [.13,.63])box(x,.2,9.6,.05,.36,.28,C.wood);
 // Utility balcony: washer near the shaft/shower stop; small plants at the
 // kitchen end leave the door clear. The outdoor AC is beyond the structure.
 box(6.60,.49,6.95,.65,.91,.66,C.white,.04);
@@ -223,15 +252,16 @@ let theta=.77,phi=.76,dist=19.5,target=new T.Vector3(2.9,.2,5),desiredTarget=tar
 const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃、灰色 Bergamo 三人座沙發，還有窗邊的一點綠意。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 洗衣與日光',desc:'靠浴室端是洗衣機，另一端經玻璃門接回廚房。冷氣室外機在柱外小平台。',pos:[6.55,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'鞋櫃、穿鞋椅和深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
 let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{tv=!tv;tvMat.color.set(tv?'#60878b':'#263b3e');tvMat.emissiveIntensity=tv?.45:0;tvArt.visible=tv;selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
 document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');lampMat.emissiveIntensity=night?3:.5;renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
-// Single-finger drag rotates. Two fingers pan by their midpoint and pinch to
-// zoom. The separate buttons shift the camera target horizontally on phones.
+// One finger pans by default; the visible switch restores orbit rotation.
+// Two fingers pan by their midpoint and pinch to zoom.
 function clampPan(){desiredTarget.x=Math.max(-1.5,Math.min(8.5,desiredTarget.x));desiredTarget.z=Math.max(-.5,Math.min(10.5,desiredTarget.z))}
 function panByPixels(dx,dy){const r=desiredDist*(portrait?1.37:1);const scale=1.1*r*Math.tan(camera.fov*Math.PI/360)/Math.max(1,host.clientHeight);desiredTarget.x+=(-dx*Math.cos(theta)+dy*Math.sin(theta))*scale;desiredTarget.z+=(dx*Math.sin(theta)+dy*Math.cos(theta))*scale;clampPan()}
 function panHorizontal(amount){desiredTarget.x+=amount*Math.cos(theta);desiredTarget.z-=amount*Math.sin(theta);clampPan()}
 $('#pan-left').onclick=()=>panHorizontal(.8);$('#pan-right').onclick=()=>panHorizontal(-.8);
+let dragMode='pan';$('#drag-mode').onclick=()=>{dragMode=dragMode==='pan'?'rotate':'pan';$('#drag-mode').textContent=dragMode==='pan'?'單指：平移':'單指：旋轉';$('#drag-mode').setAttribute('aria-pressed',dragMode==='pan');toast(dragMode==='pan'?'單指拖曳可左右移動畫面':'單指拖曳可旋轉視角')};
 const pointers=new Map();let lastX=0,lastY=0,pinch=0,midX=0,midY=0;
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});lastX=e.clientX;lastY=e.clientY;if(pointers.size===2){const p=[...pointers.values()];pinch=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);midX=(p[0].x+p[1].x)/2;midY=(p[0].y+p[1].y)/2}});
-canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1){theta-=(e.clientX-lastX)*.006;phi=Math.max(.045,Math.min(1.22,phi+(e.clientY-lastY)*.004));if(topView){topView=false;$('#top').setAttribute('aria-pressed',false)}}else if(pointers.size===2){const p=[...pointers.values()],n=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),x=(p[0].x+p[1].x)/2,y=(p[0].y+p[1].y)/2;panByPixels(x-midX,y-midY);if(n>5&&pinch>5)desiredDist=Math.max(5,Math.min(30,desiredDist*pinch/n));pinch=n;midX=x;midY=y}lastX=e.clientX;lastY=e.clientY});
+canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1){if(dragMode==='pan')panByPixels(e.clientX-lastX,e.clientY-lastY);else{theta-=(e.clientX-lastX)*.006;phi=Math.max(.045,Math.min(1.22,phi+(e.clientY-lastY)*.004));if(topView){topView=false;$('#top').setAttribute('aria-pressed',false)}}}else if(pointers.size===2){const p=[...pointers.values()],n=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),x=(p[0].x+p[1].x)/2,y=(p[0].y+p[1].y)/2;panByPixels(x-midX,y-midY);if(n>5&&pinch>5)desiredDist=Math.max(5,Math.min(30,desiredDist*pinch/n));pinch=n;midX=x;midY=y}lastX=e.clientX;lastY=e.clientY});
 function release(e){pointers.delete(e.pointerId);pinch=0;if(pointers.size){const p=[...pointers.values()][0];lastX=p.x;lastY=p.y}}
 canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
