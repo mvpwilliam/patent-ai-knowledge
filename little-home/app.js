@@ -334,15 +334,16 @@ for(const x of [2.005,2.475])box(x,2.30,9.181,.455,.52,.012,cabinetFace,.003);
 box(2.71,2.28,9.56,.022,.60,.69,lightCabinet);
 for(const y of [1.79,2.06,2.33])box(2.83,y,9.51,.23,.026,.62,lightCabinet,.003);
 box(2.83,1.83,9.89,.23,.46,.012,lightCabinet);
-// Open horizontal cup shelf below the two overhead doors.
+// Open display shelf below the two overhead doors. A full-depth vertical
+// divider closes its left edge against the adjacent narrow open shelves.
 box(2.24,2.01,9.55,.93,.03,.69,lightCabinet);
 box(2.24,1.77,9.55,.93,.04,.69,lightCabinet);
 box(2.24,1.88,9.89,.91,.18,.014,lightCabinet);
-for(const x of [2.02,2.20,2.38,2.55])cyl(x,1.815,9.45,.045,.12,'#bfc6c2');
+box(2.71,1.89,9.55,.035,.25,.69,lightCabinet,.002);
 // Grey wall above the counter and the slim under-cabinet light.
 box(2.36,1.49,9.928,1.16,.51,.008,lightCabinet);
 box(2.24,1.745,9.28,.93,.018,.055,'#e8e9e3');
-box(2.36,1.20,9.54,1.18,.06,.76,C.wall,.007);
+box(2.36,1.20,9.54,1.18,.06,.76,'#303237',.007);
 // Microwave left and shallow drawer stack right, per the elevation photo.
 box(2.25,.60,9.54,.028,1.16,.73,cabinetInterior);
 box(2.59,.88,9.89,.69,.55,.018,cabinetInterior);

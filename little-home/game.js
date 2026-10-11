@@ -1,5 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js';
+import {findPath} from './navigation.js';
 
 const scene=window.homeScene?.scene;
 const $=s=>document.querySelector(s);
@@ -15,8 +16,22 @@ let avatar=safeRead('little-home-avatar',{name:'小屋主',skin:'#e9b990',hair:'
 let tasks=safeRead('little-home-tasks',defaults);
 let hour=Math.floor(Date.now()/3600000),claims={};
 let mode='preview',auth=null,db=null,api=null,user=null,homeId='',unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
-let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=0,poseStarted=0;
-const routePoints=[[1.35,4.3],[1.7,5.7],[2.0,7.35],[2.32,8.75],[1.65,7.25],[1.25,5.2],[1.35,3.5],[1.7,1.4],[2.18,1.15]];
+let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0;
+const stops=[[1.35,4.25],[1.2,3.7],[1.15,1.25],[.7,2.6],[.72,4.8],[.68,6.1],[.70,7.8],[.65,8.65]];
+const tour=stops.flatMap((point,i)=>findPath(point,stops[(i+1)%stops.length]).slice(i?1:0));
+const tourLengths=tour.map((point,i)=>Math.hypot(point[0]-tour[(i+1)%tour.length][0],point[1]-tour[(i+1)%tour.length][1]));
+const tourDistance=tourLengths.reduce((a,b)=>a+b,0);
+function pointOnTour(distance){
+  let remaining=distance%tourDistance;
+  for(let i=0;i<tour.length;i++){
+    if(remaining<=tourLengths[i]){
+      const p=tour[i],q=tour[(i+1)%tour.length],t=tourLengths[i]?remaining/tourLengths[i]:0;
+      return [p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t,Math.atan2(q[0]-p[0],q[1]-p[1])];
+    }
+    remaining-=tourLengths[i];
+  }
+  return [tour[0][0],tour[0][1],0];
+}
 const outfit=v=>({name:String(v.name||'小屋主').slice(0,12),skin:v.skin||'#e9b990',hair:v.hair||'bob',hairColor:v.hairColor||'#4d3834',shirt:v.shirt||'#7899a0'});
 const toast=s=>{const e=$('#toast');e.textContent=s;e.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>e.classList.remove('show'),2600)};
 const boundedCode=s=>s.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,24);
@@ -46,7 +61,7 @@ function makeCharacter(v){
 function setCharacter(v){
   if(!scene)return;
   if(character)scene.remove(character);
-  character=makeCharacter(v);scene.add(character);character.position.set(1.35,.07,4.3);
+  character=makeCharacter(v);scene.add(character);character.position.set(tour[0][0],.07,tour[0][1]);route=1;
   if(pose!=='walk')setPose(pose);
 }
 function setPose(next){
@@ -56,7 +71,7 @@ function setPose(next){
   if(next==='sit'){character.position.set(2.48,.52,2.03);character.rotation.y=Math.PI/2}
   if(next==='lie'){character.position.set(4.86,.47,1.7);character.rotation.y=0}
   if(next==='stand'){character.position.set(1.55,.07,5.9);character.rotation.y=0}
-  if(next==='walk'){character.position.set(...[routePoints[0][0],.07,routePoints[0][1]]);route=1}
+  if(next==='walk'){character.position.set(tour[0][0],.07,tour[0][1]);route=1}
   toast(({walk:'開始在家裡散步',stand:'站在餐廳',sit:'坐在沙發',lie:'躺在主臥床上'})[next]);
 }
 function animate(now){
@@ -64,8 +79,8 @@ function animate(now){
   const dt=Math.min(.06,(now-lastFrame)/1000||0);lastFrame=now;
   const b=character.userData.body;
   if(pose==='walk'){
-    const [x,z]=routePoints[route],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
-    if(d<.08)route=(route+1)%routePoints.length;
+    const [x,z]=tour[route],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
+    if(d<.04)route=(route+1)%tour.length;
     else {const move=Math.min(d,dt*.53);character.position.x+=dx/d*move;character.position.z+=dz/d*move;character.rotation.y=Math.atan2(dx,dz)}
     step+=dt*10;b.position.y=Math.abs(Math.sin(step))*.028;b.rotation.z=Math.sin(step)*.035;b.rotation.x=0;
   }else if(pose==='sit'){
@@ -74,9 +89,9 @@ function animate(now){
     b.position.y=0;b.rotation.x=-Math.PI/2;b.rotation.z=0;
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
   for(const [id,item] of characters){
-    const t=now*.00015+(item.seed%100);
-    item.mesh.position.set(1.5+Math.sin(t)*.37,.07,5.25+Math.cos(t)*.44);
-    item.mesh.rotation.y=-t;
+    const [x,z,angle]=pointOnTour(now*.00043+item.seed*.17);
+    item.mesh.position.set(x,.07,z);
+    item.mesh.rotation.y=angle;
     item.mesh.userData.body.position.y=Math.abs(Math.sin(now*.006+item.seed))*.02;
   }
 }
