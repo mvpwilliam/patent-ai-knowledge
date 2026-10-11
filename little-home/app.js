@@ -44,6 +44,17 @@ floor(6.115,9.60,.57,.80);
 // The second-bedroom boards turn 90 degrees, following the flooring plan.
 box(4.24,.042,6.84,3.08,.004,2.52,C.floor);woodBoards(4.24,6.84,3.08,2.52,false,.048);
 floor(-1.025,8.95,2.05,2.1,'#85847d','tile');
+// The revised entry tile cuts diagonally into the indoor wood toward the
+// refrigerator. Its surface sits just above the boards in this small wedge.
+const entryTileShape=new T.BufferGeometry();
+entryTileShape.setAttribute('position',new T.Float32BufferAttribute([
+  0,.052,8.15, 1.30,.052,9.30, 1.30,.052,10.0,
+  0,.052,8.15, 1.30,.052,10.0, 0,.052,10.0
+],3));
+entryTileShape.computeVertexNormals();
+const entryTile=new T.Mesh(entryTileShape,new T.MeshStandardMaterial({color:'#85847d',roughness:.88,side:T.DoubleSide}));
+entryTile.receiveShadow=true;root.add(entryTile);
+rod([0,.058,8.15],[1.30,.058,9.30],.009,'#77776f');
 // The utility balcony begins directly outside the child-room wall at x=5.83.
 // Its bath end stops at z=6.45; the shower fills the projecting corner.
 floor(6.505,7.825,1.35,2.75,'#b9c2b0','tile');
@@ -360,6 +371,18 @@ box(-1.948,1.10,9.58,.006,2.16,.69,mirrorMat);
 // ceiling height down to about one third of the refrigerator height.
 box(.40,1.907,9.970,.88,1.386,.008,'#37494a',.002);
 for(let x=.02;x<.80;x+=.11)for(let y=1.25;y<2.56;y+=.11)ball(x,y,9.962,.008,'#1f2d2e');
+// A single dark bent-wood nesting table under the pegboard: rounded bridge
+// top and curved returns, open beneath it like the reference piece.
+const bentTableProfile=new T.Shape();
+bentTableProfile.moveTo(-.35,0);bentTableProfile.lineTo(-.35,.45);
+bentTableProfile.quadraticCurveTo(-.35,.55,-.25,.55);
+bentTableProfile.lineTo(.25,.55);bentTableProfile.quadraticCurveTo(.35,.55,.35,.45);
+bentTableProfile.lineTo(.35,0);bentTableProfile.lineTo(.285,0);
+bentTableProfile.lineTo(.285,.42);bentTableProfile.quadraticCurveTo(.285,.48,.225,.48);
+bentTableProfile.lineTo(-.225,.48);bentTableProfile.quadraticCurveTo(-.285,.48,-.285,.42);
+bentTableProfile.lineTo(-.285,0);bentTableProfile.closePath();
+const bentTable=new T.Mesh(new T.ExtrudeGeometry(bentTableProfile,{depth:.36,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:2,curveSegments:10}),mat('#222323'));
+bentTable.position.set(.40,.055,9.43);bentTable.castShadow=true;bentTable.receiveShadow=true;root.add(bentTable);
 // Leave the walkable utility balcony completely clear.
 // AC platform at the kitchen end: the column occupies the inner half and
 // the platform's outer edge aligns with the unbroken balcony parapet.
