@@ -11,13 +11,20 @@ const obstacles=[
   [1.00,3.07,9.04,10.10],// refrigerator and appliance cabinet
   [3.10,5.85,9.31,10.10],// kitchen base cabinets
   [2.57,2.72,5.50,8.21], // child-bedroom wall
-  [3.27,3.43,0,4.50]     // master-bedroom wall
+  [3.27,3.43,0,4.50],    // master-bedroom wall
+  [4.45,5.01,3.76,4.46], // bathroom basin
+  [5.48,6.10,3.85,4.57], // toilet
+  [6.18,6.83,6.50,7.23] // washer: approach from its front
 ];
 export function walkable(x,z){
-  if(x<.30||z<.37||z>9.00)return false;
-  if(z<4.50&&x>3.12)return false;
-  if(z>=4.50&&z<8.22&&x>2.43)return false;
-  if(z>=8.22&&x>3.00)return false;
+  const inLiving=x>=.30&&x<=3.12&&z>=.37&&z<=4.50;
+  const inHall=x>=.30&&x<=4.56&&z>=4.50&&z<=5.38;
+  const inBath=x>=4.45&&x<=6.27&&z>=4.56&&z<=5.36;
+  const inDining=x>=.30&&x<=2.43&&z>=5.38&&z<=8.22;
+  const inKitchen=x>=.30&&x<=5.70&&z>=8.22&&z<=9.00;
+  const inBalcony=x>=6.02&&x<=6.96&&z>=7.23&&z<=9.00;
+  const inBalconyDoor=x>=5.68&&x<=6.08&&z>=8.40&&z<=8.96;
+  if(!(inLiving||inHall||inBath||inDining||inKitchen||inBalcony||inBalconyDoor))return false;
   return !obstacles.some(([a,b,c,d])=>x>=a-radius&&x<=b+radius&&z>=c-radius&&z<=d+radius);
 }
 const key=(i,j)=>i+','+j;
@@ -32,7 +39,7 @@ const nearest=([x,z])=>{
   return best;
 };
 const canSee=(a,b)=>{
-  const n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.05);
+  const n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.01);
   for(let i=0;i<=n;i++){const t=i/n;if(!walkable(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t))return false}
   return true;
 };

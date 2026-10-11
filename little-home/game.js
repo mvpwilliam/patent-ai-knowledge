@@ -1,22 +1,35 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js';
-import {findPath} from './navigation.js';
+import {findPath} from './navigation.js?v=47';
 
 const scene=window.homeScene?.scene;
 const $=s=>document.querySelector(s);
 const defaults=[
-  {id:'floor',label:'掃地、拖地'},
-  {id:'dishes',label:'洗碗與整理流理台'},
-  {id:'laundry',label:'洗衣與收衣'},
-  {id:'bath',label:'清潔浴室'},
-  {id:'trash',label:'倒垃圾'}
+  {id:'floor',label:'掃地、拖地',room:'living'},
+  {id:'dishes',label:'洗碗與整理流理台',room:'kitchen'},
+  {id:'laundry',label:'洗衣與收衣',room:'balcony'},
+  {id:'bath',label:'清潔浴室',room:'bath'},
+  {id:'trash',label:'倒垃圾',room:'entry'}
 ];
+const chores={
+  floor:{room:'living',marker:[1.00,.45,4.25],stop:[1.05,4.35],icon:'🧹'},
+  dishes:{room:'kitchen',marker:[3.95,1.18,9.50],stop:[4.00,8.78],icon:'🧽'},
+  laundry:{room:'balcony',marker:[6.50,1.10,6.85],stop:[6.45,7.60],icon:'🧺'},
+  bath:{room:'bath',marker:[5.20,.68,5.05],stop:[5.20,5.00],icon:'🫧'},
+  trash:{room:'entry',marker:[.55,.65,8.70],stop:[.70,8.55],icon:'🗑️'},
+  living:{room:'living',marker:[1.00,.45,4.25],stop:[1.05,4.35],icon:'🧹'},
+  dining:{room:'dining',marker:[2.00,1.00,6.40],stop:[.75,6.40],icon:'🧽'},
+  kitchen:{room:'kitchen',marker:[4.45,1.18,9.50],stop:[4.40,8.78],icon:'🧽'},
+  balcony:{room:'balcony',marker:[6.50,1.10,6.85],stop:[6.45,7.60],icon:'🧺'},
+  entry:{room:'entry',marker:[.55,.65,8.70],stop:[.70,8.55],icon:'🗑️'}
+};
+const placement=t=>chores[t.id]||chores[t.room]||chores.living;
 const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
 let avatar=safeRead('little-home-avatar',{name:'小屋主',skin:'#e9b990',hair:'bob',hairColor:'#4d3834',shirt:'#7899a0'});
 let tasks=safeRead('little-home-tasks',defaults);
 let hour=Math.floor(Date.now()/3600000),claims={};
 let mode='preview',auth=null,db=null,api=null,user=null,homeId='',unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
-let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0;
+let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0,activity=null;
 const stops=[[1.35,4.25],[1.2,3.7],[1.15,1.25],[.7,2.6],[.72,4.8],[.68,6.1],[.70,7.8],[.65,8.65]];
 const tour=stops.flatMap((point,i)=>findPath(point,stops[(i+1)%stops.length]).slice(i?1:0));
 const tourLengths=tour.map((point,i)=>Math.hypot(point[0]-tour[(i+1)%tour.length][0],point[1]-tour[(i+1)%tour.length][1]));
@@ -50,13 +63,14 @@ function makeCharacter(v){
   sphere(.255,v.hairColor,0,.855,-.012).scale.set(1,.48,1);
   if(v.hair==='long')for(const x of [-.20,.20])sphere(.085,v.hairColor,x,.66,-.065).scale.set(.7,1.8,1);
   if(v.hair==='cap'){sphere(.22,v.shirt,0,.93,0).scale.set(1.05,.35,1);sphere(.16,v.shirt,0,.90,.20).scale.set(1.1,.17,.55)}
+  const arms=[],legs=[];
   for(const x of [-.085,.085]){
     sphere(.017,'#303135',x,.77,.208);
-    sphere(.064,v.skin,x*2.35,.42,.015).scale.set(.55,1.6,.6);
-    sphere(.075,'#3c5267',x,.13,.01).scale.set(.7,1.7,.8);
+    const arm=sphere(.064,v.skin,x*2.35,.42,.015);arm.scale.set(.55,1.6,.6);arms.push(arm);
+    const leg=sphere(.075,'#3c5267',x,.13,.01);leg.scale.set(.7,1.7,.8);legs.push(leg);
   }
   const smile=bodyPart(body,new T.TorusGeometry(.037,.007,5,12,Math.PI), '#874e4b',0,.68,.218);smile.rotation.z=Math.PI;
-  g.userData.body=body;g.userData.step=Math.random()*8;return g;
+  g.userData.body=body;g.userData.arms=arms;g.userData.legs=legs;g.userData.step=Math.random()*8;return g;
 }
 function setCharacter(v){
   if(!scene)return;
@@ -65,6 +79,7 @@ function setCharacter(v){
   if(pose!=='walk')setPose(pose);
 }
 function setPose(next){
+  if(activity){toast('先完成目前的家事');return}
   pose=next;poseStarted=performance.now();
   document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===next));
   if(!character){toast('角色姿勢已選好，請在支援 3D 的瀏覽器觀看');return}
@@ -75,14 +90,38 @@ function setPose(next){
   toast(({walk:'開始在家裡散步',stand:'站在餐廳',sit:'坐在沙發',lie:'躺在主臥床上'})[next]);
 }
 function animate(now){
+  updateMarkers();
   if(!character)return;
   const dt=Math.min(.06,(now-lastFrame)/1000||0);lastFrame=now;
   const b=character.userData.body;
-  if(pose==='walk'){
+  const [leftArm,rightArm]=character.userData.arms,[leftLeg,rightLeg]=character.userData.legs;
+  leftArm.position.set(-.20,.42,.015);rightArm.position.set(.20,.42,.015);
+  leftArm.rotation.set(0,0,0);rightArm.rotation.set(0,0,0);
+  leftLeg.rotation.x=rightLeg.rotation.x=0;
+  if(activity?.phase==='run'||activity?.phase==='return'){
+    const [x,z]=activity.path[activity.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
+    if(d<.035){activity.index++;if(activity.index>=activity.path.length){
+      if(activity.phase==='return'){route=activity.route;activity=null;renderTasks()}
+      else{activity.phase='work';activity.started=now;character.userData.body.position.y=0;toast(`開始${activity.task.label} · 2 秒`)}
+    }}
+    else{const move=Math.min(d,dt*2.05);character.position.x+=dx/d*move;character.position.z+=dz/d*move;character.rotation.y=Math.atan2(dx,dz)}
+    step+=dt*19;b.position.y=Math.abs(Math.sin(step))*.050;b.rotation.set(0,0,Math.sin(step)*.055);
+    leftArm.rotation.x=Math.sin(step)*.8;rightArm.rotation.x=-Math.sin(step)*.8;
+    leftLeg.rotation.x=-Math.sin(step)*.6;rightLeg.rotation.x=Math.sin(step)*.6;
+  }else if(activity?.phase==='work'){
+    const t=(now-activity.started)/1000;
+    b.position.y=.012*Math.sin(t*14);b.rotation.x=.12+Math.sin(t*10)*.12;b.rotation.z=0;
+    leftArm.position.z=.18;rightArm.position.z=.18;
+    leftArm.position.y=.49+Math.sin(t*16)*.06;rightArm.position.y=.49+Math.sin(t*16+Math.PI)*.06;
+    leftArm.rotation.x=rightArm.rotation.x=-.75;
+    if(t>=2){const finished=activity;activity=null;b.rotation.x=0;finishTask(finished)}
+  }else if(pose==='walk'){
     const [x,z]=tour[route],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
     if(d<.04)route=(route+1)%tour.length;
     else {const move=Math.min(d,dt*.53);character.position.x+=dx/d*move;character.position.z+=dz/d*move;character.rotation.y=Math.atan2(dx,dz)}
     step+=dt*10;b.position.y=Math.abs(Math.sin(step))*.028;b.rotation.z=Math.sin(step)*.035;b.rotation.x=0;
+    leftArm.rotation.x=Math.sin(step)*.28;rightArm.rotation.x=-Math.sin(step)*.28;
+    leftLeg.rotation.x=-Math.sin(step)*.22;rightLeg.rotation.x=Math.sin(step)*.22;
   }else if(pose==='sit'){
     b.position.y=0;b.rotation.x=-.23;b.rotation.z=0;
   }else if(pose==='lie'){
@@ -109,20 +148,69 @@ function renderTasks(){
   for(const t of tasks){
     const row=document.createElement('div');row.className='task-row';
     const label=document.createElement('span');label.textContent=t.label;
-    const button=document.createElement('button');button.textContent=claims[t.id]?`✓ ${claims[t.id].name} 完成`:'完成';
-    button.disabled=!!claims[t.id]||(mode==='online'&&!user);
-    button.onclick=()=>claimTask(t);
+    const button=document.createElement('button');button.textContent=claims[t.id]?`✓ ${claims[t.id].name} 完成`:'前往';
+    button.disabled=!!claims[t.id]||!!activity||(mode==='online'&&!user);
+    button.onclick=()=>startTask(t);
     row.append(label,button);list.append(row);
   }
+  renderMarkers();
 }
-async function claimTask(t){
+function renderMarkers(){
+  const layer=$('#chore-markers');layer.replaceChildren();
+  if(!scene)return;
+  for(const t of tasks){
+    const info=placement(t),button=document.createElement('button');
+    button.className='chore-marker';button.dataset.task=t.id;
+    button.textContent=claims[t.id]?`✓ ${t.label}`:`${info.icon} ${t.label}`;
+    button.title=claims[t.id]?`${claims[t.id].name} 已完成`:t.label;
+    button.disabled=!!claims[t.id]||!!activity||(mode==='online'&&!user);
+    button.onclick=e=>{e.stopPropagation();startTask(t)};
+    layer.append(button);
+  }
+  updateMarkers();
+}
+function updateMarkers(){
+  if(!scene)return;
+  for(const button of $('#chore-markers').children){
+    const t=tasks.find(task=>task.id===button.dataset.task);if(!t)continue;
+    const p=new T.Vector3(...placement(t).marker).project(window.homeScene.camera);
+    button.hidden=p.z<=-1||p.z>=1||Math.abs(p.x)>.90||Math.abs(p.y)>.86;
+    button.style.left=`${(p.x+1)*50}%`;button.style.top=`${(1-p.y)*50}%`;
+    button.classList.toggle('busy',activity?.task.id===t.id);
+  }
+}
+function startTask(t){
+  if(activity||claims[t.id])return;
+  if(mode==='online'&&!user)return toast('請先登入家庭帳號');
+  if(!character)return toast('請在支援 3D 的瀏覽器啟動場景');
+  if(pose==='sit')character.position.set(1.75,.07,2.03);
+  if(pose==='lie')character.position.set(3.95,.07,4.85);
+  if(pose==='stand')character.position.set(.75,.07,5.10);
+  pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose==='walk'));
+  const path=findPath([character.position.x,character.position.z],placement(t).stop);
+  if(path.length<2)return toast('目前找不到通往家事位置的路');
+  activity={task:t,phase:'run',path,index:0,day:today()};
+  if($('#game-dialog').open)$('#game-dialog').close();
+  toast(`${avatar.name} 跑去${t.label}`);renderTasks();
+}
+async function finishTask(job){
+  const nearest=tour.reduce((best,p,i)=>Math.hypot(p[0]-character.position.x,p[1]-character.position.z)<best.distance?{index:i,distance:Math.hypot(p[0]-character.position.x,p[1]-character.position.z)}:best,{index:0,distance:Infinity}).index;
+  const path=findPath([character.position.x,character.position.z],tour[nearest]);
+  activity={task:job.task,phase:'return',path,index:0,route:(nearest+1)%tour.length};
+  if(path.length<2){route=nearest;activity=null}
+  renderTasks();
+  if(job.day!==today()){toast('新的一天開始了，請重新選家事');return}
+  await claimTask(job.task,job.day);
+}
+async function claimTask(t,day=today()){
   if(mode==='preview'){
     const saved=safeRead(claimKey(),{});if(saved[t.id]){claims=saved;renderTasks();toast('今天這項家事已經有人完成');return}
+    if(day!==today())return toast('新的一天開始了，請重新選家事');
     claims[t.id]={name:avatar.name};localStorage.setItem(claimKey(),JSON.stringify(claims));
     renderTasks();toast('完成！下一個遊戲日再重置');return;
   }
   if(!user)return toast('請先登入家庭帳號');
-  const day=today(),ref=api.doc(db,'homes',homeId,'days',String(day),'claims',t.id);
+  const ref=api.doc(db,'homes',homeId,'days',String(day),'claims',t.id);
   try{
     await api.runTransaction(db,async tx=>{
       const existing=await tx.get(ref);
@@ -137,7 +225,7 @@ async function addTask(){
   const field=$('#task-new'),label=field.value.trim().slice(0,24);
   if(!label)return;
   if(tasks.length>=30)return toast('最多設定 30 項家事');
-  const task={id:'custom-'+Math.random().toString(36).slice(2,10),label};
+  const task={id:'custom-'+Math.random().toString(36).slice(2,10),label,room:$('#task-room').value};
   const next=[...tasks,task];field.value='';
   if(mode==='online'){
     if(!user)return toast('請先登入');
