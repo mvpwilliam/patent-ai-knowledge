@@ -319,44 +319,57 @@ for(let i=0;i<96;i++){const x=3.14+(i*0.437%2.68),z=9.35+(i*0.173%.59);box(x,.92
 box(3.95,.945,9.61,.72,.035,.43,C.metal,.07);box(3.95,.967,9.61,.59,.025,.32,'#a7b9b3',.06);rod([3.95,.96,9.86],[3.95,1.25,9.86],.022,C.metal);rod([3.95,1.25,9.86],[3.95,1.25,9.65],.022,C.metal);
 box(5.45,.948,9.60,.65,.04,.44,'#283c3e',.025);for(const x of [5.27,5.62]){cyl(x,.984,9.59,.12,.02,C.metal);cyl(x,1,9.59,.08,.023,'#253b3b')}
 // Cabinet above the refrigerator, with its face aligned to the fridge.
-box(1.35,2.24,9.55,.78,.65,.78,'#77736e',.012);
+const lightCabinet='#d8dadd';
+box(1.35,2.24,9.55,.78,.65,.78,lightCabinet,.012);
 for(const x of [1.17,1.53])box(x,2.24,9.145,.35,.61,.018,'#f2f1ec',.005);
 // Refrigerator-side appliance cabinet, front at z=9.17. From the kitchen
 // opening toward the fridge: a narrow three-tier open shelf, two overhead
 // doors, a cup niche, an open appliance counter, a microwave and robot bay,
 // with drawers in the narrower bay next to the refrigerator.
-const cabinetFace='#f2f1ec',cabinetInterior='#263535';
-for(const x of [1.76,2.96])box(x,1.30,9.56,.035,2.60,.76,'#797b77',.004);
-box(2.36,2.57,9.56,1.18,.05,.76,'#777b78',.004);
-box(2.24,2.30,9.55,.93,.55,.72,'#858983',.005);
+const cabinetFace='#f2f1ec',cabinetInterior=lightCabinet;
+for(const x of [1.76,2.96])box(x,1.30,9.56,.035,2.60,.76,lightCabinet,.004);
+box(2.36,2.57,9.56,1.18,.05,.76,lightCabinet,.004);
+box(2.24,2.30,9.55,.93,.55,.72,lightCabinet,.005);
 for(const x of [2.005,2.475])box(x,2.30,9.181,.455,.52,.012,cabinetFace,.003);
-box(2.71,2.28,9.56,.022,.60,.69,'#626967');
-for(const y of [1.79,2.06,2.33])box(2.83,y,9.51,.23,.026,.62,'#92928a',.003);
-box(2.83,1.83,9.89,.23,.46,.012,'#555e5b');
+box(2.71,2.28,9.56,.022,.60,.69,lightCabinet);
+for(const y of [1.79,2.06,2.33])box(2.83,y,9.51,.23,.026,.62,lightCabinet,.003);
+box(2.83,1.83,9.89,.23,.46,.012,lightCabinet);
 // Open horizontal cup shelf below the two overhead doors.
-box(2.24,2.01,9.55,.93,.03,.69,'#858981');
-box(2.24,1.77,9.55,.93,.04,.69,'#858981');
-box(2.24,1.88,9.89,.91,.18,.014,'#394846');
+box(2.24,2.01,9.55,.93,.03,.69,lightCabinet);
+box(2.24,1.77,9.55,.93,.04,.69,lightCabinet);
+box(2.24,1.88,9.89,.91,.18,.014,lightCabinet);
 for(const x of [2.02,2.20,2.38,2.55])cyl(x,1.815,9.45,.045,.12,'#bfc6c2');
 // Grey wall above the counter and the slim under-cabinet light.
-box(2.36,1.49,9.928,1.16,.51,.008,'#737775');
+box(2.36,1.49,9.928,1.16,.51,.008,lightCabinet);
 box(2.24,1.745,9.28,.93,.018,.055,'#e8e9e3');
 box(2.36,1.20,9.54,1.18,.06,.76,'#303237',.007);
 // Microwave left and shallow drawer stack right, per the elevation photo.
 box(2.25,.60,9.54,.028,1.16,.73,cabinetInterior);
 box(2.59,.88,9.89,.69,.55,.018,cabinetInterior);
-box(2.59,.61,9.54,.70,.045,.72,'#454b4b');
+box(2.59,.61,9.54,.70,.045,.72,lightCabinet);
 box(2.59,.87,9.14,.58,.42,.04,'#202b2f',.008);
 box(2.56,.88,9.112,.43,.27,.01,'#606d71',.004);
 box(2.83,.87,9.106,.025,.31,.015,'#aeb6b3');
 box(2.59,.19,9.89,.69,.36,.018,cabinetInterior);
-box(2.59,.09,9.53,.69,.035,.72,'#555d59');
+box(2.59,.09,9.53,.69,.035,.72,lightCabinet);
 box(2.59,.26,9.53,.43,.26,.44,'#343b3b',.03);
 for(const y of [.92,.67,.42,.17]){box(2.005,y,9.167,.455,.21,.016,cabinetFace,.004);box(2.005,y+.045,9.149,.28,.012,.012,'#d8dad7')}
 // Small countertop appliances preserve the open work surface.
 box(2.66,1.34,9.55,.22,.22,.20,'#f1f0eb',.035);
 box(2.27,1.32,9.50,.30,.18,.18,'#f1f0eb',.04);
-box(1.35,.95,9.52,.73,1.85,.83,'#87928b',.045);for(let yy of [1.39,.85,.34])box(1.35,yy,9.08,.67,yy>1?.88:.32,.035,'#a2aaa0',.018);box(1.36,1.39,9.048,.016,.87,.025,'#6a7b73');box(1.37,.73,9.04,.5,.025,.04,C.dark);box(1.55,1.6,9.045,.14,.2,.01,'#e3e4c8');
+// Dark mirrored six-door Panasonic NR-F521HX: two tall doors, two shallow
+// middle doors, then two full-width freezer drawers.
+const fridgeSilver=new T.MeshStandardMaterial({color:'#777d81',metalness:.72,roughness:.20});
+const fridgeGraphite=new T.MeshStandardMaterial({color:'#45494c',metalness:.66,roughness:.21});
+box(1.35,.95,9.52,.73,1.85,.83,'#36393c',.025);
+for(const [x,m] of [[1.17,fridgeSilver],[1.53,fridgeGraphite]]){
+  box(x,1.42,9.083,.345,.88,.025,m,.007);
+  box(x,.86,9.083,.345,.20,.025,m,.006);
+}
+box(1.35,.56,9.083,.70,.36,.025,fridgeGraphite,.008);
+box(1.35,.21,9.083,.70,.31,.025,fridgeGraphite,.008);
+for(const y of [.745,.365])box(1.35,y,9.065,.68,.018,.02,'#242729',.003);
+box(1.36,1.36,9.064,.003,.10,.002,'#a5a9aa');
 // Full-width entry cabinet from the door-side corner to the dining return.
 // The reference has three upper doors, a lit display niche, one row of three
 // shallow drawers, three lower doors, and a continuous shoe void at the floor.
@@ -402,7 +415,7 @@ const bentTable=new T.Mesh(new T.ExtrudeGeometry(bentTableProfile,{depth:.36,bev
 bentTable.position.set(.40,.055,9.43);bentTable.castShadow=true;bentTable.receiveShadow=true;root.add(bentTable);
 // Panasonic NA-V150RPH-K front-load washer/dryer against the bath-end solid
 // wall; its black front and copper-rimmed drum face the kitchen balcony door.
-const washer=new T.Group();washer.position.set(6.79,.045,6.865);root.add(washer);
+const washer=new T.Group();washer.position.set(6.505,.045,6.865);root.add(washer);
 box(0,.45,0,.64,.86,.70,'#1c1d20',.018,washer);
 box(0,.82,.356,.63,.10,.016,'#242428',.005,washer);
 box(-.20,.82,.366,.13,.015,.004,'#a39b91',.002,washer);
