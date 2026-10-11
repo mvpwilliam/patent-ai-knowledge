@@ -310,7 +310,7 @@ box(1.35,.95,9.52,.73,1.85,.83,'#87928b',.045);for(let yy of [1.39,.85,.34])box(
 // Full-width entry cabinet from the door-side corner to the dining return.
 // The reference has three upper doors, a lit display niche, one row of three
 // shallow drawers, three lower doors, and a continuous shoe void at the floor.
-const entryFace='#777875',entryDark='#303838';
+const entryFace='#f2f1ec',entryDark='#303838';
 const entryX=-1.06,entryZ=8.065,entryW=1.90,entryD=.40;
 for(const x of [-2.02,-.10])box(x,1.28,entryZ,.035,2.55,entryD,entryDark,.006);
 box(entryX,2.56,entryZ,entryW,.035,entryD,entryDark);
@@ -318,22 +318,22 @@ box(entryX,1.88,entryZ,entryW,.76,entryD,'#626866');
 for(const x of [-1.69,-1.06,-.43])box(x,1.88,8.277,.615,.74,.018,entryFace,.004);
 box(entryX,1.48,entryZ,entryW,.035,entryD,'#e2d3a9');
 for(const x of [-1.83,-.29])cyl(x,1.452,8.17,.035,.015,'#fff0cd');
-box(entryX,1.25,8.25,entryW-.06,.42,.02,'#596160');
+// Set the niche backing at the rear so the display shelf has real depth.
+box(entryX,1.25,7.948,entryW-.06,.42,.016,'#69716e');
 box(entryX,1.02,entryZ,entryW,.05,entryD,entryDark);
 for(const x of [-1.69,-1.06,-.43]){
   box(x,.91,8.277,.615,.17,.018,entryFace,.004);
   box(x,.55,8.277,.615,.58,.018,entryFace,.004);
 }
 box(entryX,.25,entryZ,entryW,.035,entryD,entryDark,.004);
-for(const x of [-1.63,-.50])box(x,.09,8.27,.25,.07,.23,'#575d58',.022);
 // The open dining end is slightly softened without creating a seat niche.
 box(-.10,.60,entryZ,.055,1.20,entryD,entryFace,.018);
 box(-1.50,.07,9.64,.64,.035,.43,'#9da993',.03);
 // On entering, the full-length mirror is on the left side wall. Its width
 // is 80% of the 90 cm entry door and its top sits just above the door.
-box(-1.961,1.10,9.13,.018,2.20,.72,'#343c3a',.006);
+box(-1.961,1.10,9.58,.018,2.20,.72,'#343c3a',.006);
 const mirrorMat=new T.MeshPhysicalMaterial({color:'#c9dcda',metalness:.58,roughness:.08,clearcoat:1});
-box(-1.948,1.10,9.13,.006,2.16,.69,mirrorMat);
+box(-1.948,1.10,9.58,.006,2.16,.69,mirrorMat);
 // Pegboard belongs to the wall between the door and refrigerator, from
 // ceiling height down to about one third of the refrigerator height.
 box(.40,1.907,9.970,.88,1.386,.008,'#37494a',.002);
