@@ -36,7 +36,11 @@ function floor(x,z,w,d,color=C.floor,finish='wood'){
   if(finish==='wood')woodBoards(x,z,w,d,true);
   else{for(let xx=x-w/2+.60;xx<x+w/2;xx+=.60)box(xx,.038,z,.006,.002,d,'#77756e');for(let zz=z-d/2+.60;zz<z+d/2;zz+=.60)box(x,.038,zz,w,.002,.006,'#77756e')}
 }
-floor(3.2,5,6.4,10);
+// Keep the indoor wood finish clear of the utility balcony (x 5.83–7.18,
+// z 6.45–9.20). The floor underneath used to show through its tile finish.
+floor(2.915,5,5.83,10);
+floor(6.115,3.225,.57,6.45);
+floor(6.115,9.60,.57,.80);
 // The second-bedroom boards turn 90 degrees, following the flooring plan.
 box(4.24,.042,6.84,3.08,.004,2.52,C.floor);woodBoards(4.24,6.84,3.08,2.52,false,.048);
 floor(-1.025,8.95,2.05,2.1,'#85847d','tile');
@@ -62,7 +66,17 @@ for(const [a,b] of [[.42,2.92],[3.645,6.195]]){
 wall(-.07,3.9,.15,7.9,2.6);
 wall(6.47,2.25,.15,4.5,2.6); // master and toilet side, ending at the shower glass
 wall(7.18,5.50,.13,1.90,2.6); // projecting shower exterior
-wall(7.18,8.335,.13,3.77,.55); // continuous outer parapet, shower stop to AC platform
+// The east edge of the enclosed balcony is a full-height wall with airtight
+// glazing above its sill. The AC platform continues beyond it behind a rail.
+wall(7.18,7.825,.13,2.75,.65);
+wall(7.18,9.71,.13,1.02,.55);
+const balconyEastWindow=new T.Group();balconyEastWindow.position.set(7.18,0,7.825);root.add(balconyEastWindow);
+box(0,2.365,0,.13,.47,2.75,C.wall,.008,balconyEastWindow);
+const balconyPane=new T.MeshPhysicalMaterial({color:'#bed8d9',transparent:true,opacity:.35,roughness:.10,depthWrite:false,side:T.DoubleSide});
+box(0,1.39,0,.025,1.48,2.60,balconyPane,0,balconyEastWindow);
+for(const z of [-1.335,0,1.335])box(0,1.39,z,.065,1.50,.045,'#43494a',.002,balconyEastWindow);
+for(const y of [.65,2.13])box(0,y,0,.07,.055,2.70,'#43494a',.002,balconyEastWindow);
+walls.push(balconyEastWindow);
 // The kitchen backsplash wall and the entrance enclosure reach the ceiling.
 wall(3.2,10.07,6.55,.15,2.6);
 // The square entry projects from the TV-wall side. Its room-facing edge
@@ -96,7 +110,15 @@ applianceDivider.children.forEach(part=>part.material=mat('#696b6a'));
 const serviceShaft=wall(6.15,6.00,.64,.90,2.6);
 partition(6.47,6.00,.13,.90); // shaft / projecting shower side
 partition(6.47,4.63,.13,.26); // solid return on the bath-side corner of shower
-partition(6.825,6.45,.71,.13); // solid stop at the balcony's bath end
+// At the north end a matching airtight window closes the balcony against
+// the projecting bath wall; both elevations rise to the 2.6 m room height.
+wall(6.825,6.45,.71,.13,.65);
+const balconyNorthWindow=new T.Group();balconyNorthWindow.position.set(6.825,0,6.45);root.add(balconyNorthWindow);
+box(0,2.365,0,.71,.47,.13,C.wall,.008,balconyNorthWindow);
+box(0,1.39,0,.62,1.48,.025,balconyPane,0,balconyNorthWindow);
+for(const x of [-.335,.335])box(x,1.39,0,.045,1.50,.065,'#43494a',.002,balconyNorthWindow);
+for(const y of [.65,2.13])box(0,y,0,.67,.055,.07,'#43494a',.002,balconyNorthWindow);
+walls.push(balconyNorthWindow);
 // Full-height outward shower wall, aligned with the master-bedroom window
 // elevation. The 60 x 90 cm window has a 120 cm sill and a 50 cm header.
 const showerWindowWall=new T.Group();showerWindowWall.position.set(6.825,0,4.55);root.add(showerWindowWall);
@@ -118,7 +140,7 @@ box(0,1.55,0,.018,1.2,.88,childGlass,0,childWindow);
 for(const z of [-.45,.45])box(0,1.55,z,.08,1.25,.035,C.trim,0,childWindow);
 box(0,.94,0,.1,.05,.90,C.trim,0,childWindow);box(0,2.16,0,.1,.05,.90,C.trim,0,childWindow);
 walls.push(childWindow);interiorWalls.push(childWindow);
-// Only the utility balcony has a parapet; the shower has a glass enclosure.
+// The utility balcony has airtight north and east windows; the shower has a glass enclosure.
 const doorFrames=[];
 function doorway(x,z,width,alongZ=true){const g=new T.Group();g.position.set(x,0,z);if(alongZ)g.rotation.y=Math.PI/2;root.add(g);const h=2.1;
 for(const side of [-1,1])box(side*(width/2-.025),h/2,0,.05,h,.18,'#454c57',.008,g);
