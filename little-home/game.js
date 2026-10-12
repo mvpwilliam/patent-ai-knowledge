@@ -233,29 +233,51 @@ function renderTasks(){
   if(!list.children.length){const message=document.createElement('p');message.className='task-intro';message.textContent='這個遊戲日的家事都完成了，下一小時會重置。';list.append(message)}
   renderMarkers();
 }
+let selectedTask=null;
+function closeTaskPopup(){selectedTask=null;$('#chore-popup').hidden=true}
+function chooseTask(t){
+  if(selectedTask===t.id){closeTaskPopup();return}
+  selectedTask=t.id;$('#chore-name').textContent=t.label;
+  $('#chore-start').disabled=!!activity||(mode==='online'&&!user);
+  $('#chore-popup').hidden=false;
+}
+$('#chore-start').onclick=()=>{const task=tasks.find(t=>t.id===selectedTask);closeTaskPopup();if(task)startTask(task)};
+$('#chore-close').onclick=closeTaskPopup;
+$('#scene').addEventListener('pointerdown',closeTaskPopup);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTaskPopup()});
 function renderMarkers(){
-  const layer=$('#chore-markers');layer.replaceChildren();
+  const layer=$('#chore-markers');layer.replaceChildren();closeTaskPopup();
   if(!scene)return;
   for(const t of tasks){
     if(claims[t.id])continue;
     const info=placement(t),button=document.createElement('button');
     button.className='chore-marker';button.dataset.task=t.id;
-    button.textContent=`${info.icon} ${t.label}`;
-    button.title=t.label;
+    button.textContent=info.icon;
+    button.title=t.label;button.setAttribute('aria-label',t.label);
+    button.setAttribute('aria-expanded','false');
     button.disabled=!!activity||(mode==='online'&&!user);
-    button.onclick=e=>{e.stopPropagation();startTask(t)};
+    button.onclick=e=>{e.stopPropagation();chooseTask(t)};
     layer.append(button);
   }
   updateMarkers();
 }
 function updateMarkers(){
   if(!scene)return;
+  const busy=!!activity||!!travel;
+  if(busy&&selectedTask)closeTaskPopup();
+  const placed=[];
   for(const button of $('#chore-markers').children){
     const t=tasks.find(task=>task.id===button.dataset.task);if(!t)continue;
     const p=new T.Vector3(...placement(t).marker).project(window.homeScene.camera);
-    button.hidden=p.z<=-1||p.z>=1||Math.abs(p.x)>.90||Math.abs(p.y)>.86;
-    button.style.left=`${(p.x+1)*50}%`;button.style.top=`${(1-p.y)*50}%`;
-    button.classList.toggle('busy',activity?.task.id===t.id);
+    button.hidden=busy||p.z<=-1||p.z>=1||Math.abs(p.x)>.90||Math.abs(p.y)>.86;
+    if(button.hidden)continue;
+    // Separate adjacent task icons while keeping them near their room.
+    let x=(p.x+1)*$('#world').clientWidth/2,y=(1-p.y)*$('#world').clientHeight/2;
+    for(let i=0;i<6&&placed.some(q=>Math.hypot(x-q.x,y-q.y)<48);i++)y+=48;
+    y=Math.min($('#world').clientHeight-90,Math.max(52,y));
+    placed.push({x,y});
+    button.style.left=x+'px';button.style.top=y+'px';
+    button.setAttribute('aria-expanded',String(selectedTask===t.id));
   }
 }
 function startTask(t){

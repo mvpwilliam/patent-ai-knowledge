@@ -495,6 +495,16 @@ function panByPixels(dx,dy){const r=desiredDist*(portrait?1.37:1);const scale=1.
 function panHorizontal(amount){desiredTarget.x+=amount*Math.cos(theta);desiredTarget.z-=amount*Math.sin(theta);clampPan()}
 $('#pan-left').onclick=()=>panHorizontal(-1.2);$('#pan-right').onclick=()=>panHorizontal(1.2);
 let dragMode='rotate';$('#drag-mode').onclick=()=>{dragMode=dragMode==='pan'?'rotate':'pan';$('#drag-mode').textContent=dragMode==='pan'?'單指：平移':'單指：旋轉';$('#drag-mode').setAttribute('aria-pressed',dragMode==='pan');toast(dragMode==='pan'?'單指拖曳可左右移動畫面':'單指拖曳可旋轉視角')};
+$('#view-toggle').onclick=()=>{
+  const panel=$('#view-panel'),open=panel.hidden;panel.hidden=!open;
+  $('#view-toggle').setAttribute('aria-expanded',String(open));
+};
+canvas.addEventListener('pointerdown',()=>{
+  $('#view-panel').hidden=true;$('#view-toggle').setAttribute('aria-expanded','false');
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){
+  $('#view-panel').hidden=true;$('#view-toggle').setAttribute('aria-expanded','false');
+}});
 const pointers=new Map();let lastX=0,lastY=0,pinch=0,midX=0,midY=0,lastTap=null,singleTapTimer=null;
 const moveRay=new T.Raycaster(),movePointer=new T.Vector2(),groundPlane=new T.Plane(new T.Vector3(0,1,0),-.06);
 const interactionTargets=[];
