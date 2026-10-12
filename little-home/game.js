@@ -131,6 +131,37 @@ function moveTo(point,kind='walk'){
   toast(kind==='walk'?'屋主走過去了':kind==='sofa'?'屋主走去沙發':'屋主走去睡覺');
 }
 window.homeGameMoveTo=moveTo;
+
+const jokeBubble=$('#joke-bubble');
+const jokePoint=new T.Vector3();
+let jokes=[],jokeStartedAt=0,jokeStep=-1;
+fetch('./assets/jokes.json?v=1').then(response=>{
+  if(!response.ok)throw new Error('Joke list unavailable');
+  return response.json();
+}).then(data=>{
+  if(!Array.isArray(data.jokes)||data.jokes.length!==244)throw new Error('Incomplete joke list');
+  jokes=data.jokes;jokeStartedAt=Date.now();
+}).catch(error=>console.warn('冷笑話題庫載入失敗',error));
+function updateJoke(){
+  if(!jokes.length||!character)return;
+  const step=Math.floor((Date.now()-jokeStartedAt)/10000);
+  if(step!==jokeStep){
+    jokeStep=step;
+    const index=Math.floor(step/2)%jokes.length,answer=step%2===1;
+    $('#joke-stage').textContent=`第 ${index+1} 題 · ${answer?'答案':'題目'}`;
+    $('#joke-line').textContent=answer?jokes[index].a:jokes[index].q;
+  }
+  jokePoint.set(character.position.x,character.position.y+1.27,character.position.z).project(window.homeScene.camera);
+  const world=$('#world'),w=world.clientWidth,h=world.clientHeight;
+  if(jokePoint.z<=-1||jokePoint.z>=1||Math.abs(jokePoint.x)>1.12||Math.abs(jokePoint.y)>1.12){
+    jokeBubble.hidden=true;return;
+  }
+  jokeBubble.hidden=false;
+  const x=(jokePoint.x+1)*w/2,y=(1-jokePoint.y)*h/2;
+  const half=Math.min(120,w/2);
+  jokeBubble.style.left=Math.max(half,Math.min(w-half,x))+'px';
+  jokeBubble.style.top=Math.max(82,Math.min(h-48,y-8))+'px';
+}
 const sceneryOverlay=document.createElement('div');sceneryOverlay.hidden=true;
 Object.assign(sceneryOverlay.style,{position:'fixed',inset:'0',zIndex:'200',background:'rgba(13,23,28,.88)'});
 const sceneryImage=document.createElement('img');sceneryImage.src='./assets/window-view.webp';sceneryImage.alt='客廳窗外的美景';
@@ -210,6 +241,7 @@ function animate(now){
     item.mesh.rotation.y=angle;
     item.mesh.userData.body.position.y=Math.abs(Math.sin(now*.006+item.seed))*.02;
   }
+  updateJoke();
 }
 window.homeGameUpdate=animate;
 
