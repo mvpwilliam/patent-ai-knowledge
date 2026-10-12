@@ -184,8 +184,9 @@ doorway(-1.45,10.07,.90,false); // kitchen-side wall, x -1.90 to -1.00
 // The three interior leaves share the dark walnut finish and raised moulding
 // seen in the reference photo. They rest open into their rooms, leaving the
 // hall and the character's paths unobstructed.
-function walnutDoor(x,z,w,angle,vent=false){
-  const g=new T.Group();g.position.set(x,0,z);g.rotation.y=angle;root.add(g);
+const interiorDoors=[];
+function walnutDoor(x,z,w,openAngle,closedAngle,vent=false){
+  const g=new T.Group();g.position.set(x,0,z);g.rotation.y=openAngle;root.add(g);
   box(w/2,1.04,0,w-.035,2.06,.052,'#261916',.006,g);
   for(const face of [-1,1]){
     const depth=face*.031;
@@ -204,11 +205,12 @@ function walnutDoor(x,z,w,angle,vent=false){
     ball(w-.12,1.02,depth+face*.04,.042,'#adb1ac',[1,.65,.42],g);
     rod([w-.12,1.02,depth+face*.055],[w-.28,1.02,depth+face*.055],.014,'#b9bdb7',g);
   }
-  doorFrames.push(g);
+  g.userData.door={openAngle,closedAngle,open:true,target:openAngle};
+  interiorDoors.push(g);doorFrames.push(g);
 }
-walnutDoor(3.38,4.5,1.04,.92);             // master bedroom
-walnutDoor(4.45,5.52,.99,1.35,true);          // bathroom, with lower vents
-walnutDoor(3.47,5.55,.95,-.85);             // second bedroom
+walnutDoor(3.38,4.5,1.04,.92,0);             // master bedroom
+walnutDoor(4.45,5.52,.99,.25,Math.PI/2,true); // bathroom, with lower vents
+walnutDoor(3.47,5.55,.95,-.85,0);            // second bedroom
 // A dark leaf pivots inward toward the small entry square.
 const frontDoor=new T.Group();frontDoor.position.set(-1.88,0,10.00);frontDoor.rotation.y=-.34;root.add(frontDoor);
 box(.45,1.03,-.02,.89,2.04,.055,'#292b2b',.01,frontDoor);
@@ -249,10 +251,10 @@ for(let i=0;i<3;i++){let p=box(2.91,.79,1.36+i*.67,.24,.50,.62,sofaSeat,.065);p.
 // Keep the living room clear of the former standing lamp and plants.
 // The supplied black-and-white print faces the peninsula on the continuous
 // living/dining wall. Its earlier decorative panel has been removed.
-box(.035,1.39,7.22,.046,1.09,.79,'#e7e7e4',.004);
+box(.035,1.39,6.78,.046,1.09,.79,'#e7e7e4',.004);
 const artTexture=new T.TextureLoader().load('./assets/black-white-art.jpg');artTexture.colorSpace=T.SRGBColorSpace;
 const print=new T.Mesh(new T.PlaneGeometry(.75,1.04),new T.MeshBasicMaterial({map:artTexture,side:T.DoubleSide}));
-print.rotation.y=Math.PI/2;print.position.set(.061,1.39,7.22);root.add(print);
+print.rotation.y=Math.PI/2;print.position.set(.061,1.39,6.78);root.add(print);
 // Dining table, curved backs, oak seats and peninsula with oven niches.
 function chair(x,z){for(let dx of [-.20,.20])for(let dz of [-.20,.20])rod([x+dx*1.2,.07,z+dz*1.2],[x+dx,.49,z+dz],.027,C.wood);box(x,.49,z,.49,.08,.48,'#c6c5af',.07);const back=box(x-.21,.78,z,.075,.34,.5,C.woodlight,.05);rod([x-.20,.61,z-.23],[x+.18,.68,z-.23],.023,C.woodlight);rod([x-.20,.61,z+.23],[x+.18,.68,z+.23],.023,C.woodlight)}
 // Move the 135 × 75 cm table toward the child-room wall, aligning that edge
@@ -420,8 +422,9 @@ for(const x of [-1.69,-1.06,-.43]){
   box(x,.55,8.277,.615,.58,.018,entryFace,.004);
 }
 box(entryX,.25,entryZ,entryW,.035,entryD,entryDark,.004);
-// The open dining end is slightly softened without creating a seat niche.
-box(-.10,.60,entryZ,.055,1.20,entryD,entryFace,.018);
+// A 90 cm wide, floor-to-ceiling end panel conceals the cabinet side from
+// the dining area; its front edge is flush with the cabinet doors.
+box(.065,1.30,7.82,.045,2.60,.90,'#263b3d',.004);
 box(-1.50,.07,9.64,.64,.035,.43,'#9da993',.03);
 // On entering, the full-length mirror is on the left side wall. Its width
 // is 80% of the 90 cm entry door and its top sits just above the door.
@@ -484,11 +487,26 @@ function panHorizontal(amount){desiredTarget.x+=amount*Math.cos(theta);desiredTa
 $('#pan-left').onclick=()=>panHorizontal(.8);$('#pan-right').onclick=()=>panHorizontal(-.8);
 let dragMode='pan';$('#drag-mode').onclick=()=>{dragMode=dragMode==='pan'?'rotate':'pan';$('#drag-mode').textContent=dragMode==='pan'?'單指：平移':'單指：旋轉';$('#drag-mode').setAttribute('aria-pressed',dragMode==='pan');toast(dragMode==='pan'?'單指拖曳可左右移動畫面':'單指拖曳可旋轉視角')};
 const pointers=new Map();let lastX=0,lastY=0,pinch=0,midX=0,midY=0;
-canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});lastX=e.clientX;lastY=e.clientY;if(pointers.size===2){const p=[...pointers.values()];pinch=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);midX=(p[0].x+p[1].x)/2;midY=(p[0].y+p[1].y)/2}});
-canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1){if(dragMode==='pan')panByPixels(e.clientX-lastX,e.clientY-lastY);else{theta-=(e.clientX-lastX)*.006;phi=Math.max(.045,Math.min(1.22,phi+(e.clientY-lastY)*.004));if(topView){topView=false;$('#top').setAttribute('aria-pressed',false)}}}else if(pointers.size===2){const p=[...pointers.values()],n=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),x=(p[0].x+p[1].x)/2,y=(p[0].y+p[1].y)/2;panByPixels(x-midX,y-midY);if(n>5&&pinch>5)desiredDist=Math.max(5,Math.min(30,desiredDist*pinch/n));pinch=n;midX=x;midY=y}lastX=e.clientX;lastY=e.clientY});
-function release(e){pointers.delete(e.pointerId);pinch=0;if(pointers.size){const p=[...pointers.values()][0];lastX=p.x;lastY=p.y}}
+const doorRay=new T.Raycaster(),doorPointer=new T.Vector2();
+function toggleDoorAt(e){
+  if(wallLow)return;
+  const rect=canvas.getBoundingClientRect();
+  doorPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+  doorRay.setFromCamera(doorPointer,camera);
+  const hits=doorRay.intersectObjects(interiorDoors,true);
+  if(!hits.length)return;
+  let door=hits[0].object;
+  while(door&&!door.userData.door)door=door.parent;
+  if(!door)return;
+  const state=door.userData.door;state.open=!state.open;
+  state.target=state.open?state.openAngle:state.closedAngle;
+  toast(state.open?'門打開了':'門關上了');
+}
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false});lastX=e.clientX;lastY=e.clientY;if(pointers.size===2){for(const p of pointers.values())p.moved=true;const p=[...pointers.values()];pinch=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);midX=(p[0].x+p[1].x)/2;midY=(p[0].y+p[1].y)/2}});
+canvas.addEventListener('pointermove',e=>{const prior=pointers.get(e.pointerId);if(!prior)return;pointers.set(e.pointerId,{...prior,x:e.clientX,y:e.clientY,moved:prior.moved||Math.hypot(e.clientX-prior.startX,e.clientY-prior.startY)>8});if(pointers.size===1){if(dragMode==='pan')panByPixels(e.clientX-lastX,e.clientY-lastY);else{theta-=(e.clientX-lastX)*.006;phi=Math.max(.045,Math.min(1.22,phi+(e.clientY-lastY)*.004));if(topView){topView=false;$('#top').setAttribute('aria-pressed',false)}}}else if(pointers.size===2){const p=[...pointers.values()],n=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),x=(p[0].x+p[1].x)/2,y=(p[0].y+p[1].y)/2;panByPixels(x-midX,y-midY);if(n>5&&pinch>5)desiredDist=Math.max(5,Math.min(30,desiredDist*pinch/n));pinch=n;midX=x;midY=y}lastX=e.clientX;lastY=e.clientY});
+function release(e){const p=pointers.get(e.pointerId);if(e.type==='pointerup'&&pointers.size===1&&p&&!p.moved&&Math.hypot(e.clientX-p.startX,e.clientY-p.startY)<8)toggleDoorAt(e);pointers.delete(e.pointerId);pinch=0;if(pointers.size){const p=[...pointers.values()][0];lastX=p.x;lastY=p.y}}
 canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
-let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
+let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of interiorDoors)door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
 window.homeScene={scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,get currentRoom(){return current}};
