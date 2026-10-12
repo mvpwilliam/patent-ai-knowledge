@@ -13,7 +13,9 @@ const obstacles=[
   [3.27,3.43,0,4.50],    // master-bedroom wall
   [4.45,5.01,3.76,4.46], // bathroom basin
   [5.48,6.10,3.85,4.57], // toilet
-  [6.18,6.83,6.50,7.23] // washer: approach from its front
+  [6.18,6.83,6.50,7.23], // washer: approach from its front
+  [4.45,6.43,.50,2.96], // main bed
+  [4.47,5.76,5.91,8.12] // second bedroom bed
 ];
 export function walkable(x,z){
   const inLiving=x>=.30&&x<=3.12&&z>=.37&&z<=4.50;
@@ -21,9 +23,13 @@ export function walkable(x,z){
   const inBath=x>=4.45&&x<=6.27&&z>=4.56&&z<=5.36;
   const inDining=x>=.30&&x<=2.43&&z>=5.38&&z<=8.22;
   const inKitchen=x>=.30&&x<=5.70&&z>=8.22&&z<=9.00;
+  const inMaster=x>=3.50&&x<=6.38&&z>=.28&&z<=3.54;
+  const inMasterEntry=x>=3.50&&x<=4.40&&z>=3.54&&z<=4.72;
+  const inChild=x>=2.82&&x<=5.68&&z>=5.69&&z<=8.10;
+  const inChildEntry=x>=3.48&&x<=4.42&&z>=5.35&&z<=5.69;
   const inBalcony=x>=6.02&&x<=6.96&&z>=7.23&&z<=9.00;
   const inBalconyDoor=x>=5.68&&x<=6.08&&z>=8.40&&z<=8.96;
-  if(!(inLiving||inHall||inBath||inDining||inKitchen||inBalcony||inBalconyDoor))return false;
+  if(!(inLiving||inHall||inBath||inDining||inKitchen||inMaster||inMasterEntry||inChild||inChildEntry||inBalcony||inBalconyDoor))return false;
   return !obstacles.some(([a,b,c,d])=>x>=a-radius&&x<=b+radius&&z>=c-radius&&z<=d+radius);
 }
 const key=(i,j)=>i+','+j;

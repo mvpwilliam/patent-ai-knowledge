@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js';
-import {findPath} from './navigation.js?v=48';
+import {findPath} from './navigation.js?v=55';
 
 const scene=window.homeScene?.scene;
 const $=s=>document.querySelector(s);
@@ -38,7 +38,7 @@ const normalizeTasks=items=>{
 let tasks=normalizeTasks(safeRead('little-home-tasks',defaults));
 let hour=Math.floor(Date.now()/3600000),claims={};
 let mode='preview',auth=null,db=null,api=null,user=null,homeId='',unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
-let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0,activity=null;
+let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0,activity=null,travel=null,restExit=null;
 const stops=[[1.35,4.25],[1.2,3.7],[1.15,1.25],[.7,2.6],[.72,4.8],[.68,6.1],[.70,7.8],[.65,8.65]];
 const tour=stops.flatMap((point,i)=>findPath(point,stops[(i+1)%stops.length]).slice(i?1:0));
 const tourLengths=tour.map((point,i)=>Math.hypot(point[0]-tour[(i+1)%tour.length][0],point[1]-tour[(i+1)%tour.length][1]));
@@ -89,7 +89,7 @@ function setCharacter(v){
 }
 function setPose(next){
   if(activity){toast('先完成目前的家事');return}
-  pose=next;poseStarted=performance.now();
+  travel=null;restExit=null;pose=next;poseStarted=performance.now();
   document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===next));
   if(!character){toast('角色姿勢已選好，請在支援 3D 的瀏覽器觀看');return}
   if(next==='sit'){character.position.set(2.48,.52,2.03);character.rotation.y=Math.PI/2}
@@ -98,6 +98,20 @@ function setPose(next){
   if(next==='walk'){character.position.set(tour[0][0],.07,tour[0][1]);route=1}
   toast(({walk:'開始在家裡散步',stand:'站在餐廳',sit:'坐在沙發',lie:'躺在主臥床上'})[next]);
 }
+function moveTo(point,kind='walk'){
+  if(activity)return toast('先完成目前的家事');
+  if(!character)return;
+  if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
+  restExit=null;travel=null;pose='walk';
+  document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose==='walk'));
+  const stops={sofa:[1.72,2.04],mainBed:[4.05,1.68],childBed:[3.98,6.90]};
+  const destination=stops[kind]||point;
+  const path=findPath([character.position.x,character.position.z],destination);
+  if(!path.length||Math.hypot(path.at(-1)[0]-destination[0],path.at(-1)[1]-destination[1])>.45)return toast('這裡目前走不到');
+  travel={kind,phase:'run',path,index:0,exit:destination};
+  toast(kind==='walk'?'屋主走過去了':kind==='sofa'?'屋主走去沙發':'屋主走去睡覺');
+}
+window.homeGameMoveTo=moveTo;
 function animate(now){
   updateMarkers();
   if(!character)return;
@@ -107,7 +121,29 @@ function animate(now){
   leftArm.position.set(-.20,.42,.015);rightArm.position.set(.20,.42,.015);
   leftArm.rotation.set(0,0,0);rightArm.rotation.set(0,0,0);
   leftLeg.rotation.x=rightLeg.rotation.x=0;
-  if(activity?.phase==='run'||activity?.phase==='return'){
+  if(travel){
+    if(travel.phase==='run'){
+      const [x,z]=travel.path[travel.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
+      if(d<.04){travel.index++;if(travel.index>=travel.path.length){
+        if(travel.kind==='walk'){travel=null;pose='stand'}
+        else{travel.phase='settle';travel.from=character.position.clone();travel.progress=0}
+      }}else{const move=Math.min(d,dt*1.6);character.position.x+=dx/d*move;character.position.z+=dz/d*move;character.rotation.y=Math.atan2(dx,dz)}
+      step+=dt*17;b.position.y=Math.abs(Math.sin(step))*.035;b.rotation.set(0,0,Math.sin(step)*.035);
+      leftArm.rotation.x=Math.sin(step)*.5;rightArm.rotation.x=-Math.sin(step)*.5;
+      leftLeg.rotation.x=-Math.sin(step)*.4;rightLeg.rotation.x=Math.sin(step)*.4;
+    }else{
+      travel.progress=Math.min(1,travel.progress+dt/.65);
+      const target=travel.kind==='sofa'?[2.54,.51,2.03]:travel.kind==='mainBed'?[5.16,.78,1.64]:[5.12,.78,7.00];
+      character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
+      if(travel.progress>=1){
+        const kind=travel.kind;restExit=travel.exit;travel=null;
+        pose=kind==='sofa'?'sit':'lie';
+        character.rotation.y=kind==='mainBed'?-Math.PI/2:kind==='childBed'?Math.PI:Math.PI/2;
+        document.querySelectorAll('[data-pose]').forEach(btn=>btn.classList.toggle('active',btn.dataset.pose===pose));
+        if(kind==='sofa')window.homeScene?.showNews(true);
+      }
+    }
+  }else if(activity?.phase==='run'||activity?.phase==='return'){
     const [x,z]=activity.path[activity.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
     if(d<.035){activity.index++;if(activity.index>=activity.path.length){
       if(activity.phase==='return'){route=activity.route;activity=null;renderTasks()}
@@ -138,6 +174,7 @@ function animate(now){
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
   const nearBalconyDoor=Math.abs(character.position.x-5.83)<1.12&&Math.abs(character.position.z-8.68)<.82;
   window.homeScene?.setBalconyDoor(nearBalconyDoor);
+  window.homeScene?.updateDoorsAt(character.position.x,character.position.z);
   for(const [id,item] of characters){
     const [x,z,angle]=pointOnTour(now*.00043+item.seed*.17);
     item.mesh.position.set(x,.07,z);
@@ -197,9 +234,12 @@ function startTask(t){
   if(activity||claims[t.id])return;
   if(mode==='online'&&!user)return toast('請先登入家庭帳號');
   if(!character)return toast('請在支援 3D 的瀏覽器啟動場景');
-  if(pose==='sit')character.position.set(1.75,.07,2.03);
-  if(pose==='lie')character.position.set(3.95,.07,4.85);
-  if(pose==='stand')character.position.set(.75,.07,5.10);
+  if(travel)travel=null;
+  if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
+  else if(pose==='sit')character.position.set(1.75,.07,2.03);
+  else if(pose==='lie')character.position.set(3.95,.07,4.85);
+  else if(pose==='stand')character.position.set(.75,.07,5.10);
+  restExit=null;character.position.y=.07;
   pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose==='walk'));
   const path=findPath([character.position.x,character.position.z],placement(t).stop);
   if(path.length<2)return toast('目前找不到通往家事位置的路');

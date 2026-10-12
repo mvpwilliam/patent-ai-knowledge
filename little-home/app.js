@@ -205,7 +205,7 @@ function walnutDoor(x,z,w,openAngle,closedAngle,vent=false){
     ball(w-.12,1.02,depth+face*.04,.042,'#adb1ac',[1,.65,.42],g);
     rod([w-.12,1.02,depth+face*.055],[w-.28,1.02,depth+face*.055],.014,'#b9bdb7',g);
   }
-  g.userData.door={openAngle,closedAngle,open:true,target:openAngle};
+  g.userData.door={openAngle,closedAngle,open:true,target:openAngle,autoNear:false};
   interiorDoors.push(g);doorFrames.push(g);
 }
 walnutDoor(3.38,4.5,1.04,.92,0);             // master bedroom
@@ -240,6 +240,20 @@ const curtains=new T.Group();root.add(curtains);function windowAt(x,w){box(x,1.1
 // Living area: the continuous pale oak remains visible around the seating.
 box(.23,.4,2.25,.44,.42,3.2,C.navy,.035);box(.465,.42,1.2,.025,.26,.75,C.white,.008);box(.465,.42,3.25,.025,.26,.75,C.white,.008);box(.465,.42,2.23,.03,.16,.95,C.dark);box(.24,.64,2.28,.43,.045,3.32,C.navy,.014);
 box(.15,1.18,2.1,.095,.93,1.65,'#293b3e',.022);const tvMat=new T.MeshStandardMaterial({color:'#60878b',emissive:'#496b70',emissiveIntensity:.45,roughness:.28});box(.204,1.18,2.1,.012,.83,1.54,tvMat,.009);const tvArt=new T.Group();root.add(tvArt);box(.215,1.18,2.1,.007,.055,.9,'#cadcc8',.002,tvArt);box(.216,1.37,2.1,.006,.11,.41,'#d2d9ad',.01,tvArt);box(.216,1.06,2.1,.006,.04,.65,'#9cb9ac',0,tvArt);
+const newsCanvas=document.createElement('canvas');newsCanvas.width=768;newsCanvas.height=384;
+const newsCtx=newsCanvas.getContext('2d');
+function drawNews(){
+  const c=newsCtx;c.fillStyle='#16344b';c.fillRect(0,0,768,384);
+  c.fillStyle='#456d83';for(let i=0;i<17;i++){const height=60+(i*53)%145;c.fillRect(i*48,245-height,39,height)}
+  c.fillStyle='#e9edf0';c.fillRect(0,0,768,52);c.fillStyle='#16344b';c.font='bold 31px sans-serif';c.fillText('小屋快報',28,37);
+  c.fillStyle='#b34d42';c.fillRect(0,282,768,72);c.fillStyle='white';c.font='bold 34px sans-serif';c.fillText('今天也有好多小日子',26,328);
+  c.fillStyle='#dce7e8';c.font='20px sans-serif';c.fillText('模擬新聞畫面 · 家中的日常',26,375);
+}
+drawNews();const newsTexture=new T.CanvasTexture(newsCanvas);newsTexture.colorSpace=T.SRGBColorSpace;
+const newsPanel=new T.Mesh(new T.PlaneGeometry(1.52,.80),new T.MeshBasicMaterial({map:newsTexture,side:T.DoubleSide}));
+newsPanel.rotation.y=Math.PI/2;newsPanel.position.set(.224,1.18,2.1);newsPanel.visible=false;root.add(newsPanel);
+let newsActive=false;
+function showNews(on){newsActive=on;tv=true;tvMat.color.set('#60878b');tvMat.emissiveIntensity=.45;tvArt.visible=!on;newsPanel.visible=on;}
 box(.36,.7,2.1,.13,.09,1.0,C.dark,.025);box(.27,.83,3.36,.13,.35,.19,'#f4f2e8',.026);box(.272,.83,3.25,.10,.34,.018,'#293b3e');box(.32,.72,1.03,.13,.16,.24,'#263f43',.013);box(.32,.72,.885,.14,.17,.07,'#60a7a6',.02);box(.32,.72,1.175,.14,.17,.07,'#ca7064',.02);
 // BoConcept Bergamo three-seater: a 2.5 m straight profile, one long seat,
 // three loose back cushions, broad squared arms and low dark feet.
@@ -480,7 +494,7 @@ for(const x of [6.51,6.83,7.16])rod([x,.08,9.20],[x,.55,9.20],.012,'#899893');
 let night=false,tv=true,curtainClosed=true,wallLow=false,topView=false;
 let theta=.77,phi=.76,dist=19.5,target=new T.Vector3(2.9,.2,5),desiredTarget=target.clone(),desiredDist=19.5;
 const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃與灰色 Bergamo 三人座沙發。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 日光',desc:'浴室側放 Panasonic 黑色洗脫烘，冷氣室外機位在柱外獨立小平台。',pos:[6.55,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'滿牆玄關櫃、展示層與深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
-let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台門',()=>{desiredTarget.set(5.76,1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{tv=!tv;tvMat.color.set(tv?'#60878b':'#263b3e');tvMat.emissiveIntensity=tv?.45:0;tvArt.visible=tv;selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
+let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台門',()=>{desiredTarget.set(5.76,1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{tv=!tv;tvMat.color.set(tv?'#60878b':'#263b3e');tvMat.emissiveIntensity=tv?.45:0;tvArt.visible=tv&&!newsActive;newsPanel.visible=tv&&newsActive;selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
 document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
 // One finger rotates by default; the switch enables faster, wider panning.
 // Two fingers pan by their midpoint and pinch to zoom.
@@ -489,7 +503,25 @@ function panByPixels(dx,dy){const r=desiredDist*(portrait?1.37:1);const scale=1.
 function panHorizontal(amount){desiredTarget.x+=amount*Math.cos(theta);desiredTarget.z-=amount*Math.sin(theta);clampPan()}
 $('#pan-left').onclick=()=>panHorizontal(-1.2);$('#pan-right').onclick=()=>panHorizontal(1.2);
 let dragMode='rotate';$('#drag-mode').onclick=()=>{dragMode=dragMode==='pan'?'rotate':'pan';$('#drag-mode').textContent=dragMode==='pan'?'單指：平移':'單指：旋轉';$('#drag-mode').setAttribute('aria-pressed',dragMode==='pan');toast(dragMode==='pan'?'單指拖曳可左右移動畫面':'單指拖曳可旋轉視角')};
-const pointers=new Map();let lastX=0,lastY=0,pinch=0,midX=0,midY=0;
+const pointers=new Map();let lastX=0,lastY=0,pinch=0,midX=0,midY=0,lastTap=null,singleTapTimer=null;
+const moveRay=new T.Raycaster(),movePointer=new T.Vector2(),groundPlane=new T.Plane(new T.Vector3(0,1,0),-.06);
+const interactionTargets=[];
+function hitArea(kind,x,y,z,w,d){
+  const mesh=new T.Mesh(new T.BoxGeometry(w,.015,d),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide}));
+  mesh.position.set(x,y,z);mesh.userData.kind=kind;root.add(mesh);interactionTargets.push(mesh);
+}
+hitArea('sofa',2.54,.91,2.03,.92,2.50);
+hitArea('mainBed',5.42,.91,1.64,1.91,1.96);
+hitArea('childBed',5.12,.89,7.00,1.15,2.10);
+function moveAt(e){
+  const rect=canvas.getBoundingClientRect();
+  movePointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+  moveRay.setFromCamera(movePointer,camera);
+  const hit=moveRay.intersectObjects(interactionTargets,false)[0];
+  const point=new T.Vector3();
+  if(hit){window.homeGameMoveTo?.([hit.point.x,hit.point.z],hit.object.userData.kind);return}
+  if(moveRay.ray.intersectPlane(groundPlane,point))window.homeGameMoveTo?.([point.x,point.z],'walk');
+}
 const doorRay=new T.Raycaster(),doorPointer=new T.Vector2();
 function toggleDoorAt(e){
   if(wallLow)return;
@@ -507,9 +539,33 @@ function toggleDoorAt(e){
 }
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false});lastX=e.clientX;lastY=e.clientY;if(pointers.size===2){for(const p of pointers.values())p.moved=true;const p=[...pointers.values()];pinch=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);midX=(p[0].x+p[1].x)/2;midY=(p[0].y+p[1].y)/2}});
 canvas.addEventListener('pointermove',e=>{const prior=pointers.get(e.pointerId);if(!prior)return;pointers.set(e.pointerId,{...prior,x:e.clientX,y:e.clientY,moved:prior.moved||Math.hypot(e.clientX-prior.startX,e.clientY-prior.startY)>8});if(pointers.size===1){if(dragMode==='pan')panByPixels(e.clientX-lastX,e.clientY-lastY);else{theta-=(e.clientX-lastX)*.006;phi=Math.max(.045,Math.min(1.22,phi+(e.clientY-lastY)*.004));if(topView){topView=false;$('#top').setAttribute('aria-pressed',false)}}}else if(pointers.size===2){const p=[...pointers.values()],n=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),x=(p[0].x+p[1].x)/2,y=(p[0].y+p[1].y)/2;panByPixels(x-midX,y-midY);if(n>5&&pinch>5)desiredDist=Math.max(5,Math.min(30,desiredDist*pinch/n));pinch=n;midX=x;midY=y}lastX=e.clientX;lastY=e.clientY});
-function release(e){const p=pointers.get(e.pointerId);if(e.type==='pointerup'&&pointers.size===1&&p&&!p.moved&&Math.hypot(e.clientX-p.startX,e.clientY-p.startY)<8)toggleDoorAt(e);pointers.delete(e.pointerId);pinch=0;if(pointers.size){const p=[...pointers.values()][0];lastX=p.x;lastY=p.y}}
-canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
+function release(e){
+  const p=pointers.get(e.pointerId);
+  if(e.type==='pointerup'&&pointers.size===1&&p&&!p.moved&&Math.hypot(e.clientX-p.startX,e.clientY-p.startY)<8){
+    const now=performance.now();
+    if(lastTap&&now-lastTap.time<340&&Math.hypot(e.clientX-lastTap.x,e.clientY-lastTap.y)<26){
+      clearTimeout(singleTapTimer);lastTap=null;e.preventDefault();moveAt(e);
+    }else{
+      lastTap={time:now,x:e.clientX,y:e.clientY};
+      const tap={clientX:e.clientX,clientY:e.clientY};
+      clearTimeout(singleTapTimer);singleTapTimer=setTimeout(()=>{if(lastTap?.time===now){toggleDoorAt(tap);lastTap=null}},350);
+    }
+  }
+  pointers.delete(e.pointerId);pinch=0;if(pointers.size){const first=[...pointers.values()][0];lastX=first.x;lastY=first.y}
+}
+canvas.addEventListener('dblclick',e=>e.preventDefault());canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
 let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of interiorDoors)door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;balconyLeaf.rotation.y+=(balconyDoorTarget-balconyLeaf.rotation.y)*.24;window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,setBalconyDoor(open){balconyDoorTarget=open?-1.3:0},get currentRoom(){return current}};
+window.homeScene={scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,
+  setBalconyDoor(open){balconyDoorTarget=open?-1.3:0},
+  updateDoorsAt(x,z){
+    const centers=[[3.90,4.50],[4.45,5.025],[3.95,5.55]];
+    interiorDoors.forEach((door,i)=>{
+      const state=door.userData.door,near=Math.hypot(x-centers[i][0],z-centers[i][1])<.73;
+      if(near){state.target=state.openAngle;state.open=true}
+      else if(state.autoNear){state.target=state.closedAngle;state.open=false}
+      state.autoNear=near;
+    });
+  },
+  showNews,get currentRoom(){return current}};
