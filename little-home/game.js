@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {firebaseConfig} from './firebase-config.js';
+import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath} from './navigation.js?v=55';
 
 const scene=window.homeScene?.scene;
@@ -43,7 +43,7 @@ let tasks=normalizeTasks(safeRead('little-home-tasks',defaults));
 const GAME_DAY_MS=30*60*1000;
 const today=()=>Math.floor(Date.now()/GAME_DAY_MS);
 let gameDay=today(),claims={};
-let mode='preview',auth=null,db=null,api=null,user=null,homeId='',unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
+let mode='preview',auth=null,db=null,api=null,user=null,homeId='',homeReady=false,joining=false,unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
 let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0,activity=null,travel=null,restExit=null;
 const stops=[[1.35,4.25],[1.2,3.7],[1.15,1.25],[.7,2.6],[.72,4.8],[.68,6.1],[.70,7.8],[.65,8.65]];
 const tour=stops.flatMap((point,i)=>findPath(point,stops[(i+1)%stops.length]).slice(i?1:0));
@@ -258,7 +258,7 @@ function renderTasks(){
     const row=document.createElement('div');row.className='task-row';
     const label=document.createElement('span');label.textContent=t.label;
     const button=document.createElement('button');button.textContent='前往';
-    button.disabled=!!activity||(mode==='online'&&!user);
+    button.disabled=!!activity||(mode==='online'&&(!user||!homeReady));
     button.onclick=()=>startTask(t);
     row.append(label,button);list.append(row);
   }
@@ -270,7 +270,7 @@ function closeTaskPopup(){selectedTask=null;$('#chore-popup').hidden=true}
 function chooseTask(t){
   if(selectedTask===t.id){closeTaskPopup();return}
   selectedTask=t.id;$('#chore-name').textContent=t.label;
-  $('#chore-start').disabled=!!activity||(mode==='online'&&!user);
+  $('#chore-start').disabled=!!activity||(mode==='online'&&(!user||!homeReady));
   $('#chore-popup').hidden=false;
 }
 $('#chore-start').onclick=()=>{const task=tasks.find(t=>t.id===selectedTask);closeTaskPopup();if(task)startTask(task)};
@@ -287,7 +287,7 @@ function renderMarkers(){
     button.textContent=info.icon;
     button.title=t.label;button.setAttribute('aria-label',t.label);
     button.setAttribute('aria-expanded','false');
-    button.disabled=!!activity||(mode==='online'&&!user);
+    button.disabled=!!activity||(mode==='online'&&(!user||!homeReady));
     button.onclick=e=>{e.stopPropagation();chooseTask(t)};
     layer.append(button);
   }
@@ -314,7 +314,7 @@ function updateMarkers(){
 }
 function startTask(t){
   if(activity||claims[t.id])return;
-  if(mode==='online'&&!user)return toast('請先登入家庭帳號');
+  if(mode==='online'&&(!user||!homeReady))return toast('請先建立家庭或加入家人的家庭');
   if(!character)return toast('請在支援 3D 的瀏覽器啟動場景');
   if(travel)travel=null;
   if(pose==='sit')window.homeScene?.showNews(false);
@@ -346,7 +346,7 @@ async function claimTask(t,day=today()){
     claims[t.id]={name:avatar.name};localStorage.setItem(claimKey(),JSON.stringify(claims));
     renderTasks();toast('完成！下一個遊戲日再重置');return;
   }
-  if(!user)return toast('請先登入家庭帳號');
+  if(!user||!homeReady)return toast('家庭尚未連線');
   const ref=api.doc(db,'homes',homeId,'days',String(day),'claims',t.id);
   try{
     await api.runTransaction(db,async tx=>{
@@ -365,7 +365,7 @@ async function addTask(){
   const task={id:'custom-'+Math.random().toString(36).slice(2,10),label,room:$('#task-room').value};
   const next=[...tasks,task];field.value='';
   if(mode==='online'){
-    if(!user)return toast('請先登入');
+    if(!user||!homeReady)return toast('請先建立家庭或加入家人的家庭');
     try{await api.setDoc(api.doc(db,'homes',homeId,'settings','tasks'),{items:next})}
     catch{toast('新增失敗，請再試一次')}
   }else{tasks=next;localStorage.setItem('little-home-tasks',JSON.stringify(tasks));renderTasks()}
@@ -377,7 +377,7 @@ function fillAvatar(){
 async function saveAvatar(){
   avatar=outfit({name:$('#avatar-name').value.trim()||'小屋主',skin:$('#avatar-skin').value,hair:$('#avatar-hair').value,hairColor:$('#avatar-hair-color').value,shirt:$('#avatar-shirt').value});
   localStorage.setItem('little-home-avatar',JSON.stringify(avatar));setCharacter(avatar);
-  if(user)try{await api.setDoc(api.doc(db,'homes',homeId,'profiles',user.uid),avatar)}catch{toast('造型已存本機，雲端同步失敗');return}
+  if(user&&homeReady)try{await api.setDoc(api.doc(db,'homes',homeId,'profiles',user.uid),avatar)}catch{toast('造型已存本機，雲端同步失敗');return}
   $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;toast('角色造型已儲存');
 }
 function clearSubscriptions(){
@@ -386,67 +386,119 @@ function clearSubscriptions(){
   for(const item of characters.values())scene?.remove(item.mesh);characters.clear();
 }
 function subscribeClaims(){
-  unsubscribeClaims?.();if(!db||!homeId||!user)return;
+  unsubscribeClaims?.();if(!db||!homeId||!user||!homeReady)return;
   const ref=api.collection(db,'homes',homeId,'days',String(gameDay),'claims');
   unsubscribeClaims=api.onSnapshot(ref,snap=>{claims={};snap.forEach(d=>claims[d.id]=d.data());renderTasks()},()=>toast('家事同步暫時中斷'));
 }
-function subscribeHome(){
-  clearSubscriptions();if(!user)return;
-  homeId=boundedCode($('#home-code').value);
-  if(!homeId){toast('請設定家庭代碼');return}
-  localStorage.setItem('little-home-code',homeId);
-  $('#home-code').value=homeId;
-  unsubscribeTasks=api.onSnapshot(api.doc(db,'homes',homeId,'settings','tasks'),snap=>{
-    tasks=normalizeTasks(snap.exists()?snap.data().items:defaults);renderTasks();
-  },()=>toast('任務設定讀取失敗'));
-  subscribeClaims();
-  unsubscribeProfiles=api.onSnapshot(api.collection(db,'homes',homeId,'profiles'),snap=>{
-    if(!scene)return;
-    const present=new Set();
-    snap.forEach(d=>{
-      if(d.id===user.uid)return;present.add(d.id);
-      const v=outfit(d.data()),previous=characters.get(d.id);
-      if(previous)scene.remove(previous.mesh);
-      const mesh=makeCharacter(v);scene.add(mesh);characters.set(d.id,{mesh,seed:[...d.id].reduce((s,c)=>s+c.charCodeAt(0),0)});
-    });
-    for(const [id,item] of characters)if(!present.has(id)){scene.remove(item.mesh);characters.delete(id)}
-  },()=>{});
-  api.getDoc(api.doc(db,'homes',homeId,'profiles',user.uid)).then(s=>{
-    if(s.exists()){avatar=outfit(s.data());fillAvatar();setCharacter(avatar)}
-    else saveAvatar();
-  });
+function familyError(error){
+  const message=error?.code==='permission-denied'
+    ?'匿名登入成功；請先發佈資料庫規則，再按「建立家庭」或「加入家庭」重試。'
+    :error?.message||'家庭連線失敗，請稍後再試。';
+  $('#account-state').textContent=message;toast(message);
 }
-async function credentials(register){
-  if(!auth)return toast('家庭登入尚未啟用');
-  const email=$('#account-email').value.trim(),password=$('#account-password').value;
-  if(!email||password.length<6)return toast('請輸入電郵與至少六字元的密碼');
+function newFamilyCode(){
+  return Array.from(crypto.getRandomValues(new Uint8Array(12)),n=>n.toString(16).padStart(2,'0')).join('');
+}
+async function subscribeHome(create=false){
+  if(!user)return toast('匿名登入尚未完成');
+  if(joining)return;
+  if(activity)return toast('做完這項家事後再切換家庭');
+  const code=create?newFamilyCode():boundedCode($('#home-code').value);
+  if(!/^[a-f0-9]{24}$/.test(code))return toast('請貼上家人的 24 字家庭代碼，或使用邀請連結');
+  joining=true;homeReady=false;clearSubscriptions();claims={};renderTasks();
+  $('#home-share').disabled=true;
+  $('#home-code').value=code;$('#account-state').textContent='正在連接家庭…';
   try{
-    if(register)await api.createUserWithEmailAndPassword(auth,email,password);
-    else await api.signInWithEmailAndPassword(auth,email,password);
-    $('#account-password').value='';
-  }catch(e){toast(({ 'auth/email-already-in-use':'這個電郵已註冊','auth/invalid-credential':'帳號或密碼不正確','auth/weak-password':'密碼太短'})[e.code]||'登入失敗，請檢查設定')}
+    const homeRef=api.doc(db,'homes',code);
+    if(create){
+      await api.runTransaction(db,async tx=>{
+        const existing=await tx.get(homeRef);
+        if(existing.exists())throw new Error('請再按一次建立家庭');
+        tx.set(homeRef,{ownerUid:user.uid,createdAt:api.serverTimestamp()});
+      });
+    }else{
+      const home=await api.getDoc(homeRef);
+      if(!home.exists())throw new Error('找不到這個家庭，請檢查邀請連結或家庭代碼');
+    }
+    homeId=code;
+    const profileRef=api.doc(db,'homes',homeId,'profiles',user.uid);
+    const profile=await api.getDoc(profileRef);
+    if(profile.exists()){
+      avatar=outfit(profile.data());localStorage.setItem('little-home-avatar',JSON.stringify(avatar));
+      fillAvatar();setCharacter(avatar);
+    }else await api.setDoc(profileRef,outfit(avatar));
+    const tasksRef=api.doc(db,'homes',homeId,'settings','tasks');
+    const savedTasks=await api.getDoc(tasksRef);
+    if(!savedTasks.exists())await api.setDoc(tasksRef,{items:create?tasks:defaults});
+    localStorage.setItem('little-home-code',homeId);
+    gameDay=today();homeReady=true;
+    $('#account-state').textContent='已自動登入並加入家庭。家人點邀請連結就能一起玩。';
+    $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;
+    $('#home-share').disabled=false;
+    unsubscribeTasks=api.onSnapshot(tasksRef,snap=>{
+      tasks=normalizeTasks(snap.exists()?snap.data().items:defaults);renderTasks();
+    },error=>{homeReady=false;renderTasks();familyError(error)});
+    subscribeClaims();
+    unsubscribeProfiles=api.onSnapshot(api.collection(db,'homes',homeId,'profiles'),snap=>{
+      if(!scene)return;
+      const present=new Set();
+      snap.forEach(d=>{
+        if(d.id===user.uid)return;present.add(d.id);
+        const v=outfit(d.data()),previous=characters.get(d.id);
+        if(previous)scene.remove(previous.mesh);
+        const mesh=makeCharacter(v);scene.add(mesh);
+        characters.set(d.id,{mesh,seed:[...d.id].reduce((s,c)=>s+c.charCodeAt(0),0)});
+      });
+      for(const [id,item] of characters)if(!present.has(id)){scene.remove(item.mesh);characters.delete(id)}
+    },familyError);
+    const url=new URL(location.href);url.searchParams.delete('home');history.replaceState(null,'',url);
+    renderTasks();
+  }catch(error){
+    homeReady=false;$('#home-share').disabled=true;renderTasks();familyError(error);
+  }finally{joining=false}
+}
+async function shareHome(){
+  if(!homeReady)return toast('請先連接家庭');
+  const url=new URL(location.href);url.searchParams.set('home',homeId);
+  try{
+    if(navigator.share)await navigator.share({title:'我們的小日子',text:'一起回家做家事！',url:url.href});
+    else{await navigator.clipboard.writeText(url.href);toast('家庭邀請連結已複製')}
+  }catch(error){if(error.name!=='AbortError')toast('請複製下方的家庭代碼分享給家人')}
 }
 async function connect(){
   if(!firebaseConfig?.apiKey||!firebaseConfig?.projectId){
-    $('#game-mode').textContent='目前是單機體驗：角色與任務只儲存在這台裝置。跨裝置登入與搶任務待啟用家庭資料庫。';
-    $('#account-state').textContent='家庭帳號尚未啟用。';
-    return;
+    $('#game-mode').textContent='目前是單機體驗，角色與任務儲存在這台裝置。';
+    $('#account-state').textContent='家庭連線尚未設定。';return;
   }
+  mode='online';renderTasks();$('#account-state').textContent='正在自動登入…';
   try{
     const base='https://www.gstatic.com/firebasejs/12.19.0/';
     const [app,authLib,store]=await Promise.all([import(base+'firebase-app.js'),import(base+'firebase-auth.js'),import(base+'firebase-firestore.js')]);
     api={...authLib,...store};const instance=app.initializeApp(firebaseConfig);
-    auth=authLib.getAuth(instance);db=store.getFirestore(instance);mode='online';
-    $('#game-mode').textContent='已連接家庭資料庫；家人使用相同家庭代碼即可共用每日家事。';
+    auth=authLib.getAuth(instance);db=store.getFirestore(instance);
+    await authLib.setPersistence(auth,authLib.browserLocalPersistence);
+    await auth.authStateReady();
+    $('#game-mode').textContent='家人以同一家庭邀請連結加入，可共用每半小時重置的家事。';
     authLib.onAuthStateChanged(auth,u=>{
-      user=u;$('#account-state').textContent=u?`已登入：${u.email}`:'尚未登入';
-      if(u)subscribeHome();else{clearSubscriptions();claims={};renderTasks()}
+      user=u;
+      if(u){
+        $('#account-state').textContent='已自動匿名登入。';
+        const code=boundedCode($('#home-code').value);
+        if(/^[a-f0-9]{24}$/.test(code))subscribeHome(false);
+        else subscribeHome(true);
+      }else{homeReady=false;clearSubscriptions();claims={};renderTasks()}
     });
-  }catch(e){$('#game-mode').textContent='家庭資料庫連線失敗，請檢查網路與 Firebase 設定。';$('#account-state').textContent='無法登入';}
+    if(!auth.currentUser)await authLib.signInAnonymously(auth);
+  }catch(error){
+    const message=error.code==='auth/operation-not-allowed'
+      ?'請在 Firebase 啟用匿名登入，再重新整理。'
+      :'自動登入失敗，請重新整理頁面再試。';
+    $('#game-mode').textContent=message;$('#account-state').textContent=message;
+  }
 }
 
 {
-  $('#home-code').value=localStorage.getItem('little-home-code')||'';
+  $('#home-code').value=new URL(location.href).searchParams.get('home')||localStorage.getItem('little-home-code')||'';
   fillAvatar();setCharacter(avatar);readLocalClaims();renderTasks();clock();setInterval(clock,1000);
   $('#game-open').onclick=()=>$('#game-dialog').showModal();
   $('#game-close').onclick=()=>$('#game-dialog').close();
@@ -454,10 +506,9 @@ async function connect(){
   $('#avatar-save').onclick=saveAvatar;
   document.querySelectorAll('[data-pose]').forEach(b=>b.onclick=()=>setPose(b.dataset.pose));
   $('#task-add').onclick=addTask;
-  $('#account-register').onclick=()=>credentials(true);
-  $('#account-login').onclick=()=>credentials(false);
-  $('#account-logout').onclick=()=>auth&&api.signOut(auth);
-  $('#home-code').onchange=()=>{if(user)subscribeHome()};
+  $('#home-create').onclick=()=>subscribeHome(true);
+  $('#home-join').onclick=()=>subscribeHome(false);
+  $('#home-share').onclick=shareHome;
   $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;
   connect();
 }

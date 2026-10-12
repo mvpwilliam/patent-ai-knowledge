@@ -30,3 +30,5 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 .joke-bubble::after{content:"";position:absolute;width:10px;height:10px;bottom:-6px;left:calc(50% - 5px);background:#fffcf1;border-right:1px solid #fff;border-bottom:1px solid #fff;transform:rotate(45deg)}
 .joke-bubble p{font-size:12px;line-height:1.5;margin:0;font-weight:550}
 @media(max-width:700px){.joke-bubble{max-width:min(215px,calc(100% - 22px));padding:8px 11px 10px}.joke-bubble p{font-size:11px}}
+
+.account-buttons button:disabled{opacity:.5;cursor:default}.anonymous-note{font-size:11px!important;color:#7e8d83!important}
