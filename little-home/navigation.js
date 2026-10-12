@@ -1,42 +1,48 @@
-// Public-area navigation for the small apartment model. Coordinates are metres
-// in the same X/Z plane as the room geometry. Obstacles include the walking
-// radius, so the character's body clears furniture instead of only its centre.
-const radius=.19,cell=.16;
+// Walking envelopes share the revised model's metre coordinates.
+import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift} from './layout.js?v=66';
+const radius=.19,cell=.08;
+const shift=(a,b,c,d,s)=>[a+s,b+s,c,d];
 const obstacles=[
-  [0,.47,.60,3.94],       // television cabinet
-  [2.20,3.14,.77,3.30],   // sofa and armrests
-  [1.13,2.62,5.57,7.00], // dining table and both chairs
-  [1.22,2.66,6.95,7.66], // kitchen island
-  [1.00,3.07,9.04,10.10],// refrigerator and appliance cabinet
-  [3.10,5.85,9.31,10.10],// kitchen base cabinets
-  [2.57,2.72,5.50,8.21], // child-bedroom wall
-  [3.27,3.43,0,4.50],    // master-bedroom wall
-  [4.45,5.01,3.76,4.46], // bathroom basin
-  [5.48,6.10,3.85,4.57], // toilet
-  [6.18,6.83,6.50,7.23], // washer: approach from its front
-  [4.45,6.43,.50,2.96], // main bed
-  [4.47,5.76,5.91,8.12] // second bedroom bed
+ shift(0,.49,.60,3.94,furnitureShift.tv),
+ shift(2.20,3.14,.77,3.30,furnitureShift.sofa),
+ [1.13,2.62,5.57,7.00], // unchanged dining table/chairs
+ [1.23,2.65,6.96,7.64], // unchanged island countertop
+ [entryX(207),entryX(272),9.295,9.995],
+ [entryX(273),entryX(378),9.495,9.995],
+ [entryX(102),entryX(205),9.555,9.995],
+ [entryZero,entryZero+1.25,7.925,8.275],
+ [entryZero+1.25,entryZero+1.295,7.375,8.275], // 90 cm end panel
+ [kitchenStart,kitchenEnd,9.295,10.10],
+ [scaleX(2.57),scaleX(2.72),5.50,8.21],
+ [scaleX(3.27),scaleX(3.43),0,4.50],
+ shift(4.42,5.04,3.76,4.46,furnitureShift.basin),
+ shift(5.48,6.10,3.85,4.67,furnitureShift.toilet),
+ shift(6.18,6.83,6.50,7.23,furnitureShift.washer),
+ shift(4.45,6.43,.50,2.96,furnitureShift.mainBed),
+ shift(4.47,5.76,5.91,8.12,furnitureShift.childBed)
 ];
 export function walkable(x,z){
-  const inLiving=x>=.30&&x<=3.12&&z>=.37&&z<=4.50;
-  const inHall=x>=.30&&x<=4.56&&z>=4.50&&z<=5.38;
-  const inBath=x>=4.45&&x<=6.27&&z>=4.56&&z<=5.36;
-  const inDining=x>=.30&&x<=2.43&&z>=5.38&&z<=8.22;
-  const inKitchen=x>=.30&&x<=5.70&&z>=8.22&&z<=9.00;
-  const inMaster=x>=3.50&&x<=6.38&&z>=.28&&z<=3.54;
-  const inMasterEntry=x>=3.50&&x<=4.40&&z>=3.54&&z<=4.72;
-  const inChild=x>=2.82&&x<=5.68&&z>=5.69&&z<=8.10;
-  const inChildEntry=x>=3.48&&x<=4.42&&z>=5.35&&z<=5.69;
-  const inBalcony=x>=6.02&&x<=6.96&&z>=7.23&&z<=9.00;
-  const inBalconyDoor=x>=5.68&&x<=6.08&&z>=8.40&&z<=8.96;
-  if(!(inLiving||inHall||inBath||inDining||inKitchen||inMaster||inMasterEntry||inChild||inChildEntry||inBalcony||inBalconyDoor))return false;
-  return !obstacles.some(([a,b,c,d])=>x>=a-radius&&x<=b+radius&&z>=c-radius&&z<=d+radius);
+ const inX=(a,b)=>x>=scaleX(a)&&x<=scaleX(b);
+ const inLiving=inX(.30,3.12)&&z>=.37&&z<=4.50;
+ const inHall=inX(.30,4.56)&&z>=4.50&&z<=5.38;
+ const inBath=inX(4.45,6.27)&&z>=4.56&&z<=5.36;
+ const inDining=inX(.23,2.43)&&z>=5.38&&z<=8.22;
+ const inKitchen=inX(.23,5.70)&&z>=8.22&&z<=9.00;
+ const inMaster=inX(3.50,6.38)&&z>=.28&&z<=3.54;
+ const inMasterEntry=inX(3.50,4.40)&&z>=3.54&&z<=4.72;
+ const inChild=inX(2.82,5.68)&&z>=5.69&&z<=8.10;
+ const inChildEntry=inX(3.48,4.42)&&z>=5.35&&z<=5.69;
+ const inBalcony=inX(6.02,6.96)&&z>=7.23&&z<=9.00;
+ const inBalconyDoor=inX(5.68,6.08)&&z>=8.40&&z<=8.96;
+ const inEntry=x>=entryZero+radius&&x<=scaleX(.7)&&z>=8.47&&z<=9.28;
+ if(!(inLiving||inHall||inBath||inDining||inKitchen||inMaster||inMasterEntry||inChild||inChildEntry||inBalcony||inBalconyDoor||inEntry))return false;
+ return !obstacles.some(([a,b,c,d])=>x>=a-radius&&x<=b+radius&&z>=c-radius&&z<=d+radius);
 }
 const key=(i,j)=>i+','+j;
 const grid=(i,j)=>[i*cell,j*cell];
 const nearest=([x,z])=>{
   let best=null,score=Infinity;
-  for(let i=Math.max(0,Math.round(x/cell)-5);i<=Math.round(x/cell)+5;i++)
+  for(let i=Math.round(x/cell)-5;i<=Math.round(x/cell)+5;i++)
     for(let j=Math.max(0,Math.round(z/cell)-5);j<=Math.round(z/cell)+5;j++){
       const [px,pz]=grid(i,j),d=(px-x)**2+(pz-z)**2;
       if(d<score&&walkable(px,pz)){best=[i,j];score=d}
@@ -76,3 +82,4 @@ export function findPath(from,to){
   }
   return [];
 }
+

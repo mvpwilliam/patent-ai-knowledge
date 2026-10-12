@@ -1,6 +1,7 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
-import {findPath} from './navigation.js?v=55';
+import {findPath} from './navigation.js?v=66';
+import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ} from './layout.js?v=66';
 
 const scene=window.homeScene?.scene;
 const $=s=>document.querySelector(s);
@@ -27,6 +28,9 @@ const chores={
   balcony:{room:'balcony',marker:[6.50,1.10,6.85],stop:[6.45,7.60],icon:'🧺'},
   entry:{room:'entry',marker:[.55,.65,8.70],stop:[.70,8.55],icon:'🗑️'}
 };
+// Marker and stopping coordinates use the same physical layout as the model.
+Object.values(chores).forEach(c=>{c.marker[0]=scaleX(c.marker[0]);c.stop=pointXZ(c.stop)});
+chores.dishes.marker[0]=sinkX;chores.dishes.stop[0]=sinkX;
 const placement=t=>chores[t.id]||chores[t.room]||chores.living;
 const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
 let avatar=safeRead('little-home-avatar',{name:'小屋主',skin:'#e9b990',hair:'korean',hairColor:'#4d3834',shirt:'#7899a0'});
@@ -45,7 +49,7 @@ const today=()=>Math.floor(Date.now()/GAME_DAY_MS);
 let gameDay=today(),claims={};
 let mode='preview',auth=null,db=null,api=null,user=null,homeId='',homeReady=false,joining=false,unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
 let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0,activity=null,travel=null,restExit=null;
-const stops=[[1.35,4.25],[1.2,3.7],[1.15,1.25],[.7,2.6],[.72,4.8],[.68,6.1],[.70,7.8],[.65,8.65]];
+const stops=[[1.35,4.25],[1.2,3.7],[1.15,1.25],[.7,2.6],[.72,4.8],[.68,6.1],[.70,7.8],[.65,8.65]].map(pointXZ);
 const tour=stops.flatMap((point,i)=>findPath(point,stops[(i+1)%stops.length]).slice(i?1:0));
 const tourLengths=tour.map((point,i)=>Math.hypot(point[0]-tour[(i+1)%tour.length][0],point[1]-tour[(i+1)%tour.length][1]));
 const tourDistance=tourLengths.reduce((a,b)=>a+b,0);
@@ -110,9 +114,9 @@ function setPose(next){
   travel=null;restExit=null;pose=next;poseStarted=performance.now();
   document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===next));
   if(!character){toast('角色姿勢已選好，請在支援 3D 的瀏覽器觀看');return}
-  if(next==='sit'){character.position.set(2.48,.52,2.03);character.rotation.y=-Math.PI/2;window.homeScene?.showNews(true)}
-  if(next==='lie'){character.position.set(4.86,.47,1.7);character.rotation.y=0}
-  if(next==='stand'){character.position.set(1.55,.07,5.9);character.rotation.y=0}
+  if(next==='sit'){character.position.set(...furnitureXYZ('sofa',[2.48,.52,2.03]));character.rotation.y=-Math.PI/2;window.homeScene?.showNews(true)}
+  if(next==='lie'){character.position.set(...furnitureXYZ('mainBed',[4.86,.47,1.7]));character.rotation.y=0}
+  if(next==='stand'){character.position.set(scaleX(1.55),.07,5.9);character.rotation.y=0}
   if(next==='walk'){character.position.set(tour[0][0],.07,tour[0][1]);route=1}
   toast(({walk:'開始在家裡散步',stand:'站在餐廳',sit:'坐在沙發',lie:'躺在主臥床上'})[next]);
 }
@@ -123,7 +127,7 @@ function moveTo(point,kind='walk'){
   if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
   restExit=null;travel=null;pose='walk';
   document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose==='walk'));
-  const stops={sofa:[1.72,2.04],mainBed:[4.05,1.68],childBed:[3.98,6.90]};
+  const stops={sofa:furnitureXZ('sofa',[1.72,2.04]),mainBed:furnitureXZ('mainBed',[4.05,1.68]),childBed:furnitureXZ('childBed',[3.98,6.90])};
   const destination=stops[kind]||point;
   const path=findPath([character.position.x,character.position.z],destination);
   if(!path.length||Math.hypot(path.at(-1)[0]-destination[0],path.at(-1)[1]-destination[1])>.45)return toast('這裡目前走不到');
@@ -209,7 +213,7 @@ function animate(now){
       leftLeg.rotation.x=-Math.sin(step)*.4;rightLeg.rotation.x=Math.sin(step)*.4;
     }else{
       travel.progress=Math.min(1,travel.progress+dt/.65);
-      const target=travel.kind==='sofa'?[2.54,.51,2.03]:travel.kind==='mainBed'?[5.16,.78,1.64]:[5.12,.78,7.00];
+      const target=travel.kind==='sofa'?furnitureXYZ('sofa',[2.54,.51,2.03]):travel.kind==='mainBed'?furnitureXYZ('mainBed',[5.16,.78,1.64]):furnitureXYZ('childBed',[5.12,.78,7.00]);
       character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
       if(travel.progress>=1){
         const kind=travel.kind;restExit=travel.exit;travel=null;
@@ -249,7 +253,7 @@ function animate(now){
   }else if(pose==='lie'){
     b.position.y=0;b.rotation.x=-Math.PI/2;b.rotation.z=0;
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
-  const nearBalconyDoor=Math.abs(character.position.x-5.83)<1.12&&Math.abs(character.position.z-8.68)<.82;
+  const nearBalconyDoor=Math.abs(character.position.x-scaleX(5.83))<1.12&&Math.abs(character.position.z-8.68)<.82;
   window.homeScene?.setBalconyDoor(nearBalconyDoor);
   window.homeScene?.updateDoorsAt(character.position.x,character.position.z);
   for(const [id,item] of characters){
@@ -338,9 +342,9 @@ function startTask(t){
   if(travel)travel=null;
   if(pose==='sit')window.homeScene?.showNews(false);
   if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
-  else if(pose==='sit')character.position.set(1.75,.07,2.03);
-  else if(pose==='lie')character.position.set(3.95,.07,4.85);
-  else if(pose==='stand')character.position.set(.75,.07,5.10);
+  else if(pose==='sit')character.position.set(1.75+furnitureShift.sofa,.07,2.03);
+  else if(pose==='lie')character.position.set(scaleX(3.95),.07,4.85);
+  else if(pose==='stand')character.position.set(scaleX(.75),.07,5.10);
   restExit=null;character.position.y=.07;
   pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose==='walk'));
   const path=findPath([character.position.x,character.position.z],placement(t).stop);
@@ -531,3 +535,4 @@ async function connect(){
   $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;
   connect();
 }
+
