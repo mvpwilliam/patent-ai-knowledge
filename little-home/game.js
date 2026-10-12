@@ -40,7 +40,9 @@ const normalizeTasks=items=>{
 };
 if(avatar.hair==='bob')avatar.hair='korean';
 let tasks=normalizeTasks(safeRead('little-home-tasks',defaults));
-let hour=Math.floor(Date.now()/3600000),claims={};
+const GAME_DAY_MS=30*60*1000;
+const today=()=>Math.floor(Date.now()/GAME_DAY_MS);
+let gameDay=today(),claims={};
 let mode='preview',auth=null,db=null,api=null,user=null,homeId='',unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
 let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0,activity=null,travel=null,restExit=null;
 const stops=[[1.35,4.25],[1.2,3.7],[1.15,1.25],[.7,2.6],[.72,4.8],[.68,6.1],[.70,7.8],[.65,8.65]];
@@ -61,8 +63,7 @@ function pointOnTour(distance){
 const outfit=v=>({name:String(v.name||'小屋主').slice(0,12),skin:v.skin||'#e9b990',hair:v.hair==='bob'?'korean':v.hair||'korean',hairColor:v.hairColor||'#4d3834',shirt:v.shirt||'#7899a0'});
 const toast=s=>{const e=$('#toast');e.textContent=s;e.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>e.classList.remove('show'),2600)};
 const boundedCode=s=>s.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,24);
-const today=()=>Math.floor(Date.now()/3600000);
-const claimKey=()=>`little-home-claims-${hour}`;
+const claimKey=()=>`little-home-claims-${gameDay}`;
 
 function bodyPart(parent,geometry,color,x,y,z){
   const mesh=new T.Mesh(geometry,new T.MeshStandardMaterial({color,roughness:.75}));
@@ -137,7 +138,7 @@ Object.assign(sceneryImage.style,{position:'absolute',left:'50%',top:'50%',trans
 sceneryOverlay.append(sceneryImage);document.body.append(sceneryOverlay);
 let sceneryTimer;
 function hideScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=true}
-function showScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=false;sceneryTimer=setTimeout(hideScenery,2000)}
+function showScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=false;sceneryTimer=setTimeout(hideScenery,7000)}
 sceneryOverlay.onclick=hideScenery;
 function animate(now){
   updateMarkers();
@@ -187,7 +188,7 @@ function animate(now){
     leftArm.position.y=.49+Math.sin(t*16)*.06;rightArm.position.y=.49+Math.sin(t*16+Math.PI)*.06;
     leftArm.rotation.x=rightArm.rotation.x=-.75;
     if(activity.task.id==='scenery'){b.position.y=.008*Math.sin(t*3);b.rotation.set(0,0,0);leftArm.position.set(-.20,.42,.015);rightArm.position.set(.20,.42,.015);leftArm.rotation.x=rightArm.rotation.x=0}
-    if(t>=2){if(activity.task.id==='scenery')hideScenery();const finished=activity;activity=null;b.rotation.x=0;finishTask(finished)}
+    if(t>=(activity.task.id==='scenery'?7:2)){if(activity.task.id==='scenery')hideScenery();const finished=activity;activity=null;b.rotation.x=0;finishTask(finished)}
   }else if(pose==='walk'){
     const [x,z]=tour[route],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
     if(d<.04)route=(route+1)%tour.length;
@@ -215,8 +216,8 @@ window.homeGameUpdate=animate;
 function readLocalClaims(){claims=safeRead(claimKey(),{})}
 function clock(){
   const current=today();
-  if(current!==hour){hour=current;claims={};if(mode==='preview')readLocalClaims();else subscribeClaims();renderTasks()}
-  const left=3600000-Date.now()%3600000;
+  if(current!==gameDay){gameDay=current;claims={};if(mode==='preview')readLocalClaims();else subscribeClaims();renderTasks()}
+  const left=GAME_DAY_MS-Date.now()%GAME_DAY_MS;
   $('#game-clock').textContent=`下個遊戲日 ${String(Math.floor(left/60000)).padStart(2,'0')}:${String(Math.floor(left%60000/1000)).padStart(2,'0')}`;
 }
 function renderTasks(){
@@ -230,7 +231,7 @@ function renderTasks(){
     button.onclick=()=>startTask(t);
     row.append(label,button);list.append(row);
   }
-  if(!list.children.length){const message=document.createElement('p');message.className='task-intro';message.textContent='這個遊戲日的家事都完成了，下一小時會重置。';list.append(message)}
+  if(!list.children.length){const message=document.createElement('p');message.className='task-intro';message.textContent='這個遊戲日的家事都完成了，下個 30 分鐘週期會重置。';list.append(message)}
   renderMarkers();
 }
 let selectedTask=null;
@@ -355,7 +356,7 @@ function clearSubscriptions(){
 }
 function subscribeClaims(){
   unsubscribeClaims?.();if(!db||!homeId||!user)return;
-  const ref=api.collection(db,'homes',homeId,'days',String(hour),'claims');
+  const ref=api.collection(db,'homes',homeId,'days',String(gameDay),'claims');
   unsubscribeClaims=api.onSnapshot(ref,snap=>{claims={};snap.forEach(d=>claims[d.id]=d.data());renderTasks()},()=>toast('家事同步暫時中斷'));
 }
 function subscribeHome(){
