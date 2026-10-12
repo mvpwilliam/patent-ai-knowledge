@@ -422,9 +422,10 @@ for(const x of [-1.69,-1.06,-.43]){
   box(x,.55,8.277,.615,.58,.018,entryFace,.004);
 }
 box(entryX,.25,entryZ,entryW,.035,entryD,entryDark,.004);
-// A 90 cm wide, floor-to-ceiling end panel conceals the cabinet side from
-// the dining area; its front edge is flush with the cabinet doors.
-box(.065,1.30,7.82,.045,2.60,.90,'#263b3d',.004);
+// A full-height infill closes the former space between the cabinet side and
+// the visible 90 cm end panel, which matches the cabinet top cap.
+box(-.005,1.30,entryZ,.18,2.60,entryD,entryDark,.004);
+box(.065,1.30,7.82,.045,2.60,.90,entryDark,.004);
 box(-1.50,.07,9.64,.64,.035,.43,'#9da993',.03);
 // On entering, the full-length mirror is on the left side wall. Its width
 // is 80% of the 90 cm entry door and its top sits just above the door.
