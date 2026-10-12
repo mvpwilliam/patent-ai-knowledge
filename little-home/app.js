@@ -170,9 +170,9 @@ box(0,.94,0,.1,.05,.90,C.trim,0,childWindow);box(0,2.16,0,.1,.05,.90,C.trim,0,ch
 walls.push(childWindow);interiorWalls.push(childWindow);
 // The utility balcony has airtight north and east windows; the shower has a glass enclosure.
 const doorFrames=[];
-function doorway(x,z,width,alongZ=true){const g=new T.Group();g.position.set(x,0,z);if(alongZ)g.rotation.y=Math.PI/2;root.add(g);const h=2.1;
-for(const side of [-1,1])box(side*(width/2-.025),h/2,0,.05,h,.18,'#454c57',.008,g);
-box(0,h+.035,0,width,.07,.18,'#454c57',.008,g);
+function doorway(x,z,width,alongZ=true,frameColor='#261916'){const g=new T.Group();g.position.set(x,0,z);if(alongZ)g.rotation.y=Math.PI/2;root.add(g);const h=2.1;
+for(const side of [-1,1])box(side*(width/2-.025),h/2,0,.05,h,.18,frameColor,.008,g);
+box(0,h+.035,0,width,.07,.18,frameColor,.008,g);
 box(0,(h+.07+ROOM_WALL_HEIGHT)/2,0,width,ROOM_WALL_HEIGHT-h-.07,.14,C.wall,.008,g);
 doorFrames.push(g)}
 // The marked master entrance crosses the short passage beside the bathroom.
@@ -180,7 +180,7 @@ doorFrames.push(g)}
 doorway(3.90,4.5,1.10,false);
 doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
 doorway(3.95,5.55,1.0,false); // child door, x 3.45–4.45 beside the bath
-doorway(-1.45,10.07,.90,false); // kitchen-side wall, x -1.90 to -1.00
+doorway(-1.45,10.07,.90,false,'#454c57'); // kitchen-side wall, x -1.90 to -1.00
 // The three interior leaves share the dark walnut finish and raised moulding
 // seen in the reference photo. They rest open into their rooms, leaving the
 // hall and the character's paths unobstructed.
