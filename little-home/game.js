@@ -134,17 +134,35 @@ window.homeGameMoveTo=moveTo;
 
 const jokeBubble=$('#joke-bubble');
 const jokePoint=new T.Vector3();
-let jokes=[],jokeStartedAt=0,jokeStep=-1;
+let jokes=[],jokeStartedAt=0,jokeStep=-1,jokeSavedSecond=-1,jokePausedAt=0;
+function saveJokeProgress(){
+  if(!jokes.length)return;
+  const now=jokePausedAt||Date.now();
+  const offsetMs=((now-jokeStartedAt)%(jokes.length*20000)+jokes.length*20000)%(jokes.length*20000);
+  try{localStorage.setItem('little-home-joke-progress',JSON.stringify({offsetMs}))}catch{}
+}
+window.addEventListener('pagehide',saveJokeProgress);
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){jokePausedAt=Date.now();saveJokeProgress()}
+  else if(jokePausedAt){jokeStartedAt+=Date.now()-jokePausedAt;jokePausedAt=0}
+});
 fetch('./assets/jokes.json?v=1').then(response=>{
   if(!response.ok)throw new Error('Joke list unavailable');
   return response.json();
 }).then(data=>{
   if(!Array.isArray(data.jokes)||data.jokes.length!==244)throw new Error('Incomplete joke list');
-  jokes=data.jokes;jokeStartedAt=Date.now();
+  jokes=data.jokes;
+  const saved=safeRead('little-home-joke-progress',{offsetMs:0});
+  const offset=Number.isFinite(saved.offsetMs)&&saved.offsetMs>=0?saved.offsetMs%(jokes.length*20000):0;
+  jokeStartedAt=Date.now()-offset;
+  if(document.hidden)jokePausedAt=Date.now();
 }).catch(error=>console.warn('冷笑話題庫載入失敗',error));
 function updateJoke(){
   if(!jokes.length||!character)return;
-  const step=Math.floor((Date.now()-jokeStartedAt)/10000);
+  const now=jokePausedAt||Date.now();
+  const second=Math.floor((now-jokeStartedAt)/1000);
+  if(second!==jokeSavedSecond){jokeSavedSecond=second;saveJokeProgress()}
+  const step=Math.floor((now-jokeStartedAt)/10000);
   if(step!==jokeStep){
     jokeStep=step;
     const index=Math.floor(step/2)%jokes.length,answer=step%2===1;
@@ -252,6 +270,7 @@ function clock(){
   $('#game-clock').textContent=`下個遊戲日 ${String(Math.floor(left/60000)).padStart(2,'0')}:${String(Math.floor(left%60000/1000)).padStart(2,'0')}`;
 }
 function renderTasks(){
+  $('#home-create').hidden=homeReady;
   const list=$('#task-list');list.replaceChildren();
   for(const t of tasks){
     if(claims[t.id])continue;
