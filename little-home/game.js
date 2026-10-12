@@ -7,7 +7,8 @@ const $=s=>document.querySelector(s);
 const defaults=[
   {id:'floor',label:'掃地、拖地',room:'living'},
   {id:'dishes',label:'洗碗與整理流理台',room:'kitchen'},
-  {id:'laundry',label:'洗衣與收衣',room:'balcony'},
+  {id:'laundry',label:'洗衣',room:'balcony'},
+  {id:'collect',label:'收衣',room:'balcony'},
   {id:'bath',label:'清潔浴室',room:'bath'},
   {id:'trash',label:'倒垃圾',room:'entry'}
 ];
@@ -15,6 +16,7 @@ const chores={
   floor:{room:'living',marker:[1.00,.45,4.25],stop:[1.05,4.35],icon:'🧹'},
   dishes:{room:'kitchen',marker:[3.95,1.18,9.50],stop:[4.00,8.78],icon:'🧽'},
   laundry:{room:'balcony',marker:[6.50,1.10,6.85],stop:[6.45,7.60],icon:'🧺'},
+  collect:{room:'balcony',marker:[6.78,1.15,7.55],stop:[6.45,7.75],icon:'👕'},
   bath:{room:'bath',marker:[5.20,.68,5.05],stop:[5.20,5.00],icon:'🫧'},
   trash:{room:'entry',marker:[.55,.65,8.70],stop:[.70,8.55],icon:'🗑️'},
   living:{room:'living',marker:[1.00,.45,4.25],stop:[1.05,4.35],icon:'🧹'},
@@ -26,7 +28,14 @@ const chores={
 const placement=t=>chores[t.id]||chores[t.room]||chores.living;
 const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
 let avatar=safeRead('little-home-avatar',{name:'小屋主',skin:'#e9b990',hair:'bob',hairColor:'#4d3834',shirt:'#7899a0'});
-let tasks=safeRead('little-home-tasks',defaults);
+const normalizeTasks=items=>{
+  if(!Array.isArray(items))return defaults;
+  const result=items.map(t=>t.id==='laundry'?{...t,label:'洗衣',room:'balcony'}:t);
+  const laundryIndex=result.findIndex(t=>t.id==='laundry');
+  if(laundryIndex>=0&&!result.some(t=>t.id==='collect'))result.splice(laundryIndex+1,0,{id:'collect',label:'收衣',room:'balcony'});
+  return result;
+};
+let tasks=normalizeTasks(safeRead('little-home-tasks',defaults));
 let hour=Math.floor(Date.now()/3600000),claims={};
 let mode='preview',auth=null,db=null,api=null,user=null,homeId='',unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
 let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0,activity=null;
@@ -102,7 +111,7 @@ function animate(now){
     const [x,z]=activity.path[activity.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
     if(d<.035){activity.index++;if(activity.index>=activity.path.length){
       if(activity.phase==='return'){route=activity.route;activity=null;renderTasks()}
-      else{activity.phase='work';activity.started=now;character.userData.body.position.y=0;toast(`開始${activity.task.label} · 2 秒`)}
+      else{activity.phase='work';activity.started=now;character.userData.body.position.y=0;toast(`開始${activity.task.label}`)}
     }}
     else{const move=Math.min(d,dt*2.05);character.position.x+=dx/d*move;character.position.z+=dz/d*move;character.rotation.y=Math.atan2(dx,dz)}
     step+=dt*19;b.position.y=Math.abs(Math.sin(step))*.050;b.rotation.set(0,0,Math.sin(step)*.055);
@@ -127,6 +136,8 @@ function animate(now){
   }else if(pose==='lie'){
     b.position.y=0;b.rotation.x=-Math.PI/2;b.rotation.z=0;
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
+  const nearBalconyDoor=Math.abs(character.position.x-5.83)<1.12&&Math.abs(character.position.z-8.68)<.82;
+  window.homeScene?.setBalconyDoor(nearBalconyDoor);
   for(const [id,item] of characters){
     const [x,z,angle]=pointOnTour(now*.00043+item.seed*.17);
     item.mesh.position.set(x,.07,z);
@@ -263,7 +274,7 @@ function subscribeHome(){
   localStorage.setItem('little-home-code',homeId);
   $('#home-code').value=homeId;
   unsubscribeTasks=api.onSnapshot(api.doc(db,'homes',homeId,'settings','tasks'),snap=>{
-    tasks=snap.exists()?snap.data().items:defaults;renderTasks();
+    tasks=normalizeTasks(snap.exists()?snap.data().items:defaults);renderTasks();
   },()=>toast('任務設定讀取失敗'));
   subscribeClaims();
   unsubscribeProfiles=api.onSnapshot(api.collection(db,'homes',homeId,'profiles'),snap=>{

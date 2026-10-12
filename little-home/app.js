@@ -220,17 +220,20 @@ doorFrames.push(frontDoor);
 // past the child-room corner at z 8.20.
 const balconyDoor=new T.Group();balconyDoor.position.set(5.83,0,8.68);balconyDoor.scale.z=.88;root.add(balconyDoor);
 for(const z of [-.48,.48])box(0,1.12,z,.12,2.24,.07,'#24272a',.008,balconyDoor);
-// The left jamb faces the kitchen and sits proud of the tiled end wall.
 box(-.092,1.12,-.49,.045,2.24,.105,'#151b1d',.003,balconyDoor);
 box(-.092,2.20,0,.045,.085,1.08,'#151b1d',.003,balconyDoor);
 box(0,2.20,0,.12,.10,1.02,'#24272a',.008,balconyDoor);
-box(0,2.425,0,.14,.35,1.02,C.wall,.008,balconyDoor); // lintel to the 2.6 m wall top
+box(0,2.425,0,.14,.35,1.02,C.wall,.008,balconyDoor);
 box(0,.045,0,.15,.09,1.02,'#24272a',.005,balconyDoor);
+const balconyLeaf=new T.Group();balconyLeaf.position.z=.45;balconyDoor.add(balconyLeaf);
+for(const z of [-.91,.01])box(0,1.12,z,.07,2.12,.035,'#151b1d',.002,balconyLeaf);
+for(const y of [.08,2.16])box(0,y,-.45,.07,.045,.94,'#151b1d',.002,balconyLeaf);
 const balconyGlass=new T.MeshPhysicalMaterial({color:'#a8c4c5',transparent:true,opacity:.45,roughness:.13,metalness:.08,depthWrite:false,side:T.DoubleSide});
-box(0,1.46,0,.035,1.36,.91,balconyGlass,0,balconyDoor);
-box(-.027,.37,0,.024,.70,.89,'#25292a',.008,balconyDoor);
-for(let y=.14;y<.66;y+=.075)box(-.051,y,0,.026,.027,.85,'#3b4142',.003,balconyDoor);
-box(-.08,1.08,-.35,.04,.35,.025,C.metal,.009,balconyDoor);
+box(0,1.46,-.45,.035,1.36,.88,balconyGlass,0,balconyLeaf);
+box(-.027,.37,-.45,.024,.70,.88,'#25292a',.008,balconyLeaf);
+for(let y=.14;y<.66;y+=.075)box(-.051,y,-.45,.026,.027,.84,'#3b4142',.003,balconyLeaf);
+box(-.08,1.08,-.80,.04,.35,.025,C.metal,.009,balconyLeaf);
+let balconyDoorTarget=0;
 doorFrames.push(balconyDoor);
 // Window frames and sheer curtain folds at the two north windows.
 const curtains=new T.Group();root.add(curtains);function windowAt(x,w){box(x,1.1,.015,w,1.6,.075,'#607779',.015);box(x,1.12,.062,w-.12,1.38,.018,new T.MeshStandardMaterial({color:'#b9d3d1',roughness:.25,emissive:'#9dbabc',emissiveIntensity:.2}));box(x,1.13,.083,.035,1.38,.025,C.dark);box(x,.53,.083,w,.035,.025,C.dark);for(let i=0;i<14;i++){let xx=x-w/2+.055+i*(w-.11)/13;let m=cyl(xx,1.07,.18,.035,1.68,i%2?'#eeeddf':'#d9dfd3',.035,curtains);m.scale.z=.8}box(x,1.95,.16,w+.14,.06,.1,C.cream,.02)}windowAt(1.67,2.5);windowAt(4.92,2.55);
@@ -507,6 +510,6 @@ canvas.addEventListener('pointermove',e=>{const prior=pointers.get(e.pointerId);
 function release(e){const p=pointers.get(e.pointerId);if(e.type==='pointerup'&&pointers.size===1&&p&&!p.moved&&Math.hypot(e.clientX-p.startX,e.clientY-p.startY)<8)toggleDoorAt(e);pointers.delete(e.pointerId);pinch=0;if(pointers.size){const p=[...pointers.values()][0];lastX=p.x;lastY=p.y}}
 canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
-let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of interiorDoors)door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
+let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of interiorDoors)door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;balconyLeaf.rotation.y+=(balconyDoorTarget-balconyLeaf.rotation.y)*.24;window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,get currentRoom(){return current}};
+window.homeScene={scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,setBalconyDoor(open){balconyDoorTarget=open?-1.3:0},get currentRoom(){return current}};
