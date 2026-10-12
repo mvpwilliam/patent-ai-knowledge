@@ -148,7 +148,6 @@ function updateJoke(){
   if(step!==jokeStep){
     jokeStep=step;
     const index=Math.floor(step/2)%jokes.length,answer=step%2===1;
-    $('#joke-stage').textContent=`第 ${index+1} 題 · ${answer?'答案':'題目'}`;
     $('#joke-line').textContent=answer?jokes[index].a:jokes[index].q;
   }
   jokePoint.set(character.position.x,character.position.y+1.27,character.position.z).project(window.homeScene.camera);

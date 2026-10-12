@@ -25,9 +25,8 @@
 body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#344b43}
 @media(max-width:700px){.chore-marker{width:40px;height:40px;min-width:40px;font-size:19px!important}.scene-bottom{display:none}.chore-popup{font-size:11px;gap:6px;padding-left:10px}.scene-top .pill{font-size:10px;padding:8px 12px}}
 
-.joke-bubble{position:absolute;z-index:5;pointer-events:none;transform:translate(-50%,-100%);width:max-content;min-width:130px;max-width:min(240px,calc(100% - 28px));padding:9px 13px 11px;border:1px solid #fff;background:#fffcf1f0;color:#344b43;border-radius:15px;box-shadow:0 5px 18px #1c302b28;text-align:left;overflow-wrap:anywhere}
+.joke-bubble{position:absolute;z-index:5;pointer-events:none;transform:translate(-50%,-100%);width:max-content;min-width:0;max-width:min(240px,calc(100% - 28px));padding:9px 13px 11px;border:1px solid #fff;background:#fffcf1f0;color:#344b43;border-radius:15px;box-shadow:0 5px 18px #1c302b28;text-align:left;overflow-wrap:anywhere}
 .joke-bubble[hidden]{display:none}
 .joke-bubble::after{content:"";position:absolute;width:10px;height:10px;bottom:-6px;left:calc(50% - 5px);background:#fffcf1;border-right:1px solid #fff;border-bottom:1px solid #fff;transform:rotate(45deg)}
-.joke-bubble small{display:block;color:#698573;font-size:9px;letter-spacing:.5px}
-.joke-bubble p{font-size:12px;line-height:1.5;margin:4px 0 0;font-weight:550}
+.joke-bubble p{font-size:12px;line-height:1.5;margin:0;font-weight:550}
 @media(max-width:700px){.joke-bubble{max-width:min(215px,calc(100% - 22px));padding:8px 11px 10px}.joke-bubble p{font-size:11px}}
