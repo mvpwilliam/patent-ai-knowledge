@@ -28,6 +28,8 @@ function finishSection(name,kind='architecture',dx=0){
   builtStart=root.children.length;
 }
 function named(object,name){object.name=name;return object}
+// Thin cabinet fronts should not receive their own cabinet's shadow map.
+function cabinetFront(object){object.castShadow=false;object.receiveShadow=false;return object}
 const floorGroup=new T.Group();root.add(floorGroup);
 const woodShades=['#eadcc1','#e6d7b9','#e9dbbe','#e2d2b3','#ecddc2','#e7d8bb'];
 function woodBoards(x,z,w,d,alongZ=true,y=.041){
@@ -450,8 +452,10 @@ box(fx,.21,fridgeFrontZ,.63,.31,.006,fridgeGraphite,.004);
 for(const y of [.745,.365])box(fx,y,fridgeFrontZ-.005,.61,.018,.002,'#242729');
 box(fx+.01,1.36,fridgeFrontZ-.005,.003,.10,.001,'#a5a9aa');
 named(box(fx,2.24,fz,.65,.65,.70,lightCabinet,.012),'fridge-upper-carcass');
-for(const [i,x] of [fx-.16,fx+.16].entries())named(box(x,2.24,fridgeFrontZ,.305,.61,.006,cabinetFace,.003),`fridge-upper-door-${i}`);
+for(const [i,x] of [fx-.16,fx+.16].entries())named(cabinetFront(box(x,2.24,fridgeFrontZ,.305,.61,.006,cabinetFace,.003)),`fridge-upper-door-${i}`);
 finishSection('fridge-and-upper','exact');
+// Keep the specified 70 cm depth while clearing the exterior wall's face.
+root.getObjectByName('fridge-and-upper').position.z=-.012;
 // Full-width entry cabinet from the door-side corner to the dining return.
 // The reference has three upper doors, a lit display niche, one row of three
 // shallow drawers, three lower doors, and a continuous shoe void at the floor.
@@ -465,20 +469,22 @@ for(const x of [entryLeft+.0175,entryCenter+entryW/2-.0175])box(x,1.30,entryZ,.0
 box(entryCenter,2.585,entryZ,entryW,.03,entryD,entryDark);
 // The upper carcass and three equally spaced doors reach the ceiling.
 named(box(entryCenter,2.035,entryZ,entryW,1.07,entryD,'#626866'),'entry-upper-carcass');
-for(const [i,x] of entryDoorXs.entries())named(box(x,2.035,entryFrontZ,entryDoorW,1.055,.018,entryFace,.004),`entry-upper-door-${i}`);
+for(const [i,x] of entryDoorXs.entries())named(cabinetFront(box(x,2.035,entryFrontZ,entryDoorW,1.055,.018,entryFace,.004)),`entry-upper-door-${i}`);
 box(entryCenter,1.48,entryZ,entryW,.035,entryD,'#e2d3a9');
 for(const x of [entryLeft+.18,entryCenter+entryW/2-.18])cyl(x,1.452,8.17,.035,.015,'#fff0cd');
 // Keep the display niche open and extend every shelf to the end panel.
 box(entryCenter,1.25,7.937,entryW-.06,.42,.016,'#69716e');
 box(entryCenter,1.02,entryZ,entryW,.05,entryD,entryDark);
 for(const x of entryDoorXs){
-  box(x,.91,entryFrontZ,entryDoorW,.17,.018,entryFace,.004);
-  box(x,.55,entryFrontZ,entryDoorW,.58,.018,entryFace,.004);
+  cabinetFront(box(x,.91,entryFrontZ,entryDoorW,.17,.018,entryFace,.004));
+  cabinetFront(box(x,.55,entryFrontZ,entryDoorW,.58,.018,entryFace,.004));
 }
 box(entryCenter,.25,entryZ,entryW,.035,entryD,entryDark,.004);
 // The 90 cm end panel matches the cabinet top and meets its widened side.
 named(box(entryZero+1.25+.0225,1.30,7.825,.045,2.60,.90,entryDark,.004),'entry-end-panel');
 finishSection('entry-cabinet','exact');
+// The back of the cabinet used to coincide exactly with the wall face.
+root.getObjectByName('entry-cabinet').position.z=.012;
 // On entering, the full-length mirror is on the left side wall. Its width
 // is 80% of the 90 cm entry door and its top sits just above the door.
 box(entryZero+.016,1.10,9.58,.018,2.20,.72,'#343c3a',.006);
