@@ -212,7 +212,7 @@ walnutDoor(3.38,4.5,1.04,.92,0);             // master bedroom
 walnutDoor(4.45,5.52,.99,.25,Math.PI/2,true); // bathroom, with lower vents
 walnutDoor(3.47,5.55,.95,-.85,0);            // second bedroom
 // A dark leaf pivots inward toward the small entry square.
-const frontDoor=new T.Group();frontDoor.position.set(-1.88,0,10.00);frontDoor.rotation.y=-.34;root.add(frontDoor);
+const frontDoor=new T.Group();frontDoor.position.set(-1.88,0,10.00);frontDoor.rotation.y=0;root.add(frontDoor);
 box(.45,1.03,-.02,.89,2.04,.055,'#292b2b',.01,frontDoor);
 box(.76,1.02,-.09,.13,.045,.025,C.metal,.01,frontDoor);
 doorFrames.push(frontDoor);
@@ -426,7 +426,6 @@ for(const x of entryDoorXs){
 box(entryX,.25,entryZ,entryW,.035,entryD,entryDark,.004);
 // The 90 cm end panel matches the cabinet top and meets its widened side.
 box(.065,1.30,7.82,.045,2.60,.90,entryDark,.004);
-box(-1.50,.07,9.64,.64,.035,.43,'#9da993',.03);
 // On entering, the full-length mirror is on the left side wall. Its width
 // is 80% of the 90 cm entry door and its top sits just above the door.
 box(-1.961,1.10,9.58,.018,2.20,.72,'#343c3a',.006);
@@ -480,13 +479,13 @@ let theta=.77,phi=.76,dist=19.5,target=new T.Vector3(2.9,.2,5),desiredTarget=tar
 const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃與灰色 Bergamo 三人座沙發。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 日光',desc:'浴室側放 Panasonic 黑色洗脫烘，冷氣室外機位在柱外獨立小平台。',pos:[6.55,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'滿牆玄關櫃、展示層與深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
 let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台門',()=>{desiredTarget.set(5.76,1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{tv=!tv;tvMat.color.set(tv?'#60878b':'#263b3e');tvMat.emissiveIntensity=tv?.45:0;tvArt.visible=tv;selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
 document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
-// One finger pans by default; the visible switch restores orbit rotation.
+// One finger rotates by default; the switch enables faster, wider panning.
 // Two fingers pan by their midpoint and pinch to zoom.
-function clampPan(){desiredTarget.x=Math.max(-1.5,Math.min(8.5,desiredTarget.x));desiredTarget.z=Math.max(-.5,Math.min(10.5,desiredTarget.z))}
-function panByPixels(dx,dy){const r=desiredDist*(portrait?1.37:1);const scale=1.1*r*Math.tan(camera.fov*Math.PI/360)/Math.max(1,host.clientHeight);desiredTarget.x+=(-dx*Math.cos(theta)+dy*Math.sin(theta))*scale;desiredTarget.z+=(dx*Math.sin(theta)+dy*Math.cos(theta))*scale;clampPan()}
+function clampPan(){desiredTarget.x=Math.max(-3,Math.min(10,desiredTarget.x));desiredTarget.z=Math.max(-2,Math.min(12,desiredTarget.z))}
+function panByPixels(dx,dy){const r=desiredDist*(portrait?1.37:1);const scale=1.85*r*Math.tan(camera.fov*Math.PI/360)/Math.max(1,host.clientHeight);desiredTarget.x+=(-dx*Math.cos(theta)+dy*Math.sin(theta))*scale;desiredTarget.z+=(dx*Math.sin(theta)+dy*Math.cos(theta))*scale;clampPan()}
 function panHorizontal(amount){desiredTarget.x+=amount*Math.cos(theta);desiredTarget.z-=amount*Math.sin(theta);clampPan()}
-$('#pan-left').onclick=()=>panHorizontal(.8);$('#pan-right').onclick=()=>panHorizontal(-.8);
-let dragMode='pan';$('#drag-mode').onclick=()=>{dragMode=dragMode==='pan'?'rotate':'pan';$('#drag-mode').textContent=dragMode==='pan'?'單指：平移':'單指：旋轉';$('#drag-mode').setAttribute('aria-pressed',dragMode==='pan');toast(dragMode==='pan'?'單指拖曳可左右移動畫面':'單指拖曳可旋轉視角')};
+$('#pan-left').onclick=()=>panHorizontal(-1.2);$('#pan-right').onclick=()=>panHorizontal(1.2);
+let dragMode='rotate';$('#drag-mode').onclick=()=>{dragMode=dragMode==='pan'?'rotate':'pan';$('#drag-mode').textContent=dragMode==='pan'?'單指：平移':'單指：旋轉';$('#drag-mode').setAttribute('aria-pressed',dragMode==='pan');toast(dragMode==='pan'?'單指拖曳可左右移動畫面':'單指拖曳可旋轉視角')};
 const pointers=new Map();let lastX=0,lastY=0,pinch=0,midX=0,midY=0;
 const doorRay=new T.Raycaster(),doorPointer=new T.Vector2();
 function toggleDoorAt(e){
