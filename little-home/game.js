@@ -27,7 +27,7 @@ const chores={
 };
 const placement=t=>chores[t.id]||chores[t.room]||chores.living;
 const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
-let avatar=safeRead('little-home-avatar',{name:'小屋主',skin:'#e9b990',hair:'bob',hairColor:'#4d3834',shirt:'#7899a0'});
+let avatar=safeRead('little-home-avatar',{name:'小屋主',skin:'#e9b990',hair:'korean',hairColor:'#4d3834',shirt:'#7899a0'});
 const normalizeTasks=items=>{
   if(!Array.isArray(items))return defaults;
   const result=items.map(t=>t.id==='laundry'?{...t,label:'洗衣',room:'balcony'}:t);
@@ -35,6 +35,7 @@ const normalizeTasks=items=>{
   if(laundryIndex>=0&&!result.some(t=>t.id==='collect'))result.splice(laundryIndex+1,0,{id:'collect',label:'收衣',room:'balcony'});
   return result;
 };
+if(avatar.hair==='bob')avatar.hair='korean';
 let tasks=normalizeTasks(safeRead('little-home-tasks',defaults));
 let hour=Math.floor(Date.now()/3600000),claims={};
 let mode='preview',auth=null,db=null,api=null,user=null,homeId='',unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
@@ -54,7 +55,7 @@ function pointOnTour(distance){
   }
   return [tour[0][0],tour[0][1],0];
 }
-const outfit=v=>({name:String(v.name||'小屋主').slice(0,12),skin:v.skin||'#e9b990',hair:v.hair||'bob',hairColor:v.hairColor||'#4d3834',shirt:v.shirt||'#7899a0'});
+const outfit=v=>({name:String(v.name||'小屋主').slice(0,12),skin:v.skin||'#e9b990',hair:v.hair==='bob'?'korean':v.hair||'korean',hairColor:v.hairColor||'#4d3834',shirt:v.shirt||'#7899a0'});
 const toast=s=>{const e=$('#toast');e.textContent=s;e.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>e.classList.remove('show'),2600)};
 const boundedCode=s=>s.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,24);
 const today=()=>Math.floor(Date.now()/3600000);
@@ -69,9 +70,21 @@ function makeCharacter(v){
   const sphere=(r,color,x,y,z)=>bodyPart(body,new T.SphereGeometry(r,16,12),color,x,y,z);
   sphere(.19,v.shirt,0,.40,0).scale.set(.9,1.15,.7);
   sphere(.24,v.skin,0,.75,0).scale.set(1,1.05,.9);
-  sphere(.255,v.hairColor,0,.855,-.012).scale.set(1,.48,1);
-  if(v.hair==='long')for(const x of [-.20,.20])sphere(.085,v.hairColor,x,.66,-.065).scale.set(.7,1.8,1);
-  if(v.hair==='cap'){sphere(.22,v.shirt,0,.93,0).scale.set(1.05,.35,1);sphere(.16,v.shirt,0,.90,.20).scale.set(1.1,.17,.55)}
+  // A full upper hair shell sits outside the scalp instead of below the crown.
+  const hairShell=bodyPart(body,new T.SphereGeometry(.258,24,16,0,Math.PI*2,0,1.22),v.hairColor,0,.75,-.008);
+  hairShell.scale.set(1.03,1.08,1.02);
+  // Side and back volume keeps the hairstyle complete from every camera angle.
+  sphere(.19,v.hairColor,0,.82,-.125).scale.set(1.20,.87,.62);
+  for(const side of [-1,1]){
+    sphere(.10,v.hairColor,side*.203,.826,-.038).scale.set(.63,1.15,1.02);
+    // Two softly swept curtain bangs, with a small off-centre part.
+    const fringe=sphere(.127,v.hairColor,side*.097,.919,.169);
+    fringe.scale.set(1.02,.70,.43);fringe.rotation.z=side*.25;
+    const tip=sphere(.065,v.hairColor,side*.177,.856,.136);
+    tip.scale.set(.58,1.15,.56);tip.rotation.z=side*.34;
+  }
+  if(v.hair==='long')for(const x of [-.20,.20])sphere(.095,v.hairColor,x,.66,-.085).scale.set(.72,1.85,1);
+  if(v.hair==='cap'){sphere(.245,v.shirt,0,.99,-.018).scale.set(1.08,.50,1);sphere(.16,v.shirt,0,.96,.22).scale.set(1.1,.17,.55)}
   const arms=[],legs=[];
   for(const x of [-.085,.085]){
     sphere(.017,'#303135',x,.77,.208);
