@@ -435,41 +435,45 @@ box(drawerX+.07,1.32,9.745,.30,.18,.18,'#f1f0eb',.04);
 finishSection('appliance-cabinet','exact');
 // Exact Panasonic envelope: 65 × 70 × 183 cm, with no scaled appliance.
 const fx=entryX(239.5),fz=9.645;
+// Put each front face outside the cabinet box. Coplanar faces flicker as
+// the camera moves, especially on mobile GPUs.
+const fridgeFrontZ=fz-.70/2-.012;
 const fridgeSilver=new T.MeshStandardMaterial({color:'#777d81',metalness:.72,roughness:.20});
 const fridgeGraphite=new T.MeshStandardMaterial({color:'#45494c',metalness:.66,roughness:.21});
 named(box(fx,.96,fz,.65,1.83,.70,'#36393c',.025),'fridge-body');
 for(const [x,m] of [[fx-.16,fridgeSilver],[fx+.16,fridgeGraphite]]){
-  box(x,1.415,9.298,.305,.86,.006,m,.004);
-  box(x,.86,9.298,.305,.20,.006,m,.004);
+  box(x,1.415,fridgeFrontZ,.305,.86,.006,m,.004);
+  box(x,.86,fridgeFrontZ,.305,.20,.006,m,.004);
 }
-box(fx,.56,9.298,.63,.36,.006,fridgeGraphite,.004);
-box(fx,.21,9.298,.63,.31,.006,fridgeGraphite,.004);
-for(const y of [.745,.365])box(fx,y,9.296,.61,.018,.002,'#242729');
-box(fx+.01,1.36,9.295,.003,.10,.001,'#a5a9aa');
-box(fx,2.24,fz,.65,.65,.70,lightCabinet,.012);
-for(const x of [fx-.16,fx+.16])box(x,2.24,9.298,.305,.61,.006,cabinetFace,.003);
+box(fx,.56,fridgeFrontZ,.63,.36,.006,fridgeGraphite,.004);
+box(fx,.21,fridgeFrontZ,.63,.31,.006,fridgeGraphite,.004);
+for(const y of [.745,.365])box(fx,y,fridgeFrontZ-.005,.61,.018,.002,'#242729');
+box(fx+.01,1.36,fridgeFrontZ-.005,.003,.10,.001,'#a5a9aa');
+named(box(fx,2.24,fz,.65,.65,.70,lightCabinet,.012),'fridge-upper-carcass');
+for(const [i,x] of [fx-.16,fx+.16].entries())named(box(x,2.24,fridgeFrontZ,.305,.61,.006,cabinetFace,.003),`fridge-upper-door-${i}`);
 finishSection('fridge-and-upper','exact');
 // Full-width entry cabinet from the door-side corner to the dining return.
 // The reference has three upper doors, a lit display niche, one row of three
 // shallow drawers, three lower doors, and a continuous shoe void at the floor.
 const entryFace='#62635e',entryDark='#303838';
 const entryCenter=entryZero+.625,entryZ=8.10,entryW=1.25,entryD=.35;
+const entryFrontZ=entryZ+entryD/2+.012;
 const entryLeft=entryCenter-entryW/2,entryCol=entryW/3;
 const entryDoorXs=[0,1,2].map(i=>entryLeft+entryCol*(i+.5));
 const entryDoorW=entryCol-.018;
 for(const x of [entryLeft+.0175,entryCenter+entryW/2-.0175])box(x,1.30,entryZ,.035,2.60,entryD,entryDark,.006);
 box(entryCenter,2.585,entryZ,entryW,.03,entryD,entryDark);
 // The upper carcass and three equally spaced doors reach the ceiling.
-box(entryCenter,2.035,entryZ,entryW,1.07,entryD,'#626866');
-for(const x of entryDoorXs)box(x,2.035,8.266,entryDoorW,1.055,.018,entryFace,.004);
+named(box(entryCenter,2.035,entryZ,entryW,1.07,entryD,'#626866'),'entry-upper-carcass');
+for(const [i,x] of entryDoorXs.entries())named(box(x,2.035,entryFrontZ,entryDoorW,1.055,.018,entryFace,.004),`entry-upper-door-${i}`);
 box(entryCenter,1.48,entryZ,entryW,.035,entryD,'#e2d3a9');
 for(const x of [entryLeft+.18,entryCenter+entryW/2-.18])cyl(x,1.452,8.17,.035,.015,'#fff0cd');
 // Keep the display niche open and extend every shelf to the end panel.
 box(entryCenter,1.25,7.937,entryW-.06,.42,.016,'#69716e');
 box(entryCenter,1.02,entryZ,entryW,.05,entryD,entryDark);
 for(const x of entryDoorXs){
-  box(x,.91,8.266,entryDoorW,.17,.018,entryFace,.004);
-  box(x,.55,8.266,entryDoorW,.58,.018,entryFace,.004);
+  box(x,.91,entryFrontZ,entryDoorW,.17,.018,entryFace,.004);
+  box(x,.55,entryFrontZ,entryDoorW,.58,.018,entryFace,.004);
 }
 box(entryCenter,.25,entryZ,entryW,.035,entryD,entryDark,.004);
 // The 90 cm end panel matches the cabinet top and meets its widened side.
