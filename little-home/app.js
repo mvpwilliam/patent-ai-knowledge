@@ -405,26 +405,26 @@ box(1.36,1.36,9.064,.003,.10,.002,'#a5a9aa');
 // The reference has three upper doors, a lit display niche, one row of three
 // shallow drawers, three lower doors, and a continuous shoe void at the floor.
 const entryFace='#f2f1ec',entryDark='#303838';
-const entryX=-1.06,entryZ=8.065,entryW=1.90,entryD=.40;
-for(const x of [-2.02,-.10])box(x,1.30,entryZ,.035,2.60,entryD,entryDark,.006);
+const entryX=-.975,entryZ=8.065,entryW=2.07,entryD=.40;
+const entryLeft=entryX-entryW/2,entryCol=entryW/3;
+const entryDoorXs=[0,1,2].map(i=>entryLeft+entryCol*(i+.5));
+const entryDoorW=entryCol-.018;
+for(const x of [entryLeft-.01,entryX+entryW/2+.01])box(x,1.30,entryZ,.035,2.60,entryD,entryDark,.006);
 box(entryX,2.585,entryZ,entryW,.03,entryD,entryDark);
-// Upper carcass and all three doors reach the ceiling; the display niche
-// below stays open, as in the entry photograph.
+// The upper carcass and three equally spaced doors reach the ceiling.
 box(entryX,2.035,entryZ,entryW,1.07,entryD,'#626866');
-for(const x of [-1.69,-1.06,-.43])box(x,2.035,8.277,.615,1.055,.018,entryFace,.004);
+for(const x of entryDoorXs)box(x,2.035,8.277,entryDoorW,1.055,.018,entryFace,.004);
 box(entryX,1.48,entryZ,entryW,.035,entryD,'#e2d3a9');
-for(const x of [-1.83,-.29])cyl(x,1.452,8.17,.035,.015,'#fff0cd');
-// Set the niche backing at the rear so the display shelf has real depth.
+for(const x of [entryLeft+.18,entryX+entryW/2-.18])cyl(x,1.452,8.17,.035,.015,'#fff0cd');
+// Keep the display niche open and extend every shelf to the end panel.
 box(entryX,1.25,7.948,entryW-.06,.42,.016,'#69716e');
 box(entryX,1.02,entryZ,entryW,.05,entryD,entryDark);
-for(const x of [-1.69,-1.06,-.43]){
-  box(x,.91,8.277,.615,.17,.018,entryFace,.004);
-  box(x,.55,8.277,.615,.58,.018,entryFace,.004);
+for(const x of entryDoorXs){
+  box(x,.91,8.277,entryDoorW,.17,.018,entryFace,.004);
+  box(x,.55,8.277,entryDoorW,.58,.018,entryFace,.004);
 }
 box(entryX,.25,entryZ,entryW,.035,entryD,entryDark,.004);
-// A full-height infill closes the former space between the cabinet side and
-// the visible 90 cm end panel, which matches the cabinet top cap.
-box(-.005,1.30,entryZ,.18,2.60,entryD,entryDark,.004);
+// The 90 cm end panel matches the cabinet top and meets its widened side.
 box(.065,1.30,7.82,.045,2.60,.90,entryDark,.004);
 box(-1.50,.07,9.64,.64,.035,.43,'#9da993',.03);
 // On entering, the full-length mirror is on the left side wall. Its width
