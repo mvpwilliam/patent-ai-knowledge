@@ -10,9 +10,11 @@ const defaults=[
   {id:'laundry',label:'洗衣',room:'balcony'},
   {id:'collect',label:'收衣',room:'balcony'},
   {id:'bath',label:'清潔浴室',room:'bath'},
-  {id:'trash',label:'倒垃圾',room:'entry'}
+  {id:'trash',label:'倒垃圾',room:'entry'},
+  {id:'scenery',label:'看窗外美景',room:'living'}
 ];
 const chores={
+  scenery:{room:'living',marker:[1.65,1.15,.18],stop:[1.65,.48],icon:'🌄'},
   floor:{room:'living',marker:[1.00,.45,4.25],stop:[1.05,4.35],icon:'🧹'},
   dishes:{room:'kitchen',marker:[3.95,1.18,9.50],stop:[4.00,8.78],icon:'🧽'},
   laundry:{room:'balcony',marker:[6.50,1.10,6.85],stop:[6.45,7.60],icon:'🧺'},
@@ -33,6 +35,7 @@ const normalizeTasks=items=>{
   const result=items.map(t=>t.id==='laundry'?{...t,label:'洗衣',room:'balcony'}:t);
   const laundryIndex=result.findIndex(t=>t.id==='laundry');
   if(laundryIndex>=0&&!result.some(t=>t.id==='collect'))result.splice(laundryIndex+1,0,{id:'collect',label:'收衣',room:'balcony'});
+  if(!result.some(t=>t.id==='scenery'))result.push({id:'scenery',label:'看窗外美景',room:'living'});
   return result;
 };
 if(avatar.hair==='bob')avatar.hair='korean';
@@ -102,10 +105,11 @@ function setCharacter(v){
 }
 function setPose(next){
   if(activity){toast('先完成目前的家事');return}
+  if(next!=='sit')window.homeScene?.showNews(false);
   travel=null;restExit=null;pose=next;poseStarted=performance.now();
   document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===next));
   if(!character){toast('角色姿勢已選好，請在支援 3D 的瀏覽器觀看');return}
-  if(next==='sit'){character.position.set(2.48,.52,2.03);character.rotation.y=Math.PI/2}
+  if(next==='sit'){character.position.set(2.48,.52,2.03);character.rotation.y=-Math.PI/2;window.homeScene?.showNews(true)}
   if(next==='lie'){character.position.set(4.86,.47,1.7);character.rotation.y=0}
   if(next==='stand'){character.position.set(1.55,.07,5.9);character.rotation.y=0}
   if(next==='walk'){character.position.set(tour[0][0],.07,tour[0][1]);route=1}
@@ -114,6 +118,7 @@ function setPose(next){
 function moveTo(point,kind='walk'){
   if(activity)return toast('先完成目前的家事');
   if(!character)return;
+  if(pose==='sit')window.homeScene?.showNews(false);
   if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
   restExit=null;travel=null;pose='walk';
   document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose==='walk'));
@@ -125,6 +130,15 @@ function moveTo(point,kind='walk'){
   toast(kind==='walk'?'屋主走過去了':kind==='sofa'?'屋主走去沙發':'屋主走去睡覺');
 }
 window.homeGameMoveTo=moveTo;
+const sceneryOverlay=document.createElement('div');sceneryOverlay.hidden=true;
+Object.assign(sceneryOverlay.style,{position:'fixed',inset:'0',zIndex:'200',background:'rgba(13,23,28,.88)'});
+const sceneryImage=document.createElement('img');sceneryImage.src='./assets/window-view.webp';sceneryImage.alt='客廳窗外的美景';
+Object.assign(sceneryImage.style,{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',maxWidth:'94vw',maxHeight:'90vh',borderRadius:'14px',boxShadow:'0 20px 70px rgba(0,0,0,.4)'});
+sceneryOverlay.append(sceneryImage);document.body.append(sceneryOverlay);
+let sceneryTimer;
+function hideScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=true}
+function showScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=false;sceneryTimer=setTimeout(hideScenery,2000)}
+sceneryOverlay.onclick=hideScenery;
 function animate(now){
   updateMarkers();
   if(!character)return;
@@ -151,7 +165,7 @@ function animate(now){
       if(travel.progress>=1){
         const kind=travel.kind;restExit=travel.exit;travel=null;
         pose=kind==='sofa'?'sit':'lie';
-        character.rotation.y=kind==='mainBed'?-Math.PI/2:kind==='childBed'?Math.PI:Math.PI/2;
+        character.rotation.y=kind==='mainBed'?-Math.PI/2:kind==='childBed'?Math.PI:-Math.PI/2;
         document.querySelectorAll('[data-pose]').forEach(btn=>btn.classList.toggle('active',btn.dataset.pose===pose));
         if(kind==='sofa')window.homeScene?.showNews(true);
       }
@@ -160,7 +174,7 @@ function animate(now){
     const [x,z]=activity.path[activity.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
     if(d<.035){activity.index++;if(activity.index>=activity.path.length){
       if(activity.phase==='return'){route=activity.route;activity=null;renderTasks()}
-      else{activity.phase='work';activity.started=now;character.userData.body.position.y=0;toast(`開始${activity.task.label}`)}
+      else{activity.phase='work';activity.started=now;character.userData.body.position.y=0;if(activity.task.id==='scenery'){character.rotation.y=Math.PI;showScenery()}toast(`開始${activity.task.label}`)}
     }}
     else{const move=Math.min(d,dt*2.05);character.position.x+=dx/d*move;character.position.z+=dz/d*move;character.rotation.y=Math.atan2(dx,dz)}
     step+=dt*19;b.position.y=Math.abs(Math.sin(step))*.050;b.rotation.set(0,0,Math.sin(step)*.055);
@@ -172,7 +186,8 @@ function animate(now){
     leftArm.position.z=.18;rightArm.position.z=.18;
     leftArm.position.y=.49+Math.sin(t*16)*.06;rightArm.position.y=.49+Math.sin(t*16+Math.PI)*.06;
     leftArm.rotation.x=rightArm.rotation.x=-.75;
-    if(t>=2){const finished=activity;activity=null;b.rotation.x=0;finishTask(finished)}
+    if(activity.task.id==='scenery'){b.position.y=.008*Math.sin(t*3);b.rotation.set(0,0,0);leftArm.position.set(-.20,.42,.015);rightArm.position.set(.20,.42,.015);leftArm.rotation.x=rightArm.rotation.x=0}
+    if(t>=2){if(activity.task.id==='scenery')hideScenery();const finished=activity;activity=null;b.rotation.x=0;finishTask(finished)}
   }else if(pose==='walk'){
     const [x,z]=tour[route],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
     if(d<.04)route=(route+1)%tour.length;
@@ -248,6 +263,7 @@ function startTask(t){
   if(mode==='online'&&!user)return toast('請先登入家庭帳號');
   if(!character)return toast('請在支援 3D 的瀏覽器啟動場景');
   if(travel)travel=null;
+  if(pose==='sit')window.homeScene?.showNews(false);
   if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
   else if(pose==='sit')character.position.set(1.75,.07,2.03);
   else if(pose==='lie')character.position.set(3.95,.07,4.85);
