@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
-import {findPath} from './navigation.js?v=75';
-import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ} from './layout.js?v=66';
+import {findPath} from './navigation.js?v=85';
+import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition} from './layout.js?v=85';
 
 const scene=window.homeScene?.scene;
 const $=s=>document.querySelector(s);
@@ -31,6 +31,7 @@ const chores={
 // Marker and stopping coordinates use the same physical layout as the model.
 Object.values(chores).forEach(c=>{c.marker[0]=scaleX(c.marker[0]);c.stop=pointXZ(c.stop)});
 chores.dishes.marker[0]=sinkX;chores.dishes.stop[0]=sinkX;
+for(const id of ['laundry','balcony']){chores[id].marker=[washerPosition.x,1.10,washerPosition.z];chores[id].stop=[washerPosition.x,7.30]}
 const placement=t=>chores[t.id]||chores[t.room]||chores.living;
 const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
 let avatar=safeRead('little-home-avatar',{name:'小屋主',skin:'#e9b990',hair:'korean',hairColor:'#4d3834',shirt:'#7899a0'});
