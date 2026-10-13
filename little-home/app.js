@@ -8,6 +8,13 @@ const scene=new T.Scene(),camera=new T.PerspectiveCamera(34,1,.1,100);const root
 const hemi=new T.HemisphereLight(0xf1f4fa,0x747982,1.35);scene.add(hemi);const sun=new T.DirectionalLight(0xfff6eb,2.1);sun.position.set(-3,12,6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-12,right:12,top:12,bottom:-12,near:1,far:40});sun.shadow.bias=-.0005;sun.shadow.normalBias=.035;sun.shadow.radius=3;scene.add(sun);const fill=new T.DirectionalLight(0xdce7ff,.65);fill.position.set(7,8,-9);scene.add(fill);
 const mats=new Map(),geos=new Map();function mat(c){if(!mats.has(c))mats.set(c,new T.MeshStandardMaterial({color:c,roughness:.8}));return mats.get(c)}
 const C={wall:'#b8b9ba',trim:'#979b9d',wood:'#a58b6c',woodlight:'#c4ae8b',floor:'#e8d9bd',navy:'#354e63',cream:'#e3e1d9',cab:'#62656b',dark:'#394746',metal:'#6d7773',green:'#789377',white:'#f4f1e6',bed:'#b6c3ac'};
+// Architectural X values below are unscaled model metres. The balcony and
+// shower share the same new outer line, 54 cm outward in world coordinates.
+const OUTER_X=7.18+.54/X_SCALE;
+const GLASS_X=6.47+.19/X_SCALE; // 19 cm L return from the toilet-side wall
+const SHAFT_INNER_X=5.895+.35/X_SCALE;
+const SHAFT_OUTER_X=SHAFT_INNER_X+.13;
+const END_SPAN=OUTER_X-6.47,END_CENTRE=(6.47+OUTER_X)/2;
 function box(x,y,z,w,h,d,c,round=0,parent=root){let key=[w,h,d,round].join(',');if(!geos.has(key))geos.set(key,round?new RoundedBoxGeometry(w,h,d,2,Math.min(round,w/3,h/3,d/3)):new T.BoxGeometry(w,h,d));let m=new T.Mesh(geos.get(key),typeof c==='string'?mat(c):c);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
 function cyl(x,y,z,r,h,c,r2=r,parent=root){let m=new T.Mesh(new T.CylinderGeometry(r,r2,h,20),mat(c));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
 function ball(x,y,z,r,c,s=[1,1,1],parent=root){let m=new T.Mesh(new T.SphereGeometry(r,16,12),typeof c==='string'?mat(c):c);m.position.set(x,y,z);m.scale.set(...s);m.castShadow=true;parent.add(m);return m}
@@ -103,16 +110,16 @@ for(let py=0;py<128;py++)for(let px=0;px<128;px++){
 tileCtx.putImageData(tilePixels,0,0);
 const balconyTileTexture=new T.CanvasTexture(tileCanvas);balconyTileTexture.colorSpace=T.SRGBColorSpace;
 const balconyTileMat=new T.MeshStandardMaterial({map:balconyTileTexture,roughness:.85});
-box(6.505,-.18,7.825,1.35,.32,2.75,'#c9baa0',.04);
-box(6.505,.005,7.825,1.35,.06,2.75,'#a5aeb0');
-for(let tx=5.83;tx<7.18-.001;tx+=.45)for(let tz=6.45;tz<9.20-.001;tz+=.45){
-  const w=Math.min(.45,7.18-tx),d=Math.min(.45,9.20-tz);
+box((5.83+OUTER_X)/2,-.18,7.825,OUTER_X-5.83,.32,2.75,'#c9baa0',.04);
+box((5.83+OUTER_X)/2,.005,7.825,OUTER_X-5.83,.06,2.75,'#a5aeb0');
+for(let tx=5.83;tx<OUTER_X-.001;tx+=.45)for(let tz=6.45;tz<9.20-.001;tz+=.45){
+  const w=Math.min(.45,OUTER_X-tx),d=Math.min(.45,9.20-tz);
   box(tx+w/2,.042,tz+d/2,w-.018,.012,d-.018,balconyTileMat,.001);
 }
-floor(6.825,5.50,.71,1.90,'#55585b','tile');
+floor(END_CENTRE,5.50,END_SPAN,1.90,'#55585b','tile');
 finishSection('balcony-floors');
 // Foundation and soft ground beneath the miniature.
-box(2.55,-.52,5,9.7,.28,12.2,'#d3dac4',.13);box(2.55,-.72,5,10,.18,12.5,'#bdcbae',.06);
+box(2.9,-.52,5,10.5,.28,12.2,'#d3dac4',.13);box(2.9,-.72,5,10.8,.18,12.5,'#bdcbae',.06);
 const ground=new T.Mesh(new T.PlaneGeometry(200,200),new T.ShadowMaterial({color:0x536e48,opacity:.15}));ground.rotation.x=-Math.PI/2;ground.position.y=-.82;ground.receiveShadow=true;scene.add(ground);
 finishSection('foundation');
 const walls=[];function wall(x,z,w,d,h=1.15){let g=new T.Group();g.position.set(x,0,z);root.add(g);box(0,h/2,0,w,h,d,C.wall,.018,g);box(0,h+.025,0,w+.045,.05,d+.045,C.trim,.012,g);walls.push(g);return g}
@@ -129,12 +136,12 @@ for(const [a,b] of [[.42,2.92],[3.645,6.195]]){
 }
 wall(-.07,3.9,.15,7.9,2.6);
 wall(6.47,2.25,.15,4.5,2.6); // master and toilet side, ending at the shower glass
-wall(7.18,5.50,.13,1.90,2.6); // projecting shower exterior
+named(wall(OUTER_X,5.50,.13,1.90,2.6),'shower-outer-wall'); // projecting shower exterior
 // Balcony elevation: the window sits between a lower wall and a solid
 // header. Together the two solid portions occupy about two thirds of 2.6 m.
-wall(7.18,7.825,.13,2.75,1.43);
-wall(7.18,9.71,.13,1.02,.55);
-const balconyEastWindow=new T.Group();balconyEastWindow.position.set(7.18,0,7.825);root.add(balconyEastWindow);
+named(wall(OUTER_X,7.825,.13,2.75,1.43),'balcony-parapet');
+wall(OUTER_X,9.71,.13,1.02,.55);
+const balconyEastWindow=new T.Group();balconyEastWindow.position.set(OUTER_X,0,7.825);root.add(balconyEastWindow);
 box(0,2.45,0,.13,.30,2.75,C.wall,.008,balconyEastWindow);
 const balconyPane=new T.MeshPhysicalMaterial({color:'#bed8d9',transparent:true,opacity:.35,roughness:.10,depthWrite:false,side:T.DoubleSide});
 box(0,1.865,0,.025,.82,2.60,balconyPane,0,balconyEastWindow);
@@ -189,25 +196,26 @@ const applianceDivider=partition(3.05,9.68,.13,.78); // shared kitchen/appliance
 applianceDivider.children.forEach(part=>part.material=mat(C.wall));
 // The solid service shaft touches the child-room corner. Beyond it, the
 // shower projects as far as the outside edge of the utility balcony.
-const serviceShaft=wall(6.15,6.00,.64,.90,2.6);
-partition(6.47,6.00,.13,.90); // shaft / projecting shower side
+const serviceShaft=named(wall((5.83+SHAFT_OUTER_X)/2,6.00,SHAFT_OUTER_X-5.83,.90,2.6),'service-shaft');
+partition((SHAFT_INNER_X+SHAFT_OUTER_X)/2,6.00,.13,.90); // 35 cm internal X, fixed inner wall
 partition(6.47,4.63,.13,.26); // solid return on the bath-side corner of shower
 // The bath-facing end is solid. The airtight end window belongs opposite
 // it, at the kitchen/AC-platform end of the balcony.
-partition(6.825,6.45,.71,.13);
-wall(6.825,9.20,.71,.13,1.43);
-const balconySouthWindow=new T.Group();balconySouthWindow.position.set(6.825,0,9.20);root.add(balconySouthWindow);
-box(0,2.45,0,.71,.30,.13,C.wall,.008,balconySouthWindow);
-box(0,1.865,0,.62,.82,.025,balconyPane,0,balconySouthWindow);
-for(const x of [-.335,.335])box(x,1.865,0,.045,.87,.065,'#43494a',.002,balconySouthWindow);
-for(const y of [1.455,2.275])box(0,y,0,.67,.05,.07,'#43494a',.002,balconySouthWindow);
+partition(END_CENTRE,6.45,END_SPAN,.13);
+wall(END_CENTRE,9.20,END_SPAN,.13,1.43);
+const balconySouthWindow=new T.Group();balconySouthWindow.position.set(END_CENTRE,0,9.20);root.add(balconySouthWindow);
+box(0,2.45,0,END_SPAN,.30,.13,C.wall,.008,balconySouthWindow);
+box(0,1.865,0,END_SPAN-.09,.82,.025,balconyPane,0,balconySouthWindow);
+for(const x of [-END_SPAN/2+.02,END_SPAN/2-.02])box(x,1.865,0,.045,.87,.065,'#43494a',.002,balconySouthWindow);
+for(const y of [1.455,2.275])box(0,y,0,END_SPAN-.04,.05,.07,'#43494a',.002,balconySouthWindow);
 walls.push(balconySouthWindow);
 // Full-height outward shower wall, aligned with the master-bedroom window
 // elevation. The 60 x 90 cm window has a 120 cm sill and a 50 cm header.
-const showerWindowWall=new T.Group();showerWindowWall.position.set(6.825,0,4.55);root.add(showerWindowWall);
-box(0,.60,0,.71,1.20,.13,C.wall,.008,showerWindowWall);
-box(0,2.35,0,.71,.50,.13,C.wall,.008,showerWindowWall);
-for(const x of [-.3275,.3275])box(x,1.65,0,.055,.90,.13,C.wall,.006,showerWindowWall);
+const showerWindowWall=new T.Group();showerWindowWall.name='shower-window-wall';showerWindowWall.position.set(END_CENTRE,0,4.55);root.add(showerWindowWall);
+box(0,.60,0,END_SPAN,1.20,.13,C.wall,.008,showerWindowWall);
+box(0,2.35,0,END_SPAN,.50,.13,C.wall,.008,showerWindowWall);
+const showerJamb=(END_SPAN-.60)/2;
+for(const sign of [-1,1])box(sign*(.30+showerJamb/2),1.65,0,showerJamb,.90,.13,C.wall,.006,showerWindowWall);
 const showerWindowGlass=new T.MeshPhysicalMaterial({color:'#a7c5c9',transparent:true,opacity:.48,roughness:.1,depthWrite:false,side:T.DoubleSide});
 box(0,1.65,0,.60,.90,.025,showerWindowGlass,0,showerWindowWall);
 for(const x of [-.30,.30])box(x,1.65,0,.025,.90,.15,C.trim,.003,showerWindowWall);
@@ -360,37 +368,40 @@ finishSection('main-bed','translate',furnitureShift.mainBed);
 // Bathroom tiled floor, basin, mirror, toilet and glass shower partition.
 box(5.4,.07,4.58,1.91,.06,1.64,'#55585b');for(let x=4.5;x<6.4;x+=.32)box(x,.105,4.58,.01,.004,1.64,'#777b7c');for(let z=3.8;z<5.4;z+=.32)box(5.4,.105,z,1.9,.004,.01,'#777b7c');finishSection('bath-floor');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);finishSection('basin','translate',furnitureShift.basin);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
 finishSection('toilet','translate',furnitureShift.toilet);
-// The shower projects beyond the bath toward the balcony. In local plan
-// coordinates the toilet-side wall end A=(0,0), C=(15,0), B=(15,79) cm.
-// The short leg A-C is perpendicular to that wall; C-B runs parallel to it.
-box(6.825,.07,5.50,.65,.06,1.76,'#55585b');
+// The shower projects beyond the bath toward the balcony. The L-shaped
+// entrance returns 19 cm to the toilet wall; its 62 cm leaf opens inward.
+box((GLASS_X+OUTER_X)/2,.07,5.50,OUTER_X-GLASS_X,.06,1.76,'#55585b');
 const showerGlass=new T.MeshPhysicalMaterial({color:'#c7e0df',transparent:true,opacity:.34,roughness:.08,metalness:0,depthWrite:false,side:T.DoubleSide});
-const A={x:6.47,z:4.76},Ccorner={x:6.62,z:4.76},B={x:6.62,z:5.55};
-const showerH=2.00,doorW=.65,fixedW=B.z-Ccorner.z-doorW;
-// Short fixed pane, A to C: a 15 cm return without a gap at the toilet wall.
+const A={x:6.47,z:4.76},Ccorner={x:GLASS_X,z:4.76},B={x:GLASS_X,z:5.52};
+const showerH=2.00,doorW=.62,fixedW=.14;
+// Short fixed pane, A to C: a 19 cm return without a gap at the toilet wall.
 box((A.x+Ccorner.x)/2,1.08,A.z,Ccorner.x-A.x,showerH,.012,showerGlass);
 for(const x of [A.x,Ccorner.x])rod([x,.08,A.z],[x,2.08,A.z],.008,'#232c2d');
 rod([A.x,2.08,A.z],[Ccorner.x,2.08,A.z],.008,'#232c2d');
-// Long side: a 65 cm door at C and the remaining 14 cm fixed at the shaft.
+// Long side: a 62 cm door at C and the remaining 14 cm fixed near the shaft.
 box(Ccorner.x,1.08,Ccorner.z+doorW+fixedW/2,.012,showerH,fixedW,showerGlass);
 for(const z of [Ccorner.z+doorW,B.z])rod([Ccorner.x,.08,z],[Ccorner.x,2.08,z],.008,'#232c2d');
 rod([Ccorner.x,2.08,Ccorner.z+doorW],[Ccorner.x,2.08,B.z],.008,'#232c2d');
-const showerDoor=new T.Group();showerDoor.position.set(Ccorner.x,0,Ccorner.z);root.add(showerDoor);
+const showerDoor=new T.Group();showerDoor.name='shower-door';showerDoor.position.set(Ccorner.x,0,Ccorner.z);root.add(showerDoor);
 box(0,1.08,doorW/2,.012,showerH,doorW,showerGlass,0,showerDoor);
 rod([0,.08,0],[0,2.08,0],.008,'#232c2d',showerDoor);
 rod([0,2.08,0],[0,2.08,doorW],.008,'#232c2d',showerDoor);
 rod([0,.08,doorW],[0,2.08,doorW],.008,'#232c2d',showerDoor);
 rod([-.04,.93,.53],[-.04,1.25,.53],.010,'#232c2d',showerDoor);
+showerDoor.userData.door={open:false,target:0,openAngle:Math.PI/2,closedAngle:0};
 // The dashed plan arc shows the door opening inward, away from the outer
 // window at z=4.55. The door itself stays closed on the straight C-B line.
 for(let j=0;j<18;j+=2){const a=j*Math.PI/60,b=(j+1)*Math.PI/60;rod([Ccorner.x+doorW*Math.sin(a),.135,Ccorner.z+doorW*Math.cos(a)],[Ccorner.x+doorW*Math.sin(b),.135,Ccorner.z+doorW*Math.cos(b)],.006,'#cfad7d')}
-// Opaque return at the shaft end remains a solid service enclosure.
-box(6.552,1.30,6.00,.032,2.58,.90,'#51565b',.004);
-// A small cross seal closes the last centimetres to the shaft's end face.
-box(6.585,1.08,5.55,.07,showerH,.012,showerGlass);
+// The shaft face and L-shaped glass cannot occupy one X line while retaining
+// the 19 cm return. A fixed glass piece closes their 22 cm offset at the end.
+box((SHAFT_OUTER_X+GLASS_X)/2,1.08,5.55,GLASS_X-SHAFT_OUTER_X,showerH,.012,showerGlass);
+box(GLASS_X,1.08,5.535,.012,showerH,.03,showerGlass);
 finishSection('shower-floor-and-glass');
-rod([7.04,.12,5.47],[7.04,1.53,5.47],.02,C.metal);rod([7.04,1.53,5.47],[6.84,1.53,5.47],.02,C.metal);cyl(6.84,1.51,5.47,.085,.03,C.metal);
-finishSection('shower-fixtures','translate',scaleX(7.04)-7.04);
+const showerHeadX=OUTER_X-.20;
+rod([showerHeadX,.12,5.50],[showerHeadX,1.53,5.50],.02,C.metal);
+rod([showerHeadX,1.53,5.50],[showerHeadX-.20,1.53,5.50],.02,C.metal);
+cyl(showerHeadX-.20,1.51,5.50,.085,.03,C.metal);
+finishSection('shower-fixtures');
 // Child room: only the bed; the headboard faces the opposite kitchen-side wall.
 box(5.12,.25,7.00,1.1,.35,1.95,C.wood,.06);
 box(5.12,.51,7.00,1.1,.20,1.94,C.white,.055);
@@ -561,7 +572,7 @@ for(const x of [-.26,.26])for(const z of [-.28,.28])box(x,.018,z,.055,.036,.055,
 finishSection('washer','translate',furnitureShift.washer);
 // AC platform at the kitchen end: the column occupies the inner half and
 // the platform's outer edge aligns with the unbroken balcony parapet.
-box(6.82,-.13,9.72,.72,.22,1.05,'#a9aba4',.02);
+box((6.46+OUTER_X)/2,-.13,9.72,OUTER_X-6.46,.22,1.05,'#a9aba4',.02);
 finishSection('ac-platform-floor');
 box(6.82,.34,9.72,.56,.67,.66,'#c6c9c5',.025);
 box(6.82,.36,9.37,.52,.53,.025,'#e3e5de',.008);
@@ -569,14 +580,14 @@ const outdoorFan=cyl(6.82,.36,9.35,.19,.025,'#657471');outdoorFan.rotation.x=Mat
 for(let i=0;i<8;i++){const a=i*Math.PI/4;rod([6.82,.36,9.33],[6.82+.16*Math.cos(a),.36+.16*Math.sin(a),9.33],.012,'#d0d7d3')}
 box(6.82,.73,9.72,.61,.035,.67,'#979d98',.005);
 // Guard rail separates the appliance platform from the walkable balcony.
-finishSection('ac-outdoor-unit','translate',scaleX(6.82)-6.82);
-rod([6.51,.55,9.20],[7.16,.55,9.20],.018,'#899893');
-for(const x of [6.51,6.83,7.16])rod([x,.08,9.20],[x,.55,9.20],.012,'#899893');
+finishSection('ac-outdoor-unit','translate',scaleX(6.82)-6.82+.54);
+rod([6.51,.55,9.20],[OUTER_X-.02,.55,9.20],.018,'#899893');
+for(const x of [6.51,(6.51+OUTER_X-.02)/2,OUTER_X-.02])rod([x,.08,9.20],[x,.55,9.20],.012,'#899893');
 finishSection('ac-platform-railing');
 // Small welcoming detail away from the clear dining tabletop.
 let night=false,tv=false,curtainClosed=true,wallLow=false,topView=false;
 let theta=.77,phi=.76,dist=19.5,target=new T.Vector3(2.9,.2,5),desiredTarget=target.clone(),desiredDist=19.5;
-const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃與灰色 Bergamo 三人座沙發。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 日光',desc:'浴室側放 Panasonic 黑色洗脫烘，冷氣室外機位在柱外獨立小平台。',pos:[6.55,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'滿牆玄關櫃、展示層與深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
+const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃與灰色 Bergamo 三人座沙發。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 日光',desc:'浴室側放 Panasonic 黑色洗脫烘，冷氣室外機位在柱外獨立小平台。',pos:[7.14,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'滿牆玄關櫃、展示層與深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
 Object.values(rooms).forEach(r=>r.pos[0]=scaleX(r.pos[0]));
 rooms.entry.desc='125 公分玄關櫃、上中下各三片白色面板與開放展示層。';
 target.x=scaleX(target.x);desiredTarget.x=scaleX(desiredTarget.x);
@@ -624,7 +635,7 @@ function toggleDoorAt(e){
   const rect=canvas.getBoundingClientRect();
   doorPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
   doorRay.setFromCamera(doorPointer,camera);
-  const hits=doorRay.intersectObjects(interiorDoors,true);
+  const hits=doorRay.intersectObjects([...interiorDoors,showerDoor],true);
   if(!hits.length)return;
   let door=hits[0].object;
   while(door&&!door.userData.door)door=door.parent;
@@ -651,9 +662,9 @@ function release(e){
 }
 canvas.addEventListener('dblclick',e=>e.preventDefault());canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
-let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of interiorDoors)door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;balconyLeaf.rotation.y+=(balconyDoorTarget-balconyLeaf.rotation.y)*.24;window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
+let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;balconyLeaf.rotation.y+=(balconyDoorTarget-balconyLeaf.rotation.y)*.24;window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX},root,scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,
+window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX},root,scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,showerDoor,
   setBalconyDoor(open){balconyDoorTarget=open?-1.3:0},
   updateDoorsAt(x,z){
     const centers=[[3.90,4.50],[4.45,5.025],[3.95,5.55]];
