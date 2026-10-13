@@ -547,7 +547,7 @@ function setupAccountUI(){
  dialog.append(title,message);
  for(const [id,label] of [['login-google','Google 登入'],['login-guest','訪客體驗'],['login-existing','登入已有 Google 帳號']]){const b=document.createElement('button');b.id=id;b.textContent=label;b.style.margin='8px 0';b.style.width='100%';dialog.append(b)}
  document.body.append(dialog);
- const open=document.createElement('button');open.id='account-open';open.textContent='帳號／跨裝置登入';open.style.marginTop='12px';$('#account-state').parentElement?.append(open);
+ const open=document.createElement('button');open.id='account-open';open.className='account-manage-button';open.textContent='帳號設定';$('#account-state').parentElement?.querySelector('.account-buttons')?.append(open);
  open.onclick=()=>{accountStatus();dialog.showModal()};
  $('#login-guest').onclick=async()=>{
   if(authBusy)return;authBusy=true;accountStatus();
