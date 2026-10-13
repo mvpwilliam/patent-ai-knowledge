@@ -69,21 +69,30 @@ box(4.24,.042,6.84,3.08,.004,2.52,C.floor);woodBoards(4.24,6.84,3.08,2.52,false,
 finishSection('indoor-floors');
 named(floor((entryZero+scaleX(0))/2,(7.85+stoneStartZ)/2,scaleX(0)-entryZero,stoneStartZ-7.85),'entry-wood-under-cabinet');
 finishSection('entry-wood-floor','exact');
-// The floor-finish plan shows a rectangular speckled stone landing, 205 x
-// 165 cm, lower than the adjoining wood. No diagonal stone wedge or grout.
+// The real floor uses muted grey slate. A diagonal transition runs from the
+// refrigerator side to the front tip of the entry cabinet's decorative panel.
 const entryStoneCanvas=document.createElement('canvas');entryStoneCanvas.width=256;entryStoneCanvas.height=256;
-const stoneCtx=entryStoneCanvas.getContext('2d');stoneCtx.fillStyle='#e2e0d8';stoneCtx.fillRect(0,0,256,256);
+const stoneCtx=entryStoneCanvas.getContext('2d');stoneCtx.fillStyle='#696c69';stoneCtx.fillRect(0,0,256,256);
 let stoneSeed=1917;const stoneRand=()=>((stoneSeed=(stoneSeed*1664525+1013904223)>>>0)/4294967296);
-for(let i=0;i<185;i++){
-  const size=1+stoneRand()*5;
-  stoneCtx.fillStyle=['#9a9991','#bab7ae','#777a76','#c9c7bd'][i%4];
-  stoneCtx.fillRect(stoneRand()*256,stoneRand()*256,size,size*(.55+stoneRand()));
+for(let i=0;i<11500;i++){
+  const size=.3+stoneRand()*1.15;
+  stoneCtx.fillStyle=['#777a77','#5d615e','#858783','#676a67'][i%4];
+  stoneCtx.fillRect(stoneRand()*256,stoneRand()*256,size,size);
 }
 const entryStoneTexture=new T.CanvasTexture(entryStoneCanvas);entryStoneTexture.colorSpace=T.SRGBColorSpace;
 const entryStoneMaterial=new T.MeshStandardMaterial({map:entryStoneTexture,roughness:.92});
 const stoneCenterX=entryZero+1.025,stoneCenterZ=(stoneStartZ+9.995)/2;
 named(box(stoneCenterX,-.18,stoneCenterZ,2.05,.32,1.65,'#c9baa0',.004),'entry-stone-base');
-named(box(stoneCenterX,.005,stoneCenterZ,2.05,.06,1.65,entryStoneMaterial,.001),'entry-stone-finish');
+box(stoneCenterX,.005,stoneCenterZ,2.05,.06,1.65,'#696c69',.001);
+const panelTip=[entryX(125),7.387],fridgeTip=[entryX(207),9.295];
+const stoneOutline=[[entryZero,stoneStartZ],[panelTip[0],stoneStartZ],panelTip,fridgeTip,[fridgeTip[0],9.995],[entryZero,9.995]];
+const stoneShape=new T.Shape();stoneShape.moveTo(stoneOutline[0][0],-stoneOutline[0][1]);
+for(const [x,z] of stoneOutline.slice(1))stoneShape.lineTo(x,-z);
+stoneShape.closePath();
+const stoneGeometry=new T.ShapeGeometry(stoneShape);stoneGeometry.rotateX(-Math.PI/2);
+const stoneFinish=new T.Mesh(stoneGeometry,entryStoneMaterial);stoneFinish.position.y=.052;stoneFinish.receiveShadow=true;
+named(stoneFinish,'entry-stone-finish');root.add(stoneFinish);
+named(rod([panelTip[0],.056,panelTip[1]],[fridgeTip[0],.056,fridgeTip[1]],.007,'#b6aea0'),'entry-diagonal-transition');
 finishSection('entry-stone','exact');
 // Brown ceramic balcony squares with cool grey grout and soft horizontal
 // grain follow the actual floor photograph, independent of the indoor wood.
@@ -148,6 +157,21 @@ wall(entryZero-.064125,10.07,.12825,.15,2.6); // short corner before the front d
 // Door opening continues directly to the structural column. // long kitchen wall after the door
 named(wall(entryX(153.5),9.775,1.03,.44,2.6),'entry-column');
 finishSection('entry-walls','exact'); // solid column: door, column, then refrigerator
+// Black pegboard on the room-facing upper third of the structural pillar.
+const pegCenter=entryX(153.5),pegZ=9.532;
+named(box(pegCenter,2.16,pegZ,.96,.86,.018,'#262a2a',.006),'entry-pegboard');
+for(let row=0;row<8;row++)for(let col=0;col<10;col++){
+  const hole=cyl(entryX(108)+col*.10,1.78+row*.105,pegZ-.012,.007,.001,'#151819');
+  hole.rotation.x=Math.PI/2;hole.castShadow=false;hole.receiveShadow=false;
+}
+box(pegCenter,1.815,pegZ-.025,.70,.026,.03,'#171b1b',.003);
+for(const x of [entryX(133),entryX(154),entryX(175)])rod([x,1.81,pegZ-.035],[x,1.68,pegZ-.065],.008,'#a2a7a1');
+finishSection('entry-pegboard','exact');
+// Youqingmen STRAUSS large bent-wood stool: rounded U profile, dark finish.
+const stoolX=entryX(153.5),stoolZ=9.31,stoolColor='#242626';
+named(box(stoolX,.435,stoolZ,.70,.055,.34,stoolColor,.027),'entry-bent-stool-top');
+for(const x of [stoolX-.315,stoolX+.315])box(x,.225,stoolZ,.07,.42,.34,stoolColor,.025);
+finishSection('entry-bent-stool','exact');
 wall(6.16,9.635,.66,.87,2.6); // balcony-end column fills the recessed floor
 // Interior walls use a full 2.6 m height; low-wall mode is display-only.
 const ROOM_WALL_HEIGHT=2.6;
@@ -502,7 +526,7 @@ box(entryZero+.016,1.10,9.58,.018,2.20,.72,'#343c3a',.006);
 const mirrorMat=new T.MeshPhysicalMaterial({color:'#c9dcda',metalness:.58,roughness:.08,clearcoat:1});
 box(entryZero+.029,1.10,9.58,.006,2.16,.69,mirrorMat);
 finishSection('entry-mirror','exact');
-// Pegboard and bent nesting table removed per revised entrance plan.
+// Entry pillar pegboard and bent-wood stool are assembled above.
 // Panasonic NA-V150RPH-K front-load washer/dryer against the bath-end solid
 // wall; its black front and copper-rimmed drum face the kitchen balcony door.
 const washer=new T.Group();washer.position.set(6.505,.045,6.865);root.add(washer);
