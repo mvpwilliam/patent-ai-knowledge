@@ -379,7 +379,12 @@ async function claimTask(t,day=today()){
       tx.set(ref,{uid:user.uid,name:avatar.name,at:api.serverTimestamp()});
     });
     toast('完成！家人現在也會看到');
-  }catch(e){toast(e.message||'暫時無法完成，請再試一次')}
+  }catch(e){
+    console.warn('家事完成紀錄寫入失敗',e);
+    toast(e?.code==='permission-denied'
+      ?'家事未記錄：Firestore 規則拒絕寫入，請確認已發佈 30 分鐘遊戲日規則。'
+      :e.message||'暫時無法完成，請再試一次');
+  }
 }
 async function addTask(){
   const field=$('#task-new'),label=field.value.trim().slice(0,24);
