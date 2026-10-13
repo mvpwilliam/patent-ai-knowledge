@@ -127,7 +127,7 @@ for(let tx=5.83;tx<OUTER_X-.001;tx+=.45)for(let tz=BALCONY_START_Z;tz<9.20-.001;
   const w=Math.min(.45,OUTER_X-tx),d=Math.min(.45,9.20-tz);
   box(tx+w/2,.042,tz+d/2,w-.018,.012,d-.018,balconyTileMat,.001);
 }
-floor(SHOWER_WINDOW_CENTRE,SHOWER_CENTRE_Z,SHOWER_WINDOW_SPAN,SHOWER_LENGTH,'#55585b','tile');
+floor(SHOWER_WINDOW_CENTRE-.0375,SHOWER_CENTRE_Z,SHOWER_WINDOW_SPAN+.075,SHOWER_LENGTH,'#55585b','tile');
 floor((SHAFT_OUTER_X+BATH_EXTERIOR_X)/2,(5.55+BALCONY_START_Z)/2,BATH_EXTERIOR_X-SHAFT_OUTER_X,BALCONY_START_Z-5.55,'#55585b','tile');
 finishSection('balcony-floors');
 // Foundation and soft ground beneath the miniature.
@@ -381,42 +381,40 @@ const bathFloorNear=3.65,bathFloorFar=5.55,bathFloorMiddle=(bathFloorNear+bathFl
 box((bathFloorStart+bathFloorEnd)/2,.07,bathFloorMiddle,bathFloorEnd-bathFloorStart,.06,bathFloorDepth,'#55585b');for(let x=4.5;x<bathFloorEnd;x+=.32)box(x,.105,bathFloorMiddle,.01,.004,bathFloorDepth,'#777b7c');for(let z=3.65;z<5.55;z+=.32)box((bathFloorStart+bathFloorEnd)/2,.105,z,bathFloorEnd-bathFloorStart,.004,.01,'#777b7c');finishSection('bath-floor');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);finishSection('basin','translate',furnitureShift.basin);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
 finishSection('toilet','translate',furnitureShift.toilet);
 // Shower floor follows the walls; the glass enclosure is installed below.
-box(SHOWER_WINDOW_CENTRE,.07,SHOWER_CENTRE_Z,SHOWER_WINDOW_SPAN,.06,SHOWER_LENGTH-.13,'#55585b');
+box(SHOWER_WINDOW_CENTRE-.0375,.07,SHOWER_CENTRE_Z,SHOWER_WINDOW_SPAN+.075,.06,SHOWER_LENGTH-.13,'#55585b');
 box((SHAFT_OUTER_X+BATH_EXTERIOR_X)/2,.07,(5.55+BALCONY_START_Z-.065)/2,BATH_EXTERIOR_X-SHAFT_OUTER_X,.06,BALCONY_START_Z-.065-5.55,'#55585b');
 finishSection('shower-floor');
-// L-shaped shower enclosure. Red in the marked plan is the hinged leaf;
-// green is a short fixed pane followed by a fixed return to the solid wall.
-// Use world coordinates so the 62 cm door does not stretch when it rotates.
-const showerGlass=new T.MeshPhysicalMaterial({color:'#c5dddc',transparent:true,opacity:.34,roughness:.10,metalness:0,depthWrite:false,side:T.DoubleSide});
-const glassMetal='#596566',glassSeal='#d1d8d4';
-const showerGlassZ=SHAFT_BATH_FACE_Z,showerWallX=scaleX(SHAFT_OUTER_X);
-const showerDoorWidth=.62,showerFixedWidth=.14;
-const showerHingeX=showerWallX+showerDoorWidth;
-const showerReturnX=showerHingeX+showerFixedWidth;
-const showerEndFaceZ=BALCONY_START_Z-.13;
+// Confirmed world-space floor points. Long glass runs along Z,
+// parallel to the exterior wall; only the fixed return runs along X.
+const showerPoints={P1:{x:5.873625,y:.10,z:5.485},P3:{x:6.109975,y:.10,z:4.625},C:{x:5.873625,y:.10,z:4.625},H:{x:5.873625,y:.10,z:4.840}};
+const {P1:showerP1,P3:showerP3,C:showerC,H:showerH}=showerPoints;
+const showerGlass=new T.MeshPhysicalMaterial({color:'#d8e6e5',transparent:true,opacity:.24,roughness:.08,metalness:0,depthWrite:false,side:T.DoubleSide});
+const glassMetal='#151b1c',glassSeal='#969c9d',glassBase=showerH.y,glassMiddle=glassBase+1;
+const showerDoorWidth=showerP1.z-showerH.z;
 const showerFixed=new T.Group();showerFixed.name='shower-fixed-glass';root.add(showerFixed);
-box(showerHingeX+showerFixedWidth/2,1.08,showerGlassZ,showerFixedWidth,2.0,.012,showerGlass,0,showerFixed);
-box(showerReturnX,1.08,(showerGlassZ+showerEndFaceZ)/2,.012,2.0,showerEndFaceZ-showerGlassZ,showerGlass,0,showerFixed);
-for(const x of [showerHingeX,showerReturnX])rod([x,.08,showerGlassZ],[x,2.08,showerGlassZ],.008,glassMetal,showerFixed);
-rod([showerReturnX,.08,showerEndFaceZ],[showerReturnX,2.08,showerEndFaceZ],.009,glassMetal,showerFixed);
-rod([showerHingeX,2.08,showerGlassZ],[showerReturnX,2.08,showerGlassZ],.008,glassMetal,showerFixed);
-rod([showerReturnX,2.08,showerGlassZ],[showerReturnX,2.08,showerEndFaceZ],.008,glassMetal,showerFixed);
-const showerDoor=new T.Group();showerDoor.name='shower-door';showerDoor.position.set(showerHingeX,0,showerGlassZ);root.add(showerDoor);
-box(-showerDoorWidth/2,1.08,0,showerDoorWidth,.012+1.988,.012,showerGlass,0,showerDoor);
-for(const x of [-showerDoorWidth,0])rod([x,.08,0],[x,2.08,0],.008,glassMetal,showerDoor);
-rod([-showerDoorWidth,2.08,0],[0,2.08,0],.008,glassMetal,showerDoor);
-rod([-.16,1.02,-.034],[-.16,1.02,-.14],.012,glassMetal,showerDoor);
-rod([-.16,.92,-.14],[-.16,1.12,-.14],.012,glassMetal,showerDoor);
-// A soft seal closes against the shaft-side wall at the free edge.
-box(-showerDoorWidth-.004,1.08,0,.014,2.0,.028,glassSeal,.003,showerDoor);
-showerDoor.userData.door={open:false,target:0,closedAngle:0,openAngle:1.12};
+named(box(showerC.x,glassMiddle,(showerH.z+showerC.z)/2,.01,2,showerH.z-showerC.z,showerGlass,0,showerFixed),'shower-fixed-long-pane');
+named(box((showerC.x+showerP3.x)/2,glassMiddle,showerC.z,showerP3.x-showerC.x,2,.01,showerGlass,0,showerFixed),'shower-fixed-return-pane');
+// Slim vertical and bottom edges only. No overhead rails or top surfaces.
+for(const p of [showerH,showerC,showerP3])box(p.x,glassMiddle,p.z,.009,2,.009,glassMetal,0,showerFixed);
+box(showerC.x,glassBase+.005,(showerH.z+showerC.z)/2,.009,.01,showerH.z-showerC.z,glassMetal,0,showerFixed);
+box((showerC.x+showerP3.x)/2,glassBase+.005,showerC.z,showerP3.x-showerC.x,.01,.009,glassMetal,0,showerFixed);
+const showerDoor=new T.Group();showerDoor.name='shower-door';showerDoor.position.set(showerH.x,0,showerH.z);root.add(showerDoor);
+named(box(0,glassMiddle,showerDoorWidth/2,.01,2,showerDoorWidth,showerGlass,0,showerDoor),'shower-door-pane');
+for(const z of [0,showerDoorWidth])box(0,glassMiddle,z,.009,2,.009,glassMetal,0,showerDoor);
+box(0,glassBase+.005,showerDoorWidth/2,.009,.01,showerDoorWidth,glassMetal,0,showerDoor);
+for(const y of [.65,1.65])box(0,y,0,.022,.045,.022,glassMetal,.003,showerDoor);
+rod([-.015,1.08,showerDoorWidth-.13],[-.075,1.08,showerDoorWidth-.13],.008,glassMetal,showerDoor);
+rod([-.075,.98,showerDoorWidth-.13],[-.075,1.18,showerDoorWidth-.13],.008,glassMetal,showerDoor);
+// A 1 cm free-edge seal sits on P1 and meets the shaft corner when closed.
+named(box(0,glassMiddle,showerDoorWidth,.014,2,.01,glassSeal,0,showerDoor),'shower-door-wall-seal');
+showerDoor.userData.door={open:false,target:0,closedAngle:0,openAngle:Math.PI/2};
 finishSection('shower-glass','exact');
 doorFrames.push(showerFixed,showerDoor);
-// Mount the shower on the solid wall marked X, opposite the window wall.
-const showerHeadX=(BATH_EXTERIOR_X+OUTER_X)/2,showerHeadWallZ=BALCONY_START_Z-.13;
-rod([showerHeadX,.12,showerHeadWallZ],[showerHeadX,1.53,showerHeadWallZ],.02,C.metal);
-rod([showerHeadX,1.53,showerHeadWallZ],[showerHeadX,1.53,showerHeadWallZ-.20],.02,C.metal);
-cyl(showerHeadX,1.51,showerHeadWallZ-.20,.085,.03,C.metal);
+// Mount near the exterior wall, wholly below Z=4.84 and outside the door arc.
+const showerHeadX=OUTER_X-.12/X_SCALE,showerHeadZ=4.72;
+rod([showerHeadX,.13,showerHeadZ],[showerHeadX,1.60,showerHeadZ],.02,C.metal);
+rod([showerHeadX,1.60,showerHeadZ],[showerHeadX-.18/X_SCALE,1.60,showerHeadZ],.02,C.metal);
+cyl(showerHeadX-.18/X_SCALE,1.58,showerHeadZ,.085,.03,C.metal);
 finishSection('shower-fixtures');
 // Child room: only the bed; the headboard faces the opposite kitchen-side wall.
 box(5.12,.25,7.00,1.1,.35,1.95,C.wood,.06);
@@ -682,7 +680,7 @@ canvas.addEventListener('dblclick',e=>e.preventDefault());canvas.addEventListene
 canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
 let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX},root,scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,
+window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,
   setBalconyDoor(){},
   updateDoorsAt(x,z){
     const centers=[[3.90,4.50],[4.45,5.025],[3.95,5.55]];
