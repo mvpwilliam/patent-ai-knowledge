@@ -380,10 +380,38 @@ const bathFloorStart=4.445,bathFloorEnd=BATH_EXTERIOR_X-.075;
 const bathFloorNear=3.65,bathFloorFar=5.55,bathFloorMiddle=(bathFloorNear+bathFloorFar)/2,bathFloorDepth=bathFloorFar-bathFloorNear;
 box((bathFloorStart+bathFloorEnd)/2,.07,bathFloorMiddle,bathFloorEnd-bathFloorStart,.06,bathFloorDepth,'#55585b');for(let x=4.5;x<bathFloorEnd;x+=.32)box(x,.105,bathFloorMiddle,.01,.004,bathFloorDepth,'#777b7c');for(let z=3.65;z<5.55;z+=.32)box((bathFloorStart+bathFloorEnd)/2,.105,z,bathFloorEnd-bathFloorStart,.004,.01,'#777b7c');finishSection('bath-floor');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);finishSection('basin','translate',furnitureShift.basin);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
 finishSection('toilet','translate',furnitureShift.toilet);
-// The shower remains open, with no panes, metal frames, handles or door arc.
+// Shower floor follows the walls; the glass enclosure is installed below.
 box(SHOWER_WINDOW_CENTRE,.07,SHOWER_CENTRE_Z,SHOWER_WINDOW_SPAN,.06,SHOWER_LENGTH-.13,'#55585b');
 box((SHAFT_OUTER_X+BATH_EXTERIOR_X)/2,.07,(5.55+BALCONY_START_Z-.065)/2,BATH_EXTERIOR_X-SHAFT_OUTER_X,.06,BALCONY_START_Z-.065-5.55,'#55585b');
 finishSection('shower-floor');
+// L-shaped shower enclosure. Red in the marked plan is the hinged leaf;
+// green is a short fixed pane followed by a fixed return to the solid wall.
+// Use world coordinates so the 62 cm door does not stretch when it rotates.
+const showerGlass=new T.MeshPhysicalMaterial({color:'#c5dddc',transparent:true,opacity:.34,roughness:.10,metalness:0,depthWrite:false,side:T.DoubleSide});
+const glassMetal='#596566',glassSeal='#d1d8d4';
+const showerGlassZ=SHAFT_BATH_FACE_Z,showerWallX=scaleX(SHAFT_OUTER_X);
+const showerDoorWidth=.62,showerFixedWidth=.14;
+const showerHingeX=showerWallX+showerDoorWidth;
+const showerReturnX=showerHingeX+showerFixedWidth;
+const showerEndFaceZ=BALCONY_START_Z-.13;
+const showerFixed=new T.Group();showerFixed.name='shower-fixed-glass';root.add(showerFixed);
+box(showerHingeX+showerFixedWidth/2,1.08,showerGlassZ,showerFixedWidth,2.0,.012,showerGlass,0,showerFixed);
+box(showerReturnX,1.08,(showerGlassZ+showerEndFaceZ)/2,.012,2.0,showerEndFaceZ-showerGlassZ,showerGlass,0,showerFixed);
+for(const x of [showerHingeX,showerReturnX])rod([x,.08,showerGlassZ],[x,2.08,showerGlassZ],.008,glassMetal,showerFixed);
+rod([showerReturnX,.08,showerEndFaceZ],[showerReturnX,2.08,showerEndFaceZ],.009,glassMetal,showerFixed);
+rod([showerHingeX,2.08,showerGlassZ],[showerReturnX,2.08,showerGlassZ],.008,glassMetal,showerFixed);
+rod([showerReturnX,2.08,showerGlassZ],[showerReturnX,2.08,showerEndFaceZ],.008,glassMetal,showerFixed);
+const showerDoor=new T.Group();showerDoor.name='shower-door';showerDoor.position.set(showerHingeX,0,showerGlassZ);root.add(showerDoor);
+box(-showerDoorWidth/2,1.08,0,showerDoorWidth,.012+1.988,.012,showerGlass,0,showerDoor);
+for(const x of [-showerDoorWidth,0])rod([x,.08,0],[x,2.08,0],.008,glassMetal,showerDoor);
+rod([-showerDoorWidth,2.08,0],[0,2.08,0],.008,glassMetal,showerDoor);
+rod([-.16,1.02,-.034],[-.16,1.02,-.14],.012,glassMetal,showerDoor);
+rod([-.16,.92,-.14],[-.16,1.12,-.14],.012,glassMetal,showerDoor);
+// A soft seal closes against the shaft-side wall at the free edge.
+box(-showerDoorWidth-.004,1.08,0,.014,2.0,.028,glassSeal,.003,showerDoor);
+showerDoor.userData.door={open:false,target:0,closedAngle:0,openAngle:1.12};
+finishSection('shower-glass','exact');
+doorFrames.push(showerFixed,showerDoor);
 // Mount the shower on the solid wall marked X, opposite the window wall.
 const showerHeadX=(BATH_EXTERIOR_X+OUTER_X)/2,showerHeadWallZ=BALCONY_START_Z-.13;
 rod([showerHeadX,.12,showerHeadWallZ],[showerHeadX,1.53,showerHeadWallZ],.02,C.metal);
@@ -579,7 +607,8 @@ const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌
 Object.values(rooms).forEach(r=>r.pos[0]=scaleX(r.pos[0]));
 rooms.entry.desc='125 公分玄關櫃、上中下各三片白色面板與開放展示層。';
 target.x=scaleX(target.x);desiredTarget.x=scaleX(desiredTarget.x);
-let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台',()=>{desiredTarget.set(scaleX(5.76),1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{showNews(!tv);selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
+let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台',()=>{desiredTarget.set(scaleX(5.76),1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='bath')action(showerDoor.userData.door.open?'關閉淋浴門':'推開淋浴門',()=>{toggleShowerDoor();selectRoom('bath')});if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{showNews(!tv);selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
+function toggleShowerDoor(){const state=showerDoor.userData.door;state.open=!state.open;state.target=state.open?state.openAngle:state.closedAngle;toast(state.open?'淋浴門向內推開了':'淋浴門關上了')}
 document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
 // One finger rotates by default; the switch enables faster, wider panning.
 // Two fingers pan by their midpoint and pinch to zoom.
@@ -623,11 +652,12 @@ function toggleDoorAt(e){
   const rect=canvas.getBoundingClientRect();
   doorPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
   doorRay.setFromCamera(doorPointer,camera);
-  const hits=doorRay.intersectObjects(interiorDoors,true);
+  const hits=doorRay.intersectObjects([...interiorDoors,showerDoor],true);
   if(!hits.length)return;
   let door=hits[0].object;
   while(door&&!door.userData.door)door=door.parent;
   if(!door)return;
+  if(door===showerDoor){toggleShowerDoor();if(current==='bath')selectRoom('bath');return}
   const state=door.userData.door;state.open=!state.open;
   state.target=state.open?state.openAngle:state.closedAngle;
   toast(state.open?'門打開了':'門關上了');
@@ -650,9 +680,9 @@ function release(e){
 }
 canvas.addEventListener('dblclick',e=>e.preventDefault());canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
-let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of interiorDoors)door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
+let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX},root,scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,showerDoor:null,
+window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX},root,scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,
   setBalconyDoor(){},
   updateDoorsAt(x,z){
     const centers=[[3.90,4.50],[4.45,5.025],[3.95,5.55]];
