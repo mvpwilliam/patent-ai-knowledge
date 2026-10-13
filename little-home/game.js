@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
-import {findPath} from './navigation.js?v=66';
+import {findPath} from './navigation.js?v=68';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ} from './layout.js?v=66';
 
 const scene=window.homeScene?.scene;
