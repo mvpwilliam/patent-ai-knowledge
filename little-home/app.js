@@ -235,7 +235,7 @@ box(0,2.35,0,SHOWER_WINDOW_SPAN,.50,.13,C.wall,.008,showerWindowWall);
 const showerJamb=(SHOWER_WINDOW_SPAN-.60)/2;
 for(const sign of [-1,1])box(sign*(.30+showerJamb/2),1.65,0,showerJamb,.90,.13,C.wall,.006,showerWindowWall);
 const showerWindowGlass=new T.MeshPhysicalMaterial({color:'#a7c5c9',transparent:true,opacity:.48,roughness:.1,depthWrite:false,side:T.DoubleSide});
-box(0,1.65,0,.60,.90,.025,showerWindowGlass,0,showerWindowWall);
+// The operable sash is built in world space below.
 for(const x of [-.30,.30])box(x,1.65,0,.025,.90,.15,C.trim,.003,showerWindowWall);
 for(const y of [1.20,2.10])box(0,y,0,.62,.035,.15,C.trim,.003,showerWindowWall);
 walls.push(showerWindowWall);
@@ -378,11 +378,20 @@ finishSection('main-bed','translate',furnitureShift.mainBed);
 // Bathroom tiled floor, basin, mirror, toilet and open shower area.
 const bathFloorStart=4.445,bathFloorEnd=BATH_EXTERIOR_X-.075;
 const bathFloorNear=3.65,bathFloorFar=5.55,bathFloorMiddle=(bathFloorNear+bathFloorFar)/2,bathFloorDepth=bathFloorFar-bathFloorNear;
-box((bathFloorStart+bathFloorEnd)/2,.07,bathFloorMiddle,bathFloorEnd-bathFloorStart,.06,bathFloorDepth,'#55585b');for(let x=4.5;x<bathFloorEnd;x+=.32)box(x,.105,bathFloorMiddle,.01,.004,bathFloorDepth,'#777b7c');for(let z=3.65;z<5.55;z+=.32)box((bathFloorStart+bathFloorEnd)/2,.105,z,bathFloorEnd-bathFloorStart,.004,.01,'#777b7c');finishSection('bath-floor');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);finishSection('basin','translate',furnitureShift.basin);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
+function bathFloorTiles(x0,x1,z0,z1){
+  named(box((x0+x1)/2,.07,(z0+z1)/2,x1-x0,.06,z1-z0,'#55585b'),'bath-tile-floor-surface');
+  // Shared origin and spacing keep the wet and dry grout aligned.
+  for(let x=4.5+Math.ceil((x0-4.5)/.32)*.32;x<x1;x+=.32)
+    box(x,.105,(z0+z1)/2,.01,.004,z1-z0,'#777b7c');
+  for(let z=3.65+Math.ceil((z0-3.65)/.32)*.32;z<z1;z+=.32)
+    box((x0+x1)/2,.105,z,x1-x0,.004,.01,'#777b7c');
+}
+bathFloorTiles(bathFloorStart,bathFloorEnd,bathFloorNear,bathFloorFar);
+finishSection('bath-floor');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);finishSection('basin','translate',furnitureShift.basin);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
 finishSection('toilet','translate',furnitureShift.toilet);
 // Shower floor follows the walls; the glass enclosure is installed below.
-box(SHOWER_WINDOW_CENTRE-.0375,.07,SHOWER_CENTRE_Z,SHOWER_WINDOW_SPAN+.075,.06,SHOWER_LENGTH-.13,'#55585b');
-box((SHAFT_OUTER_X+BATH_EXTERIOR_X)/2,.07,(5.55+BALCONY_START_Z-.065)/2,BATH_EXTERIOR_X-SHAFT_OUTER_X,.06,BALCONY_START_Z-.065-5.55,'#55585b');
+bathFloorTiles(bathFloorEnd,OUTER_X,4.615,BALCONY_START_Z-.065);
+bathFloorTiles(SHAFT_OUTER_X,bathFloorEnd,5.55,BALCONY_START_Z-.065);
 finishSection('shower-floor');
 // Confirmed world-space floor points. Long glass runs along Z,
 // parallel to the exterior wall; only the fixed return runs along X.
@@ -410,8 +419,18 @@ named(box(0,glassMiddle,showerDoorWidth,.014,2,.01,glassSeal,0,showerDoor),'show
 showerDoor.userData.door={open:false,target:0,closedAngle:0,openAngle:Math.PI/2};
 finishSection('shower-glass','exact');
 doorFrames.push(showerFixed,showerDoor);
+// Outward-opening bathroom casement, preserving the existing wall aperture.
+const bathWindow=new T.Group();bathWindow.name='bath-window';
+const bathWindowWidth=.57*X_SCALE;
+bathWindow.position.set(scaleX(SHOWER_WINDOW_CENTRE-.285),0,4.55);root.add(bathWindow);
+named(box(bathWindowWidth/2,1.65,0,bathWindowWidth,.86,.018,showerWindowGlass,0,bathWindow),'bath-window-pane');
+for(const x of [0,bathWindowWidth])box(x,1.65,0,.015,.89,.028,C.trim,0,bathWindow);
+for(const y of [1.205,2.095])box(bathWindowWidth/2,y,0,bathWindowWidth,.015,.028,C.trim,0,bathWindow);
+rod([bathWindowWidth-.045,1.59,.025],[bathWindowWidth-.045,1.71,.025],.008,C.metal,bathWindow);
+bathWindow.userData.door={open:false,target:0,closedAngle:0,openAngle:Math.PI/2};
+finishSection('bath-window-sash','exact');doorFrames.push(bathWindow);
 // Mount on the solid end wall opposite the shower window, outside the door arc.
-const showerHeadX=OUTER_X-.28/X_SCALE,showerHeadZ=BALCONY_START_Z-.13-.035;
+const showerHeadX=(SHAFT_OUTER_X+OUTER_X-.065)/2,showerHeadZ=BALCONY_START_Z-.13-.035;
 rod([showerHeadX,.13,showerHeadZ],[showerHeadX,1.60,showerHeadZ],.02,C.metal);
 rod([showerHeadX,1.60,showerHeadZ],[showerHeadX,1.60,showerHeadZ-.20],.02,C.metal);
 cyl(showerHeadX,1.58,showerHeadZ-.20,.085,.03,C.metal);
@@ -669,7 +688,8 @@ Object.values(rooms).forEach(r=>r.pos[0]=scaleX(r.pos[0]));
 rooms.entry.desc='125 公分玄關櫃、上中下各三片白色面板與開放展示層。';
 rooms.bath.desc='深灰石紋牆磚與淺色磚縫，L 形乾濕分離玻璃門可向內開啟。';
 target.x=scaleX(target.x);desiredTarget.x=scaleX(desiredTarget.x);
-let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台',()=>{desiredTarget.set(scaleX(5.76),1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='bath')action(showerDoor.userData.door.open?'關閉淋浴門':'推開淋浴門',()=>{toggleShowerDoor();selectRoom('bath')});if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{showNews(!tv);selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
+let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台',()=>{desiredTarget.set(scaleX(5.76),1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='bath'){action(showerDoor.userData.door.open?'關閉淋浴門':'推開淋浴門',()=>{toggleShowerDoor();selectRoom('bath')});action(bathWindow.userData.door.open?'關閉浴室窗戶':'打開浴室窗戶',()=>{toggleBathWindow();selectRoom('bath')})}if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{showNews(!tv);selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
+function toggleBathWindow(){const state=bathWindow.userData.door;state.open=!state.open;state.target=state.open?state.openAngle:state.closedAngle;toast(state.open?'浴室窗戶打開了':'浴室窗戶關上了')}
 function toggleShowerDoor(){const state=showerDoor.userData.door;state.open=!state.open;state.target=state.open?state.openAngle:state.closedAngle;toast(state.open?'淋浴門向內推開了':'淋浴門關上了')}
 document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
 // One finger rotates by default; the switch enables faster, wider panning.
@@ -714,11 +734,12 @@ function toggleDoorAt(e){
   const rect=canvas.getBoundingClientRect();
   doorPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
   doorRay.setFromCamera(doorPointer,camera);
-  const hits=doorRay.intersectObjects([...interiorDoors,showerDoor],true);
+  const hits=doorRay.intersectObjects([...interiorDoors,showerDoor,bathWindow],true);
   if(!hits.length)return;
   let door=hits[0].object;
   while(door&&!door.userData.door)door=door.parent;
   if(!door)return;
+  if(door===bathWindow){toggleBathWindow();if(current==='bath')selectRoom('bath');return}
   if(door===showerDoor){toggleShowerDoor();if(current==='bath')selectRoom('bath');return}
   const state=door.userData.door;state.open=!state.open;
   state.target=state.open?state.openAngle:state.closedAngle;
@@ -742,9 +763,9 @@ function release(e){
 }
 canvas.addEventListener('dblclick',e=>e.preventDefault());canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
-let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
+let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,
+window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,bathWindow,toggleBathWindow,
   setBalconyDoor(){},
   updateDoorsAt(x,z){
     const centers=[[3.90,4.50],[4.45,5.025],[3.95,5.55]];
