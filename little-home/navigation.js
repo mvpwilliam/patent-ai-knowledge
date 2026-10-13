@@ -47,7 +47,7 @@ export function walkable(x,z){
  const inChildEntry=inX(3.48,4.42)&&z>=5.35&&z<=5.69;
  const inBalcony=inX(6.02,7.59)&&z>=7.23&&z<=9.00;
  const inBalconyDoor=inX(5.68,6.08)&&z>=8.40&&z<=8.96;
- const inEntry=x>=entryZero+radius&&x<=scaleX(.7)&&z>=8.47&&z<=9.28;
+ const inEntry=x>=entryZero+radius&&x<=scaleX(.7)&&z>=8.47&&z<=9.60;
  if(!(inLiving||inHall||inBath||inDining||inKitchen||inMaster||inMasterEntry||inChild||inChildEntry||inBalcony||inBalconyDoor||inEntry))return false;
  return !obstacles.some(([a,b,c,d])=>x>=a-radius&&x<=b+radius&&z>=c-radius&&z<=d+radius);
 }
@@ -104,5 +104,6 @@ export function findPath(from,to){
   }
   return [];
 }
+
 
 
