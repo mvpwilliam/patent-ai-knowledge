@@ -11,11 +11,15 @@ const C={wall:'#b8b9ba',trim:'#979b9d',wood:'#a58b6c',woodlight:'#c4ae8b',floor:
 // Architectural X values below are unscaled model metres. The balcony and
 // shower share the same new outer line, 54 cm outward in world coordinates.
 const OUTER_X=7.18+.54/X_SCALE;
+// The master/bath exterior wall moves 20 cm toward the building exterior.
+const BATH_EXTERIOR_X=6.47+.20/X_SCALE;
 const SHAFT_DEPTH=.35*.8; // reduce the clear depth perpendicular to the balcony by 20%
 const SHAFT_INNER_X=5.895+SHAFT_DEPTH/X_SCALE;
 const SHAFT_OUTER_X=SHAFT_INNER_X+.13;
 const SHAFT_END_Z=5.55+.68; // 55 cm internal Z after two 6.5 cm wall faces
 const END_SPAN=OUTER_X-6.47,END_CENTRE=(6.47+OUTER_X)/2;
+const SHOWER_WINDOW_SPAN=OUTER_X-BATH_EXTERIOR_X;
+const SHOWER_WINDOW_CENTRE=(BATH_EXTERIOR_X+OUTER_X)/2;
 // The balcony-facing end-wall surface follows the red line at the shaft end.
 // Its inner end overlaps the shaft's outer wall, closing both former gaps.
 const BALCONY_START_Z=SHAFT_END_Z,BALCONY_LENGTH=9.20-BALCONY_START_Z;
@@ -73,7 +77,7 @@ function floor(x,z,w,d,color=C.floor,finish='wood'){
 // grey base remained visible on the wood side of the intended red-line edge.
 const stoneStartZ=8.345;
 floor(2.915,5,5.83,10);
-floor(6.115,3.225,.57,6.45);
+floor((5.83+BATH_EXTERIOR_X)/2,3.225,BATH_EXTERIOR_X-5.83,6.45);
 floor(6.115,9.60,.57,.80);
 // The second-bedroom boards turn 90 degrees, following the flooring plan.
 box(4.24,.042,6.84,3.08,.004,2.52,C.floor);woodBoards(4.24,6.84,3.08,2.52,false,.048);
@@ -123,8 +127,8 @@ for(let tx=5.83;tx<OUTER_X-.001;tx+=.45)for(let tz=BALCONY_START_Z;tz<9.20-.001;
   const w=Math.min(.45,OUTER_X-tx),d=Math.min(.45,9.20-tz);
   box(tx+w/2,.042,tz+d/2,w-.018,.012,d-.018,balconyTileMat,.001);
 }
-floor(END_CENTRE,SHOWER_CENTRE_Z,END_SPAN,SHOWER_LENGTH,'#55585b','tile');
-floor((SHAFT_OUTER_X+6.47)/2,(5.55+BALCONY_START_Z)/2,6.47-SHAFT_OUTER_X,BALCONY_START_Z-5.55,'#55585b','tile');
+floor(SHOWER_WINDOW_CENTRE,SHOWER_CENTRE_Z,SHOWER_WINDOW_SPAN,SHOWER_LENGTH,'#55585b','tile');
+floor((SHAFT_OUTER_X+BATH_EXTERIOR_X)/2,(5.55+BALCONY_START_Z)/2,BATH_EXTERIOR_X-SHAFT_OUTER_X,BALCONY_START_Z-5.55,'#55585b','tile');
 finishSection('balcony-floors');
 // Foundation and soft ground beneath the miniature.
 box(2.9,-.52,5,10.5,.28,12.2,'#d3dac4',.13);box(2.9,-.72,5,10.8,.18,12.5,'#bdcbae',.06);
@@ -133,7 +137,7 @@ finishSection('foundation');
 const walls=[];function wall(x,z,w,d,h=1.15){let g=new T.Group();g.position.set(x,0,z);root.add(g);box(0,h/2,0,w,h,d,C.wall,.018,g);box(0,h+.025,0,w+.045,.05,d+.045,C.trim,.012,g);walls.push(g);return g}
 // Two north-facing windows each have a sill and a full-height header. The
 // old continuous 1.75 m wall covered the glazing but left the top open.
-for(const [a,b] of [[-.075,.42],[2.92,3.645],[6.195,6.475]])wall((a+b)/2,-.07,b-a,.15,2.6);
+for(const [a,b] of [[-.075,.42],[2.92,3.645],[6.195,BATH_EXTERIOR_X+.005]])wall((a+b)/2,-.07,b-a,.15,2.6);
 for(const [a,b] of [[.42,2.92],[3.645,6.195]]){
   const x=(a+b)/2,w=b-a;
   wall(x,-.07,w,.15,.30);
@@ -143,7 +147,7 @@ for(const [a,b] of [[.42,2.92],[3.645,6.195]]){
   walls.push(header);
 }
 wall(-.07,3.9,.15,7.9,2.6);
-wall(6.47,2.25,.15,4.5,2.6); // master and toilet side, ending at the shower opening
+named(wall(BATH_EXTERIOR_X,2.25,.15,4.5,2.6),'master-bath-exterior-wall');
 named(wall(OUTER_X,SHOWER_CENTRE_Z,.13,SHOWER_LENGTH,2.6),'shower-outer-wall');
 // Balcony elevation: the window sits between a lower wall and a solid
 // header. Together the two solid portions occupy about two thirds of 2.6 m.
@@ -191,7 +195,7 @@ function partition(x,z,w,d){const g=wall(x,z,w,d,ROOM_WALL_HEIGHT);g.userData.fu
 // CAD's thick purple lines set the walls; its door arcs set the openings.
 // In plan view model X runs downward and model Z runs from right to left.
 partition(3.35,2.25,.14,4.5); // uninterrupted living wall ends at the marked master entry
-partition(5.46,3.65,2.02,.14); // master/bath wall, x 4.45–6.47
+partition((4.45+BATH_EXTERIOR_X)/2,3.65,BATH_EXTERIOR_X-4.45,.14); // extend to the relocated exterior wall
 partition(4.45,4.125,.13,.75); // bathroom front wall, z 3.75–4.50
 partition(5.14,5.55,1.38,.13); // one shared bath/child wall, x 4.45–5.83
 partition(3.05,5.55,.8,.13); // short wall above the child door
@@ -204,9 +208,10 @@ const applianceDivider=partition(3.05,9.68,.13,.78); // shared kitchen/appliance
 applianceDivider.children.forEach(part=>part.material=mat(C.wall));
 // The solid service shaft touches the child-room corner. Beyond it, the
 // shower projects as far as the outside edge of the utility balcony.
-const serviceShaft=named(wall((5.83+SHAFT_OUTER_X)/2,(5.55+SHAFT_END_Z)/2,SHAFT_OUTER_X-5.83,SHAFT_END_Z-5.55,2.6),'service-shaft');
+// The shaft's left face shares the exact outer plane of the adjoining wall.
+const SHAFT_LEFT_FACE=5.83-.065;
+const serviceShaft=named(wall((SHAFT_LEFT_FACE+SHAFT_OUTER_X)/2,(5.55+SHAFT_END_Z)/2,SHAFT_OUTER_X-SHAFT_LEFT_FACE,SHAFT_END_Z-5.55,2.6),'service-shaft');
 partition((SHAFT_INNER_X+SHAFT_OUTER_X)/2,(5.55+SHAFT_END_Z)/2,.13,SHAFT_END_Z-5.55); // 28 cm internal X, 55 cm internal Z
-partition(6.47,4.63,.13,.26); // solid return on the bath-side corner of shower
 // The bath-facing end is solid. The airtight end window belongs opposite
 // it, at the kitchen/AC-platform end of the balcony.
 named(partition(BATH_END_CENTRE,BALCONY_START_Z-.065,BATH_END_SPAN,.13),'balcony-bath-end-wall');
@@ -219,10 +224,10 @@ for(const y of [1.455,2.275])box(0,y,0,END_SPAN-.04,.05,.07,'#43494a',.002,balco
 walls.push(balconySouthWindow);
 // Full-height outward shower wall, aligned with the master-bedroom window
 // elevation. The 60 x 90 cm window has a 120 cm sill and a 50 cm header.
-const showerWindowWall=new T.Group();showerWindowWall.name='shower-window-wall';showerWindowWall.position.set(END_CENTRE,0,4.55);root.add(showerWindowWall);
-box(0,.60,0,END_SPAN,1.20,.13,C.wall,.008,showerWindowWall);
-box(0,2.35,0,END_SPAN,.50,.13,C.wall,.008,showerWindowWall);
-const showerJamb=(END_SPAN-.60)/2;
+const showerWindowWall=new T.Group();showerWindowWall.name='shower-window-wall';showerWindowWall.position.set(SHOWER_WINDOW_CENTRE,0,4.55);root.add(showerWindowWall);
+box(0,.60,0,SHOWER_WINDOW_SPAN,1.20,.13,C.wall,.008,showerWindowWall);
+box(0,2.35,0,SHOWER_WINDOW_SPAN,.50,.13,C.wall,.008,showerWindowWall);
+const showerJamb=(SHOWER_WINDOW_SPAN-.60)/2;
 for(const sign of [-1,1])box(sign*(.30+showerJamb/2),1.65,0,showerJamb,.90,.13,C.wall,.006,showerWindowWall);
 const showerWindowGlass=new T.MeshPhysicalMaterial({color:'#a7c5c9',transparent:true,opacity:.48,roughness:.1,depthWrite:false,side:T.DoubleSide});
 box(0,1.65,0,.60,.90,.025,showerWindowGlass,0,showerWindowWall);
@@ -366,11 +371,12 @@ for(const z of [1.12,2.15]){const pillow=box(6.04,.70,z,.45,.17,.71,'#f3ecda',.0
 box(4.74,.77,1.64,.33,.07,1.95,'#8ea48d',.03);
 finishSection('main-bed','translate',furnitureShift.mainBed);
 // Bathroom tiled floor, basin, mirror, toilet and open shower area.
-box(5.4,.07,4.58,1.91,.06,1.64,'#55585b');for(let x=4.5;x<6.4;x+=.32)box(x,.105,4.58,.01,.004,1.64,'#777b7c');for(let z=3.8;z<5.4;z+=.32)box(5.4,.105,z,1.9,.004,.01,'#777b7c');finishSection('bath-floor');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);finishSection('basin','translate',furnitureShift.basin);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
+const bathFloorStart=4.445,bathFloorEnd=BATH_EXTERIOR_X-.075;
+box((bathFloorStart+bathFloorEnd)/2,.07,4.58,bathFloorEnd-bathFloorStart,.06,1.64,'#55585b');for(let x=4.5;x<bathFloorEnd;x+=.32)box(x,.105,4.58,.01,.004,1.64,'#777b7c');for(let z=3.8;z<5.4;z+=.32)box((bathFloorStart+bathFloorEnd)/2,.105,z,bathFloorEnd-bathFloorStart,.004,.01,'#777b7c');finishSection('bath-floor');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);finishSection('basin','translate',furnitureShift.basin);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
 finishSection('toilet','translate',furnitureShift.toilet);
 // The shower remains open, with no panes, metal frames, handles or door arc.
-box(END_CENTRE,.07,SHOWER_CENTRE_Z,END_SPAN,.06,SHOWER_LENGTH-.13,'#55585b');
-box((SHAFT_OUTER_X+6.47)/2,.07,(5.55+BALCONY_START_Z-.065)/2,6.47-SHAFT_OUTER_X,.06,BALCONY_START_Z-.065-5.55,'#55585b');
+box(SHOWER_WINDOW_CENTRE,.07,SHOWER_CENTRE_Z,SHOWER_WINDOW_SPAN,.06,SHOWER_LENGTH-.13,'#55585b');
+box((SHAFT_OUTER_X+BATH_EXTERIOR_X)/2,.07,(5.55+BALCONY_START_Z-.065)/2,BATH_EXTERIOR_X-SHAFT_OUTER_X,.06,BALCONY_START_Z-.065-5.55,'#55585b');
 finishSection('shower-floor');
 const showerHeadX=OUTER_X-.20;
 rod([showerHeadX,.12,5.50],[showerHeadX,1.53,5.50],.02,C.metal);
