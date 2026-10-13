@@ -82,7 +82,7 @@ floor(6.115,9.60,.57,.80);
 // The second-bedroom boards turn 90 degrees, following the flooring plan.
 box(4.24,.042,6.84,3.08,.004,2.52,C.floor);woodBoards(4.24,6.84,3.08,2.52,false,.048);
 finishSection('indoor-floors');
-named(floor((entryZero+scaleX(0))/2,(7.85+9.995)/2,scaleX(0)-entryZero,9.995-7.85),'entry-wood-under-cabinet');
+named(floor((entryZero+scaleX(0))/2,(7.85+9.995)/2,scaleX(0)-entryZero,9.995-7.85,'#696c69','tile'),'entry-base-under-cabinet');
 finishSection('entry-wood-floor','exact');
 // The real floor uses muted grey slate. The timber/stone edge follows the
 // photographed diagonal from the end panel to the refrigerator corner.
@@ -106,6 +106,8 @@ stoneShape.closePath();
 const stoneGeometry=new T.ShapeGeometry(stoneShape);stoneGeometry.rotateX(-Math.PI/2);
 const stoneFinish=new T.Mesh(stoneGeometry,entryStoneMaterial);stoneFinish.position.y=.052;stoneFinish.receiveShadow=true;
 named(stoneFinish,'entry-stone-finish');root.add(stoneFinish);
+// The shoe cabinet and its open toe space belong to the same stone zone.
+named(box(entryZero+.625,.0475,(7.85+stoneStartZ)/2,1.25,.009,stoneStartZ-7.85,entryStoneMaterial),'entry-stone-under-cabinet');
 named(rod([panelTip[0],.056,panelTip[1]],[fridgeTip[0],.056,fridgeTip[1]],.007,'#b6aea0'),'entry-diagonal-transition');
 finishSection('entry-stone','exact');
 // Brown ceramic balcony squares with cool grey grout and soft horizontal
@@ -338,7 +340,14 @@ box(-.092,2.20,0,.045,.085,1.08,'#151b1d',.003,balconyDoor);
 box(0,2.20,0,.12,.10,1.02,'#24272a',.008,balconyDoor);
 box(0,2.425,0,.14,.35,1.02,C.wall,.008,balconyDoor);
 box(0,.045,0,.15,.09,1.02,'#24272a',.005,balconyDoor);
-// Keep the architectural opening and header while removing the glass door.
+// Restore the framed glass door, opening inward into the kitchen.
+const balconyDoorLeaf=new T.Group();balconyDoorLeaf.name='kitchen-balcony-door-leaf';balconyDoorLeaf.position.set(-.025,0,-.44);balconyDoor.add(balconyDoorLeaf);
+const balconyDoorGlass=new T.MeshPhysicalMaterial({color:'#b9d2d1',transparent:true,opacity:.34,roughness:.12,depthWrite:false,side:T.DoubleSide});
+named(box(0,1.12,.44,.022,2.08,.81,balconyDoorGlass,0,balconyDoorLeaf),'kitchen-balcony-door-glass');
+for(const z of [.015,.865])box(0,1.12,z,.055,2.16,.035,'#24272a',.005,balconyDoorLeaf);
+for(const y of [.06,2.18])box(0,y,.44,.055,.04,.88,'#24272a',.005,balconyDoorLeaf);
+rod([-.045,1.00,.78],[-.045,1.17,.78],.012,C.metal,balconyDoorLeaf);
+balconyDoorLeaf.userData.door={open:false,target:0,closedAngle:0,openAngle:-Math.PI/2,autoNear:false};
 doorFrames.push(balconyDoor);
 // Window frames and sheer curtain folds at the two north windows.
 const curtains=new T.Group();curtains.name='living-grey-wave-curtain';root.add(curtains);
@@ -824,7 +833,7 @@ function toggleDoorAt(e){
   const rect=canvas.getBoundingClientRect();
   doorPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
   doorRay.setFromCamera(doorPointer,camera);
-  const hits=doorRay.intersectObjects([...interiorDoors,showerDoor,bathWindow,bathWindowHit,...slidingWindows,curtains,masterBlinds,childBlinds],true);
+  const hits=doorRay.intersectObjects([...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf,bathWindowHit,...slidingWindows,curtains,masterBlinds,childBlinds],true);
   if(!hits.length)return;
   let door=hits[0].object;
   while(door&&!door.userData.door&&!door.userData.slider&&!door.userData.windowTarget&&!door.userData.covering)door=door.parent;
@@ -855,10 +864,10 @@ function release(e){
 }
 canvas.addEventListener('dblclick',e=>e.preventDefault());canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
-let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);window.homeGameUpdate?.(performance.now());if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=4.5;phi=.70;const angle=focus.angle+Math.PI;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait&&!followMode?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}updateCoverings();renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
+let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);window.homeGameUpdate?.(performance.now());if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=4.5;phi=.70;const angle=focus.angle+Math.PI;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait&&!followMode?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}updateCoverings();renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
-  setBalconyDoor(){},
+window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
+  setBalconyDoor(near){const state=balconyDoorLeaf.userData.door;if(near){state.open=true;state.target=state.openAngle}else if(state.autoNear){state.open=false;state.target=state.closedAngle}state.autoNear=near},
   updateDoorsAt(x,z){
     const centers=[[3.90,4.50],[4.45,5.025],[3.95,5.55]];
     interiorDoors.forEach((door,i)=>{
