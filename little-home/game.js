@@ -332,7 +332,7 @@ function updateMarkers(){
     if(button.hidden)continue;
     // Separate adjacent task icons while keeping them near their room.
     let x=(p.x+1)*$('#world').clientWidth/2,y=(1-p.y)*$('#world').clientHeight/2;
-    for(let i=0;i<6&&placed.some(q=>Math.hypot(x-q.x,y-q.y)<48);i++)y+=48;
+    for(let i=0;i<6&&placed.some(q=>Math.hypot(x-q.x,y-q.y)<40);i++)y+=40;
     y=Math.min($('#world').clientHeight-90,Math.max(52,y));
     placed.push({x,y});
     button.style.left=x+'px';button.style.top=y+'px';
