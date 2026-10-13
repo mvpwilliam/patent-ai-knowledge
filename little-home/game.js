@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
-import {findPath} from './navigation.js?v=85';
+import {findPath,canTraverse,walkable,crossesWall} from './navigation.js?v=93';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
 
 const scene=window.homeScene?.scene;
@@ -109,23 +109,31 @@ function makeCharacter(v){
   g.userData.body=body;g.userData.arms=arms;g.userData.legs=legs;g.userData.step=Math.random()*8;return g;
 }
 function setCharacter(v){
-  if(!scene)return;
-  if(character)scene.remove(character);
-  character=makeCharacter(v);scene.add(character);const start=[...(user?.uid||localActorId)].reduce((sum,c)=>sum+c.charCodeAt(0),0)%tour.length;character.position.set(tour[start][0],.07,tour[start][1]);route=(start+1)%tour.length;
-  if(pose!=='walk')setPose(pose);
+ if(!scene)return;const previous=character?.position.clone(),angle=character?.rotation.y;
+ if(character)scene.remove(character);character=makeCharacter(v);scene.add(character);
+ if(previous){character.position.copy(previous);character.rotation.y=angle;return}
+ const start=[...(user?.uid||localActorId)].reduce((sum,c)=>sum+c.charCodeAt(0),0)%tour.length;
+ character.position.set(tour[start][0],.07,tour[start][1]);route=(start+1)%tour.length;
+}
+function leaveRest(){
+ if(restExit){character.position.set(restExit[0],.07,restExit[1]);restExit=null}
+ character.position.y=.07;
 }
 function setPose(next){
-  if(activity){toast('先完成目前的家事');return}
-  if(next!=='sit')window.homeScene?.showNews(false);
-  travel=null;restExit=null;pose=next;poseStarted=performance.now();
-  document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===next));
-  if(!character){toast('角色姿勢已選好，請在支援 3D 的瀏覽器觀看');return}
-  if(next==='sit'){character.position.set(...furnitureXYZ('sofa',[2.48,.52,2.03]));character.rotation.y=-Math.PI/2;window.homeScene?.showNews(true)}
-  if(next==='lie'){character.position.set(...furnitureXYZ('mainBed',[4.86,.47,1.7]));character.rotation.y=0}
-  if(next==='stand'){character.position.set(scaleX(1.55),.07,5.9);character.rotation.y=0}
-  if(next==='walk'){character.position.set(tour[0][0],.07,tour[0][1]);route=1}
-  toast(({walk:'開始在家裡散步',stand:'站在餐廳',sit:'坐在沙發',lie:'躺在主臥床上'})[next]);
+ if(activity)return toast('先完成目前的家事');if(!character)return;
+ if(next==='sit')return moveTo(null,'sofa');if(next==='lie')return moveTo(null,'mainBed');
+ if(pose==='sit')window.homeScene?.showNews(false);leaveRest();travel=null;
+ if(next==='walk'){
+   const nearest=tour.reduce((best,p,i)=>Math.hypot(p[0]-character.position.x,p[1]-character.position.z)<best.distance?{index:i,distance:Math.hypot(p[0]-character.position.x,p[1]-character.position.z)}:best,{index:0,distance:Infinity}).index;
+   const path=findPath([character.position.x,character.position.z],tour[nearest]);
+   if(!path.length)return toast('目前沒有可通行的路線');travel={kind:'walk',phase:'run',path,index:0,exit:path.at(-1),resumeTour:true};route=(nearest+1)%tour.length;
+ }
+ pose=next;poseStarted=performance.now();document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===next));toast(next==='walk'?'開始沿走道散步':'在原地站著');
 }
+function walkStep(mesh,x,z){
+ const from=[mesh.position.x,mesh.position.z];if(!canTraverse(from,[x,z]))return false;mesh.position.x=x;mesh.position.z=z;return true;
+}
+window.homeGameFocus=()=>character?{position:character.position.clone(),angle:character.rotation.y}:null;
 function moveTo(point,kind='walk'){
   if(activity)return toast('先完成目前的家事');
   if(!character)return;
@@ -210,17 +218,17 @@ function animate(now){
   if(travel){
     if(travel.phase==='run'){
       const [x,z]=travel.path[travel.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
-      if(d<.04){travel.index++;if(travel.index>=travel.path.length){
-        if(travel.kind==='walk'){travel=null;pose='stand'}
+      if(d<.04){walkStep(character,x,z);travel.index++;if(travel.index>=travel.path.length){
+        if(travel.kind==='walk'){const resume=travel.resumeTour;travel=null;pose=resume?'walk':'stand'}
         else{travel.phase='settle';travel.from=character.position.clone();travel.progress=0}
-      }}else{const move=Math.min(d,dt*1.6);character.position.x+=dx/d*move;character.position.z+=dz/d*move;character.rotation.y=Math.atan2(dx,dz)}
+      }}else{const move=Math.min(d,dt*1.6);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
       step+=dt*17;b.position.y=Math.abs(Math.sin(step))*.035;b.rotation.set(0,0,Math.sin(step)*.035);
       leftArm.rotation.x=Math.sin(step)*.5;rightArm.rotation.x=-Math.sin(step)*.5;
       leftLeg.rotation.x=-Math.sin(step)*.4;rightLeg.rotation.x=Math.sin(step)*.4;
     }else{
       travel.progress=Math.min(1,travel.progress+dt/.65);
       const target=travel.kind==='sofa'?furnitureXYZ('sofa',[2.54,.51,2.03]):travel.kind==='mainBed'?furnitureXYZ('mainBed',[5.16,.78,1.64]):furnitureXYZ('childBed',[5.12,.78,7.00]);
-      character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
+      if(crossesWall([travel.from.x,travel.from.z],[target[0],target[2]])){travel=null;pose='stand';toast('家具位置跨越牆面，請重新選擇');return}character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
       if(travel.progress>=1){
         const kind=travel.kind;restExit=travel.exit;travel=null;
         pose=kind==='sofa'?'sit':'lie';
@@ -231,11 +239,11 @@ function animate(now){
     }
   }else if(activity?.phase==='run'||activity?.phase==='return'){
     const [x,z]=activity.path[activity.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
-    if(d<.035){activity.index++;if(activity.index>=activity.path.length){
+    if(d<.035){walkStep(character,x,z);activity.index++;if(activity.index>=activity.path.length){
       if(activity.phase==='return'){route=activity.route;activity=null;renderTasks()}
       else{activity.phase='work';activity.started=now;character.userData.body.position.y=0;if(activity.task.id==='scenery'){character.rotation.y=Math.PI;showScenery()}toast(`開始${activity.task.label}`)}
     }}
-    else{const move=Math.min(d,dt*2.05);character.position.x+=dx/d*move;character.position.z+=dz/d*move;character.rotation.y=Math.atan2(dx,dz)}
+    else{const move=Math.min(d,dt*2.05);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
     step+=dt*19;b.position.y=Math.abs(Math.sin(step))*.050;b.rotation.set(0,0,Math.sin(step)*.055);
     leftArm.rotation.x=Math.sin(step)*.8;rightArm.rotation.x=-Math.sin(step)*.8;
     leftLeg.rotation.x=-Math.sin(step)*.6;rightLeg.rotation.x=Math.sin(step)*.6;
@@ -249,8 +257,8 @@ function animate(now){
     if(t>=(activity.task.id==='scenery'?7:2)){if(activity.task.id==='scenery')hideScenery();const finished=activity;activity=null;b.rotation.x=0;finishTask(finished)}
   }else if(pose==='walk'){
     const [x,z]=tour[route],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
-    if(d<.04)route=(route+1)%tour.length;
-    else {const move=Math.min(d,dt*.53);character.position.x+=dx/d*move;character.position.z+=dz/d*move;character.rotation.y=Math.atan2(dx,dz)}
+    if(d<.04){walkStep(character,x,z);route=(route+1)%tour.length;}
+    else {const move=Math.min(d,dt*.53);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
     step+=dt*10;b.position.y=Math.abs(Math.sin(step))*.028;b.rotation.z=Math.sin(step)*.035;b.rotation.x=0;
     leftArm.rotation.x=Math.sin(step)*.28;rightArm.rotation.x=-Math.sin(step)*.28;
     leftLeg.rotation.x=-Math.sin(step)*.22;rightLeg.rotation.x=Math.sin(step)*.22;
@@ -325,10 +333,7 @@ function startTask(t){
   if(!character)return toast('請在支援 3D 的瀏覽器啟動場景');
   if(travel)travel=null;
   if(pose==='sit')window.homeScene?.showNews(false);
-  if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
-  else if(pose==='sit')character.position.set(1.75+furnitureShift.sofa,.07,2.03);
-  else if(pose==='lie')character.position.set(scaleX(3.95),.07,4.85);
-  else if(pose==='stand')character.position.set(scaleX(.75),.07,5.10);
+  leaveRest();
   restExit=null;character.position.y=.07;
   pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose==='walk'));
   const path=findPath([character.position.x,character.position.z],placement(t).stop);
@@ -624,7 +629,7 @@ function syncCharacters(){
  if(!scene)return;const online=onlinePlayers(),visible=online.slice(0,5),ids=new Set(visible.map(([id])=>id));
  for(const [id,item] of characters)if(!ids.has(id)){scene.remove(item.mesh);characters.delete(id)}
  for(const [id,p] of visible){const profile=profileCache[id];if(!profile)continue;let item=characters.get(id);const signature=JSON.stringify(profile);
- if(!item||item.signature!==signature){if(item)scene.remove(item.mesh);const mesh=makeCharacter(outfit(profile));scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){item.remotePath=['walk','work'].includes(p.presence.pose)?findPath([item.mesh.position.x,item.mesh.position.z],[p.presence.x,p.presence.z]):null;item.remoteIndex=0}item.target=p.presence;
+ if(!item||item.signature!==signature){if(item)scene.remove(item.mesh);const mesh=makeCharacter(outfit(profile));scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;
  }
  const list=$('#member-list');list.replaceChildren();for(const [id,v] of Object.entries(profileCache)){const row=document.createElement('p');const active=id===playerId()||online.some(([uid])=>uid===id);row.textContent=`${v.name} · ${active?'上線':'離線'}${active&&id!==playerId()&&!ids.has(id)?'（成員列）':''}`;list.append(row)}
  $('#member-count').textContent=`上線 ${online.length+1} · 屋內 ${characters.size+1}／6`;
@@ -634,12 +639,12 @@ async function publishPresence(force=false,online=true){
  const moving=!!activity||!!travel||pose==='walk',interval=moving?4000:18000;
  if(!force&&Date.now()-lastPresence<interval)return;
  presenceBusy=true;lastPresence=Date.now();
- const data={online,at:Date.now(),x:character.position.x,y:character.position.y,z:character.position.z,angle:character.rotation.y,pose:activity?'work':travel?'walk':pose};
+ const data={online,at:Date.now(),x:character.position.x,y:character.position.y,z:character.position.z,angle:character.rotation.y,approach:restExit||null,pose:activity?'work':travel?'walk':pose};
  try{const ref=api.doc(db,'homes',homeId,'settings','tasks');await api.runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())return;const items=snap.data().items,meta=structuredClone(items.find(t=>t.id===GAME_META_ID)||{id:GAME_META_ID,players:{}});meta.players[playerId()]=normalizePlayer(meta.players[playerId()]);meta.players[playerId()].presence=data;tx.set(ref,{items:[...items.filter(t=>t.id!==GAME_META_ID),meta]})})}catch(e){console.warn('人物狀態同步暫時中斷',e)}finally{presenceBusy=false}
 }
 function animateOthers(dt,now){
  for(const item of characters.values()){const p=item.target;if(!p)continue;const body=item.mesh.userData.body;
- if(item.remotePath?.length&&item.remoteIndex<item.remotePath.length){const q=item.remotePath[item.remoteIndex],dx=q[0]-item.mesh.position.x,dz=q[1]-item.mesh.position.z,d=Math.hypot(dx,dz);if(d<.035)item.remoteIndex++;else{const move=Math.min(d,dt*2);item.mesh.position.x+=dx/d*move;item.mesh.position.z+=dz/d*move}item.mesh.position.y=p.y||.07}else item.mesh.position.lerp(new T.Vector3(p.x,p.y||.07,p.z),Math.min(1,dt*3));item.mesh.rotation.y=p.angle||0;
+ if(item.remotePath?.length&&item.remoteIndex<item.remotePath.length){const q=item.remotePath[item.remoteIndex],dx=q[0]-item.mesh.position.x,dz=q[1]-item.mesh.position.z,d=Math.hypot(dx,dz);if(d<.035){walkStep(item.mesh,q[0],q[1]);item.remoteIndex++;}else{const move=Math.min(d,dt*2);walkStep(item.mesh,item.mesh.position.x+dx/d*move,item.mesh.position.z+dz/d*move)}item.mesh.position.y=p.y||.07}else if(!crossesWall([item.mesh.position.x,item.mesh.position.z],[p.x,p.z]))item.mesh.position.lerp(new T.Vector3(p.x,p.y||.07,p.z),Math.min(1,dt*3));item.mesh.rotation.y=p.angle||0;
  body.rotation.x=p.pose==='lie'?-Math.PI/2:p.pose==='sit'?-.23:0;body.rotation.z=0;body.position.y=p.pose==='walk'?Math.abs(Math.sin(now*.008))*.02:0;
  for(const [i,limb] of [...item.mesh.userData.arms,...item.mesh.userData.legs].entries())limb.rotation.x=p.pose==='walk'?Math.sin(now*.009+i%2*Math.PI)*.3:p.pose==='work'&&i<2?-.75:0;
  }
@@ -686,5 +691,6 @@ async function attackMonster(){try{await mutateGame((p,meta)=>{const m=meta.mons
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
