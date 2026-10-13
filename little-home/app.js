@@ -104,11 +104,50 @@ const stoneShape=new T.Shape();stoneShape.moveTo(stoneOutline[0][0],-stoneOutlin
 for(const [x,z] of stoneOutline.slice(1))stoneShape.lineTo(x,-z);
 stoneShape.closePath();
 const stoneGeometry=new T.ShapeGeometry(stoneShape);stoneGeometry.rotateX(-Math.PI/2);
-const stoneFinish=new T.Mesh(stoneGeometry,entryStoneMaterial);stoneFinish.position.y=.052;stoneFinish.receiveShadow=true;
+const stoneFinish=new T.Mesh(stoneGeometry,entryStoneMaterial);stoneFinish.position.y=.058;stoneFinish.receiveShadow=true;
 named(stoneFinish,'entry-stone-finish');root.add(stoneFinish);
 // The shoe cabinet and its open toe space belong to the same stone zone.
 // Cabinet toe space is included in the continuous stone polygon above.
 named(rod([panelTip[0],.056,panelTip[1]],[fridgeTip[0],.056,fridgeTip[1]],.007,'#b6aea0'),'entry-diagonal-transition');
+
+// Subtract the stone footprint from timber planks and grain geometry instead
+// of leaving them underneath a thin overlay where shadow lines can bleed through.
+function clipHalf(poly,a,b,inside){
+ const side=p=>(b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]);
+ const out=[];for(let i=0;i<poly.length;i++){
+  const p=poly[i],q=poly[(i+1)%poly.length],sp=side(p),sq=side(q);
+  const pin=inside?sp>=-1e-10:sp<=1e-10,qin=inside?sq>=-1e-10:sq<=1e-10;
+  if(pin)out.push(p);if(pin!==qin){const t=sp/(sp-sq);out.push([p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t])}
+ }return out;
+}
+function subtractConvex(poly,cut){
+ const outside=[];let remaining=poly;
+ for(let i=0;i<cut.length&&remaining.length>=3;i++){const a=cut[i],b=cut[(i+1)%cut.length],piece=clipHalf(remaining,a,b,false);if(piece.length>=3)outside.push(piece);remaining=clipHalf(remaining,a,b,true)}
+ return outside;
+}
+const stoneCuts=[
+ [[entryZero,7.85],[entryX(125),7.85],[entryX(125),stoneStartZ],[entryZero,stoneStartZ]],
+ [[entryZero,stoneStartZ],panelTip,fridgeTip,[fridgeTip[0],9.995],[entryZero,9.995]]
+];
+root.updateMatrixWorld(true);
+for(const groupName of ['indoor-floors','entry-wood-floor']){
+ const group=root.getObjectByName(groupName),pieces=[];group?.traverse(mesh=>{
+  if(!mesh.isMesh)return;const bounds=new T.Box3().setFromObject(mesh);
+  if(bounds.min.y<.036||bounds.max.y>.060||bounds.max.x<entryZero||bounds.min.x>fridgeTip[0]||bounds.max.z<7.85)return;
+  pieces.push([mesh,bounds]);
+ });
+ for(const [mesh,b] of pieces){
+  let polys=[[[b.min.x,b.min.z],[b.max.x,b.min.z],[b.max.x,b.max.z],[b.min.x,b.max.z]]];
+  for(const cut of stoneCuts)polys=polys.flatMap(poly=>subtractConvex(poly,cut));
+  mesh.parent.remove(mesh);
+  for(const poly of polys){
+   const area=Math.abs(poly.reduce((sum,p,i)=>sum+p[0]*poly[(i+1)%poly.length][1]-poly[(i+1)%poly.length][0]*p[1],0))/2;if(area<1e-8)continue;
+   const shape=new T.Shape();shape.moveTo(poly[0][0],-poly[0][1]);for(const p of poly.slice(1))shape.lineTo(p[0],-p[1]);shape.closePath();
+   const geo=new T.ShapeGeometry(shape);geo.rotateX(-Math.PI/2);const fragment=new T.Mesh(geo,mesh.material);fragment.position.y=b.max.y;fragment.name='wood-outside-stone';fragment.castShadow=false;fragment.receiveShadow=false;root.add(fragment);
+  }mesh.geometry.dispose();
+ }
+}
+
 finishSection('entry-stone','exact');
 // Brown ceramic balcony squares with cool grey grout and soft horizontal
 // grain follow the actual floor photograph, independent of the indoor wood.
@@ -362,10 +401,10 @@ const blindSlats=[],blindCords=[];curtains.userData.covering='sheer';masterBlind
 function windowAt(x,w,living){
   {
     // Photo proportions: upper 70% sliding, lower 30% fixed, broad left reveal.
-    const sill=.65,top=2.20,divider=sill+(top-sill)*.30;
+    const sill=.65,top=2.20,divider=sill+(top-sill)*(living?.30:.32);
     const g=new T.Group();g.name=living?'living-window':'master-window';g.position.set(x,0,.015);root.add(g);
-    for(const xx of [-w/2,w/2])box(xx,(sill+top)/2,0,.035,top-sill,.075,'#242c2d',0,g);
-    for(const yy of [sill,divider,top])box(0,yy,0,w,.035,.075,'#242c2d',0,g);
+    for(const xx of [-w/2,w/2])box(xx,(sill+top)/2,0,living?.035:.055,top-sill,.075,'#242c2d',0,g);
+    for(const yy of [sill,divider,top])box(0,yy,0,w,living?.035:yy===divider?.11:.045,.075,'#242c2d',0,g);
     named(box(0,(sill+divider)/2,0,w-.035,divider-sill-.025,.018,balconyPane,0,g),living?'living-lower-fixed-pane':'master-lower-fixed-pane');
     const upper=new T.Group();upper.rotation.y=Math.PI/2;g.add(upper);
     slidingWindow(upper,w-.035,top-divider-.035,(divider+top)/2,living?'living-upper-sliding-window':'master-upper-sliding-window');
@@ -769,7 +808,7 @@ rod([6.51,.55,9.20],[OUTER_X-.02,.55,9.20],.018,'#899893');
 for(const x of [6.51,(6.51+OUTER_X-.02)/2,OUTER_X-.02])rod([x,.08,9.20],[x,.55,9.20],.012,'#899893');
 finishSection('ac-platform-railing');
 // Small welcoming detail away from the clear dining tabletop.
-let night=false,tv=false,curtainClosed=true,wallLow=false,topView=false,followMode=false;
+let night=false,tv=false,curtainClosed=true,wallLow=false,topView=false,followMode=false,followYaw=.77,followPitch=.70,followDistance=6.2;
 let theta=.77,phi=.76,dist=19.5,target=new T.Vector3(2.9,.2,5),desiredTarget=target.clone(),desiredDist=19.5;
 const rooms={all:{name:'我們的家',desc:'沿著玄關進門，穿過木餐桌，走到灑滿日光的客廳。',pos:[2.9,.2,5],dist:19.5},living:{name:'客廳 · 慢慢過日子',desc:'灰藍懸浮電視櫃與灰色 Bergamo 三人座沙發。',pos:[1.7,.4,2.15],dist:9.6},dining:{name:'餐廳 · 一起好好吃飯',desc:'木餐桌連著深色檯面的中島，保留了收納櫃與小烤箱。',pos:[1.8,.3,6.3],dist:8.7},kitchen:{name:'廚房 · 香氣的起點',desc:'冰箱、餐邊櫃、水槽與爐台，依施工圖排在家的後端。',pos:[3.5,.3,9],dist:9.8},main:{name:'主臥 · 把夢收好',desc:'雙人床與窗邊柔光。寢具配色為這個小世界的第一版提案。',pos:[4.9,.3,1.7],dist:9.7},child:{name:'次臥 · 小小的天地',desc:'先留一張單人床，讓空間保持寬敞。',pos:[4.45,.3,6.7],dist:8.7},bath:{name:'浴室 · 清爽一下',desc:'洗手台、馬桶與獨立淋浴區。隔間依施工圖，材質先以簡化配色呈現。',pos:[5.5,.3,4.6],dist:8.5},balcony:{name:'陽台 · 日光',desc:'浴室側放 Panasonic 黑色洗脫烘，冷氣室外機位在柱外獨立小平台。',pos:[7.14,.3,7.8],dist:7.8},entry:{name:'玄關 · 歡迎回家',desc:'滿牆玄關櫃、展示層與深色洞洞板，每天回家的第一個角落。',pos:[-.2,.3,8.9],dist:8.5}};
 Object.values(rooms).forEach(r=>r.pos[0]=scaleX(r.pos[0]));
@@ -793,7 +832,7 @@ function updateCoverings(){
 }
 function toggleBathWindow(){const state=bathWindow.userData.door;state.open=!state.open;state.target=state.open?state.openAngle:state.closedAngle;toast(state.open?'浴室窗戶打開了':'浴室窗戶關上了')}
 function toggleShowerDoor(){const state=showerDoor.userData.door;state.open=!state.open;state.target=state.open?state.openAngle:state.closedAngle;toast(state.open?'淋浴門向內推開了':'淋浴門關上了')}
-document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};if($('#follow'))$('#follow').onclick=()=>{followMode=!followMode;topView=false;$('#top').setAttribute('aria-pressed',false);$('#follow')?.setAttribute('aria-pressed',followMode);toast(followMode?'跟隨人物 · 雙擊地板移動':'回到自由視角')};$('#top').onclick=()=>{followMode=false;$('#follow')?.setAttribute('aria-pressed',false);topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
+document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};if($('#follow'))$('#follow').onclick=()=>{followMode=!followMode;if(followMode){const focus=window.homeGameFocus?.();followYaw=focus?focus.angle+Math.PI:theta;followPitch=.70;followDistance=6.2}topView=false;$('#top').setAttribute('aria-pressed',false);$('#follow')?.setAttribute('aria-pressed',followMode);toast(followMode?'跟隨人物 · 雙擊地板移動':'回到自由視角')};$('#top').onclick=()=>{followMode=false;$('#follow')?.setAttribute('aria-pressed',false);topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
 // One finger rotates by default; the switch enables faster, wider panning.
 // Two fingers pan by their midpoint and pinch to zoom.
 function clampPan(){desiredTarget.x=Math.max(-3,Math.min(10,desiredTarget.x));desiredTarget.z=Math.max(-2,Math.min(12,desiredTarget.z))}
@@ -854,7 +893,7 @@ function toggleDoorAt(e){
   toast(state.open?'門打開了':'門關上了');
 }
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false});lastX=e.clientX;lastY=e.clientY;if(pointers.size===2){for(const p of pointers.values())p.moved=true;const p=[...pointers.values()];pinch=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);midX=(p[0].x+p[1].x)/2;midY=(p[0].y+p[1].y)/2}});
-canvas.addEventListener('pointermove',e=>{const prior=pointers.get(e.pointerId);if(!prior)return;pointers.set(e.pointerId,{...prior,x:e.clientX,y:e.clientY,moved:prior.moved||Math.hypot(e.clientX-prior.startX,e.clientY-prior.startY)>8});if(pointers.size===1){if(dragMode==='pan')panByPixels(e.clientX-lastX,e.clientY-lastY);else{theta-=(e.clientX-lastX)*.006;phi=Math.max(.045,Math.min(1.22,phi-(e.clientY-lastY)*.004));if(topView){topView=false;$('#top').setAttribute('aria-pressed',false)}}}else if(pointers.size===2){const p=[...pointers.values()],n=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),x=(p[0].x+p[1].x)/2,y=(p[0].y+p[1].y)/2;panByPixels(x-midX,y-midY);if(n>5&&pinch>5)desiredDist=Math.max(5,Math.min(30,desiredDist*pinch/n));pinch=n;midX=x;midY=y}lastX=e.clientX;lastY=e.clientY});
+canvas.addEventListener('pointermove',e=>{const prior=pointers.get(e.pointerId);if(!prior)return;pointers.set(e.pointerId,{...prior,x:e.clientX,y:e.clientY,moved:prior.moved||Math.hypot(e.clientX-prior.startX,e.clientY-prior.startY)>8});if(pointers.size===1){if(followMode){followYaw-=(e.clientX-lastX)*.006;followPitch=Math.max(.15,Math.min(1.25,followPitch-(e.clientY-lastY)*.004))}else if(dragMode==='pan')panByPixels(e.clientX-lastX,e.clientY-lastY);else{theta-=(e.clientX-lastX)*.006;phi=Math.max(.045,Math.min(1.22,phi-(e.clientY-lastY)*.004));if(topView){topView=false;$('#top').setAttribute('aria-pressed',false)}}}else if(pointers.size===2){const p=[...pointers.values()],n=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),x=(p[0].x+p[1].x)/2,y=(p[0].y+p[1].y)/2;if(!followMode)panByPixels(x-midX,y-midY);if(n>5&&pinch>5){if(followMode)followDistance=Math.max(4,Math.min(14,followDistance*pinch/n));else desiredDist=Math.max(5,Math.min(30,desiredDist*pinch/n))}pinch=n;midX=x;midY=y}lastX=e.clientX;lastY=e.clientY});
 function release(e){
   const p=pointers.get(e.pointerId);
   if(e.type==='pointerup'&&pointers.size===1&&p&&!p.moved&&Math.hypot(e.clientX-p.startX,e.clientY-p.startY)<8){
@@ -870,10 +909,10 @@ function release(e){
   pointers.delete(e.pointerId);pinch=0;if(pointers.size){const first=[...pointers.values()][0];lastX=first.x;lastY=first.y}
 }
 canvas.addEventListener('dblclick',e=>e.preventDefault());canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
-canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
-let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);window.homeGameUpdate?.(performance.now());if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=6.2;phi=.70;const angle=focus.angle+Math.PI;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait&&!followMode?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}updateCoverings();renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(followMode)followDistance=Math.max(4,Math.min(14,followDistance*Math.exp(e.deltaY*.001)));else desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
+let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);window.homeGameUpdate?.(performance.now());if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=followDistance;phi=followPitch;const angle=followYaw;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait&&!followMode?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}updateCoverings();renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,interactionTargets,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
+window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,getFollowOrbit:()=>({yaw:followYaw,pitch:followPitch,distance:followDistance}),interactionTargets,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
   setBalconyDoor(near){const state=balconyDoorLeaf.userData.door;if(near){state.open=true;state.target=state.openAngle}else if(state.autoNear){state.open=false;state.target=state.closedAngle}state.autoNear=near},
   updateDoorsAt(x,z){
     const centers=[[3.90,4.50],[4.45,5.025],[3.95,5.55]];
@@ -885,6 +924,7 @@ window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShif
     });
   },
   showNews,get currentRoom(){return current}};
+
 
 
 
