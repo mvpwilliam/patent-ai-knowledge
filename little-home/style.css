@@ -35,3 +35,32 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 
 
 .wallet-pill{position:absolute;z-index:7;top:18px;right:18px;background:#fffdf3ed;color:#405f50;border:1px solid #fff;border-radius:30px;padding:10px 16px;font-weight:700;font-size:14px;box-shadow:0 3px 12px #1c302b18}.scene-top .hint{display:none}.game-tools{display:flex;gap:8px;margin-top:10px}.game-tools button{flex:1;border-radius:12px;padding:11px 8px;background:#e4eae0;color:#405f50;font-size:13px}.game-tools .game-primary{background:#405f50;color:white}.compact-dialog{max-width:540px}.item-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}.item-card{display:flex;flex-direction:column;gap:8px;background:#eef1e8;border-radius:16px;padding:16px}.item-card strong{font-size:14px}.item-card small{color:#6c7c72;font-size:12px}.item-card button{padding:9px;background:#405f50;color:#fff;border-radius:10px;font-size:13px}.item-card button:disabled{background:#d6ded2;color:#81907e}.item-icon{font-size:32px}.inventory-tabs{display:flex;gap:8px;overflow:auto;margin-top:10px}.inventory-tabs button{padding:8px 12px;border-radius:20px;background:#e8ede2;white-space:nowrap}.inventory-tabs .active{background:#405f50;color:#fff}#xp-meter{display:block;width:100%;height:8px;margin:9px 0;accent-color:#789377}#xp-label{display:block;color:#758477;font-size:11px;margin-bottom:12px}#active-task{padding:10px 12px;background:#e3eadb;border-radius:12px}#wallet-list p,#member-list p{padding:10px;border-bottom:1px solid #e4e9df;font-size:13px}.task-target-ring{position:absolute;width:22px;height:12px;border:2px solid #8daa73;border-radius:50%;background:#b5ca8922;transform:translate(-50%,-50%);box-shadow:0 0 8px #a8c58f;pointer-events:none}.task-target-ring[hidden]{display:none}.placement-dialog{margin:auto auto 18px;width:min(94vw,430px);padding:18px}.placement-dialog::backdrop{background:#1c3a2515}.placement-dialog label{display:flex;gap:12px;align-items:center}.placement-dialog select{padding:10px;border:1px solid #dce3d9;border-radius:10px;font:inherit;flex:1}.placement-dialog p{font-size:12px;line-height:1.6}.night .item-card{background:#e1e7dc}@media(max-width:700px){.wallet-pill{top:16px;right:16px;padding:8px 12px;font-size:12px}.item-card{padding:12px}.game-tools{margin-top:8px}.game-tools button{font-size:12px}#active-task{margin:8px 0 0}.game-card .game-head{margin-bottom:8px}}
+
+/* Small, fixed-shell game panel: only the selected page scrolls. */
+#game-dialog{width:min(92vw,460px);max-width:460px;height:min(72dvh,640px);max-height:calc(100dvh - 40px);padding:0;overflow:hidden;border-radius:22px}
+#game-dialog[open]{display:flex;flex-direction:column}
+#game-dialog .dialog-head{flex:none;align-items:center;padding:18px 20px 12px;gap:16px;background:#fafaf6}
+#game-dialog .dialog-head h2{font-size:21px;font-weight:600;letter-spacing:.04em;margin:4px 0;line-height:1.4}
+#game-close{width:44px;height:44px;min-width:44px;font-size:20px;background:#edf0e9;border-radius:50%}
+.game-tabs{display:flex;gap:5px;flex:none;padding:0 18px 12px;border-bottom:1px solid #e0e5dc}
+.game-tabs button{flex:1;font-size:12px;font-weight:500;letter-spacing:.04em;padding:10px 4px;border-radius:11px;background:#eff1eb;min-height:40px}
+.game-tabs button[aria-selected=true]{background:#405f50;color:#fff}
+.game-dialog-body{min-height:0;overflow:auto;overscroll-behavior:contain;padding:6px 20px 18px;flex:1;scrollbar-width:thin}
+#game-dialog .game-grid{display:block}
+#game-dialog [hidden]{display:none!important}
+#game-dialog h3{font-size:14px;letter-spacing:.035em;margin:16px 0 10px;font-weight:600}
+#game-dialog .account{margin:0;border:0}
+#game-dialog .mode-note{font-size:11px;line-height:1.8;color:#7b877f;border:0;padding:0;margin:10px 0}
+#game-dialog .task-intro{font-size:11px;line-height:1.8;margin:0 0 12px;color:#7b877f}
+.game-dialog-foot{flex:none;padding:12px 18px;border-top:1px solid #e0e5dc;background:#fafaf6}
+.game-dialog-foot button{width:100%;min-height:44px;border-radius:12px;font-size:12px;font-weight:500;letter-spacing:.06em;background:#e9eee5}
+.game-card{padding:17px 18px;background:#f0f3eb;border-color:#dfe6dc}
+#game-status{font-size:13px;font-weight:500;letter-spacing:.035em;line-height:1.7;color:#405b4d;margin:12px 0 3px}
+#npc-status{display:block;font-size:10px;font-weight:400;letter-spacing:.055em;line-height:1.7;color:#88958a;margin:0 0 13px}
+.game-head .mini-label{font-size:9px;letter-spacing:.18em;color:#8d9b8d}
+.game-head strong{font-size:10px;font-weight:500;letter-spacing:.045em;font-variant-numeric:tabular-nums}
+.joke-bubble{border-color:#ffffffbb;background:#faf9f2ed;border-radius:14px;box-shadow:0 3px 15px #243a3118;padding:10px 14px}
+.joke-bubble p{font-size:12px;line-height:1.7;font-weight:400;letter-spacing:.035em;color:#536358}
+#monster-button{display:block;width:100%;font-size:12px;font-weight:500;letter-spacing:.045em;line-height:1.6;min-height:44px;border:1px solid #d3decd;border-radius:12px;padding:11px 14px;margin:12px 0 0;background:#e8eee1;color:#405b4d;font-variant-numeric:tabular-nums}
+#monster-button[hidden]{display:none}
+@media(max-width:700px){#game-dialog{width:92vw;height:70dvh;max-height:calc(100dvh - 32px)}#game-dialog .dialog-head{padding:14px 16px 10px}#game-dialog .dialog-head h2{font-size:19px}.game-dialog-body{padding:4px 16px 14px}.game-tabs{padding:0 14px 10px}.joke-bubble p{font-size:11px}.game-tools button{font-weight:500;letter-spacing:.035em}.game-dialog-foot{padding:10px 14px}}
