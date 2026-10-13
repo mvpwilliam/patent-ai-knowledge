@@ -2,6 +2,7 @@ import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall} from './navigation.js?v=95';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
+import {createHouseNPC} from './house-npc.js?v=97';
 
 const scene=window.homeScene?.scene;
 const $=s=>document.querySelector(s);
@@ -40,7 +41,7 @@ chores.dishes.marker[0]=sinkX;chores.dishes.stop[0]=sinkX;
 for(const id of ['laundry','balcony']){chores[id].marker=[washerPosition.x,1.10,washerPosition.z];chores[id].stop=[washerPosition.x,7.30]}
 const placement=t=>chores[t.id]||chores[t.room]||chores.living;
 const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
-let avatar=safeRead('little-home-avatar',{name:'小屋主',skin:'#e9b990',hair:'korean',hairColor:'#4d3834',shirt:'#7899a0'});
+let avatar=safeRead('little-home-avatar',{name:'玩家',skin:'#e9b990',hair:'korean',hairColor:'#4d3834',shirt:'#7899a0'});
 const normalizeTasks=items=>{
  const incoming=Array.isArray(items)?items.filter(t=>t.id!==GAME_META_ID&&t.id!=='scenery'):[];
  const merged=[...defaults.map(t=>({...incoming.find(old=>old.id===t.id),...t})),...incoming.filter(t=>!defaults.some(d=>d.id===t.id))];
@@ -55,6 +56,7 @@ let gameDay=today(),claims={};
 const isClaimed=t=>taskDone(t);
 let mode='preview',auth=null,db=null,api=null,user=null,homeId='',homeReady=false,joining=false,unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
 let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0,activity=null,travel=null,restExit=null;
+let houseNPC=null,authBusy=false,connectedUid=null;
 const stops=[[1.35,4.25],[1.2,3.7],[1.15,1.25],[.7,2.6],[.72,4.8],[.68,6.1],[.70,7.8],[.65,8.65]].map(pointXZ);
 const tour=stops.flatMap((point,i)=>findPath(point,stops[(i+1)%stops.length]).slice(i?1:0));
 const tourLengths=tour.map((point,i)=>Math.hypot(point[0]-tour[(i+1)%tour.length][0],point[1]-tour[(i+1)%tour.length][1]));
@@ -192,7 +194,8 @@ fetch('./assets/jokes.json?v=1').then(response=>{
   if(document.hidden)jokePausedAt=Date.now();
 }).catch(error=>console.warn('冷笑話題庫載入失敗',error));
 function updateJoke(){
-  if(!jokes.length||!character)return;
+  const speaker=houseNPC?.character||character;
+  if(!jokes.length||!speaker)return;
   const now=jokePausedAt||Date.now();
   const second=Math.floor((now-jokeStartedAt)/1000);
   if(second!==jokeSavedSecond){jokeSavedSecond=second;saveJokeProgress()}
@@ -202,7 +205,7 @@ function updateJoke(){
     const index=Math.floor(step/2)%jokes.length,answer=step%2===1;
     $('#joke-line').textContent=answer?jokes[index].a:jokes[index].q;
   }
-  jokePoint.set(character.position.x,character.position.y+1.27,character.position.z).project(window.homeScene.camera);
+  jokePoint.set(speaker.position.x,speaker.position.y+1.27,speaker.position.z).project(window.homeScene.camera);
   const world=$('#world'),w=world.clientWidth,h=world.clientHeight;
   if(jokePoint.z<=-1||jokePoint.z>=1||Math.abs(jokePoint.x)>1.12||Math.abs(jokePoint.y)>1.12){
     jokeBubble.hidden=true;return;
@@ -283,10 +286,12 @@ function animate(now){
   }else if(pose==='lie'){
     b.position.y=0;b.rotation.x=-Math.PI/2;b.rotation.z=0;
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
-  const nearBalconyDoor=Math.abs(character.position.x-scaleX(5.83))<1.12&&Math.abs(character.position.z-8.68)<.82;
+  const nearBalconyDoor=[character,houseNPC?.character].filter(Boolean).some(p=>Math.abs(p.position.x-scaleX(5.83))<1.12&&Math.abs(p.position.z-8.68)<.82);
   window.homeScene?.setBalconyDoor(nearBalconyDoor);
-  window.homeScene?.updateDoorsAt(character.position.x,character.position.z);
+  window.homeScene?.updateDoorsAt(character.position.x,character.position.z,houseNPC?[[houseNPC.character.position.x,houseNPC.character.position.z]]:[]);
   animateOthers(dt,now);
+  houseNPC?.update(dt,now);
+  if(houseNPC)$('#npc-status').textContent=`小屋主（NPC）· ${houseNPC.action?.label||'在家休息'}`;
   updateJoke();
 }
 window.homeGameUpdate=animate;
@@ -450,7 +455,7 @@ async function subscribeHome(create=false){
     if(!savedTasks.exists())await api.setDoc(tasksRef,{items:create?tasks:defaults});
     localStorage.setItem('little-home-code',homeId);
     gameDay=today();homeReady=true;
-    $('#account-state').textContent='已自動登入並加入家庭。家人點邀請連結就能一起玩。';
+    $('#account-state').textContent=user.isAnonymous?'訪客已加入家庭。綁定 Google 可在新裝置取回進度。':'Google 帳號已加入家庭，人物進度會同步。';
     $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;
     $('#home-share').disabled=false;
     unsubscribeTasks=api.onSnapshot(tasksRef,snap=>{
@@ -475,10 +480,55 @@ async function shareHome(){
     else{await navigator.clipboard.writeText(url.href);toast('家庭邀請連結已複製')}
   }catch(error){if(error.name!=='AbortError')toast('請複製下方的家庭代碼分享給家人')}
 }
+function accountStatus(){
+ const anonymous=!!user?.isAnonymous;
+ $('#login-google').textContent=anonymous?'綁定 Google，保留目前進度':'Google 登入';
+ $('#login-existing').hidden=!anonymous;
+ $('#login-guest').textContent=user?'繼續遊戲':'訪客體驗';
+ $('#login-message').textContent=user&&!anonymous?'已登入 Google。新裝置使用相同帳號，再輸入原家庭代碼或開啟邀請連結。':anonymous?'目前是訪客；綁定 Google 可保留人物、金幣、等級與道具。':'Google 登入可跨裝置保存；訪客體驗只保留這台裝置的登入身分。';
+ $('#login-google').disabled=authBusy||!auth;
+ $('#login-existing').disabled=authBusy||!auth;
+ $('#login-guest').disabled=authBusy;
+}
+function accountError(error){
+ const messages={'auth/operation-not-allowed':'請在 Firebase Authentication 啟用 Google 登入。','auth/unauthorized-domain':'請在 Firebase 的授權網域加入 mvpwilliam.github.io。','auth/popup-blocked':'登入視窗被阻擋，請允許彈出視窗，或改用 Safari 開啟網站。','auth/popup-closed-by-user':'登入視窗已關閉，可以再試一次。','auth/credential-already-in-use':'這個 Google 已有遊戲帳號，未更動目前訪客資料。可選「登入已有 Google 帳號」；兩份進度不會自動合併。'};
+ $('#login-message').textContent=messages[error?.code]||'登入暫時失敗，請檢查網路後重試。';
+}
+function setupAccountUI(){
+ const dialog=document.createElement('dialog');dialog.id='login-dialog';dialog.className='game-dialog compact-dialog';
+ const title=document.createElement('h2');title.textContent='歡迎回到我們的小日子';
+ const message=document.createElement('p');message.id='login-message';
+ dialog.append(title,message);
+ for(const [id,label] of [['login-google','Google 登入'],['login-guest','訪客體驗'],['login-existing','登入已有 Google 帳號']]){const b=document.createElement('button');b.id=id;b.textContent=label;b.style.margin='8px 0';b.style.width='100%';dialog.append(b)}
+ document.body.append(dialog);
+ const open=document.createElement('button');open.id='account-open';open.textContent='帳號／跨裝置登入';open.style.marginTop='12px';$('#account-state').parentElement?.append(open);
+ open.onclick=()=>{accountStatus();dialog.showModal()};
+ $('#login-guest').onclick=async()=>{
+  if(authBusy)return;authBusy=true;accountStatus();
+  try{if(auth&&!auth.currentUser)await api.signInAnonymously(auth);localStorage.setItem('little-home-login-choice','guest');dialog.close()}
+   catch(e){accountError(e)}finally{authBusy=false;$('#login-guest').disabled=false;$('#login-google').disabled=!auth;$('#login-existing').disabled=!auth}
+ };
+ const google=async existing=>{
+  if(authBusy||!auth)return;
+  if(activity||syncBusy||joining){$('#login-message').textContent='請先完成目前操作再登入或綁定。';return}
+  if(existing&&user?.isAnonymous&&!window.confirm('切換到已有 Google 帳號？目前訪客进度不會合併，請先保留原家庭代碼。'))return;
+  authBusy=true;accountStatus();let error=null;
+  try{
+   const provider=new api.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
+   if(auth.currentUser?.isAnonymous&&!existing){await api.linkWithPopup(auth.currentUser,provider);user=auth.currentUser;accountStatus();toast('Google 綁定完成，原人物與進度已保留')}
+   else{await api.signInWithPopup(auth,provider)}
+   localStorage.setItem('little-home-login-choice','google');dialog.close();
+  }catch(e){error=e}finally{authBusy=false;accountStatus();if(error)accountError(error)}
+ };
+ $('#login-google').onclick=()=>google(false);$('#login-existing').onclick=()=>google(true);
+ dialog.addEventListener('cancel',e=>{if(!user&&mode==='online')e.preventDefault()});accountStatus();
+ return dialog;
+}
 async function connect(){
+  const login=setupAccountUI();
   if(!firebaseConfig?.apiKey||!firebaseConfig?.projectId){
     $('#game-mode').textContent='目前是單機體驗，角色與任務儲存在這台裝置。';
-    $('#account-state').textContent='家庭連線尚未設定。';return;
+    $('#account-state').textContent='家庭連線尚未設定。';login.showModal();return;
   }
   mode='online';renderTasks();$('#account-state').textContent='正在自動登入…';
   try{
@@ -492,13 +542,15 @@ async function connect(){
     authLib.onAuthStateChanged(auth,u=>{
       user=u;
       if(u){
-        $('#account-state').textContent='已自動匿名登入。';
+        accountStatus();if(connectedUid===u.uid)return;connectedUid=u.uid;
+        $('#account-state').textContent=u.isAnonymous?'訪客登入成功。':'Google 登入成功。';
         const code=boundedCode($('#home-code').value);
         if(/^[a-f0-9]{24}$/.test(code))subscribeHome(false);
-        else subscribeHome(true);
-      }else{homeReady=false;clearSubscriptions();claims={};renderTasks()}
+        else if(u.isAnonymous)subscribeHome(true);
+        else{homeReady=false;clearSubscriptions();$('#account-state').textContent='請輸入原家庭代碼或開啟邀請連結，以讀取原人物；新玩家可建立家庭。';$('#game-dialog').showModal()}
+      }else{connectedUid=null;homeReady=false;clearSubscriptions();claims={};renderTasks();accountStatus()}
     });
-    if(!auth.currentUser)await authLib.signInAnonymously(auth);
+    accountStatus();if(!auth.currentUser||(!localStorage.getItem('little-home-login-choice')&&auth.currentUser.isAnonymous))login.showModal();
   }catch(error){
     const message=error.code==='auth/operation-not-allowed'
       ?'請在 Firebase 啟用匿名登入，再重新整理。'
@@ -682,6 +734,8 @@ async function attackMonster(){try{await mutateGame((p,meta)=>{const m=meta.mons
 {
   $('#home-code').value=new URL(location.href).searchParams.get('home')||localStorage.getItem('little-home-code')||'';
   readPlayer();gameMeta.players[playerId()]=player;fillAvatar();setCharacter(avatar);readLocalClaims();renderTasks();clock();setInterval(clock,1000);
+  if(scene)houseNPC=createHouseNPC(window.homeScene,makeCharacter,()=>[character,...characters.values()]);
+  const npcStatus=document.createElement('small');npcStatus.id='npc-status';npcStatus.textContent='小屋主（NPC）· 在家休息';$('#game-status').parentElement?.append(npcStatus);
   $('#game-open').onclick=()=>$('#game-dialog').showModal();
   $('#game-close').onclick=()=>$('#game-dialog').close();
   $('#game-dialog').onclick=e=>{if(e.target===$('#game-dialog'))e.target.close()};
