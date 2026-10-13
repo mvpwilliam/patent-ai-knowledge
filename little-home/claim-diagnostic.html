@@ -14,7 +14,8 @@ try{
  for(const [label,day] of [['half-hour',Math.floor(Date.now()/1800000)],['hour',Math.floor(Date.now()/3600000)]]){
   const ref=doc(db,'homes',homeId,'days',String(day),'claims','diagnostic-'+label);try{const empty=await getDoc(ref);log(label+' get',empty.exists()?'exists':'missing allowed')}catch(e){log(label+' get',e.code+' '+e.message)}
   try{await runTransaction(db,async tx=>{const old=await tx.get(ref);if(!old.exists())tx.set(ref,{uid:user.uid,name:'測試',at:serverTimestamp()})});log(label,'OK')}
-  catch(e){log(label,e.code+' '+e.message)}\n  try{await setDoc(doc(db,'homes',homeId,'days',String(day),'claims','diagnostic-direct-'+label),{uid:user.uid,name:'測試',at:serverTimestamp()});log(label+' direct','OK')}catch(e){log(label+' direct',e.code+' '+e.message)}
+  catch(e){log(label,e.code+' '+e.message)}
+  try{await setDoc(doc(db,'homes',homeId,'days',String(day),'claims','diagnostic-direct-'+label),{uid:user.uid,name:'測試',at:serverTimestamp()});log(label+' direct','OK')}catch(e){log(label+' direct',e.code+' '+e.message)}
  }
 }catch(e){log('setup',e.code+' '+e.message)}
 };</script></body></html>
