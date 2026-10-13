@@ -5,7 +5,7 @@ const bytes=new Uint8Array(await new Response(new Blob([packed]).stream().pipeTh
 function data(i){const a=spec.accessors[i],v=spec.bufferViews[a.bufferView],n={SCALAR:1,VEC2:2,VEC3:3,VEC4:4}[a.type],Type=a.componentType===5125?Uint32Array:Float32Array;return new Type(bytes.buffer,offset+v.byteOffset,a.count*n).slice()}
 
 const bounded=(v,a,b,d)=>Number.isFinite(Number(v))?Math.max(a,Math.min(b,Number(v))):d;
-export function normalizeAvatarDesign(d={}){d=d&&typeof d==='object'?d:{};return {version:1,faceWidth:bounded(d.faceWidth,.82,1.2,1),chin:bounded(d.chin,.6,1.6,1),eyeSize:bounded(d.eyeSize,.65,1.4,1),eyeGap:bounded(d.eyeGap,.75,1.25,1),browAngle:bounded(d.browAngle,-.5,.5,0),hairStyle:['korean','short','long','cap'].includes(d.hairStyle)?d.hairStyle:'korean',mouth:['smile','flat','open'].includes(d.mouth)?d.mouth:'smile',glasses:!!d.glasses,jeans:/^#[0-9a-f]{6}$/i.test(d.jeans||'')?d.jeans:'#354f6b'}};
+export function normalizeAvatarDesign(d={}){d=d&&typeof d==='object'?d:{};return {version:1,faceWidth:bounded(d.faceWidth,.82,1.2,1),chin:bounded(d.chin,.6,1.6,1),eyeSize:bounded(d.eyeSize,.65,1.4,1),eyeGap:bounded(d.eyeGap,.75,1.25,1),browAngle:bounded(d.browAngle,-.5,.5,0),hairStyle:['korean','short','long','cap','braids','bob','bluntLong','ponytail','buns'].includes(d.hairStyle)?d.hairStyle:'korean',mouth:['smile','flat','open'].includes(d.mouth)?d.mouth:'smile',glasses:!!d.glasses,jeans:/^#[0-9a-f]{6}$/i.test(d.jeans||'')?d.jeans:'#354f6b'}};
 
 export const dadWhitePreset={hair:'korean',hairColor:'#242323',shirt:'#ffffff'};
 export function isPixelDad(v){return v.hair==='korean'&&v.hairColor.toLowerCase()==='#242323'&&v.shirt.toLowerCase()==='#ffffff'}
@@ -35,10 +35,60 @@ if(d.hairStyle==='short')for(let i=0;i<7;i++){const tuft=new T.Mesh(new T.ConeGe
 if(d.hairStyle==='cap'){block('Cap crown',.49*d.faceWidth,.12,.44,'#4a6176',0,1.365,0);block('Cap brim',.42*d.faceWidth,.025,.16,'#4a6176',0,1.31,.24)}
 if(d.mouth!=='smile')block('Mouth '+d.mouth,d.mouth==='flat'?.12:.047,d.mouth==='flat'?.007:.033,.005,'#704238',0,.927,.251);
 
+
+// All hair is assembled from editable cuboids, in the same coordinate system as the head.
+if(['bob','bluntLong','braids','ponytail','buns'].includes(d.hairStyle)){
+ for(let i=0;i<7;i++)block('Blunt fringe '+i,.062,.10,.09,hc,(i-3)*.061*d.faceWidth,1.27,.218);
+}
+if(['bob','bluntLong'].includes(d.hairStyle)){
+ const h=d.hairStyle==='bob'?.31:.58;
+ for(const sign of [-1,1])block('Hair side '+sign,.095*d.faceWidth,h,.34,hc,sign*.225*d.faceWidth,1.30-h/2,-.03);
+ block('Hair back',.46*d.faceWidth,h,.09,hc,0,1.30-h/2,-.21);
+}
+if(d.hairStyle==='braids')for(const sign of [-1,1]){
+ for(let i=0;i<6;i++){const b=block('Braid '+sign+' '+i,.105,.14,.105,hc,sign*(.245+(i%2)*.025)*d.faceWidth,1.13-i*.13,-.07);b.rotation.z=sign*(i%2?.18:-.18)}
+ block('Braid tie '+sign,.105,.035,.11,'#c59286',sign*.257*d.faceWidth,.44,-.07);
+}
+if(d.hairStyle==='ponytail'){
+ block('Ponytail tie',.17,.08,.09,'#c59286',0,1.36,-.25);
+ for(let i=0;i<5;i++)block('Ponytail '+i,.19-i*.015,.14,.13,hc,0,1.36-i*.11,-.30-i*.012);
+}
+if(d.hairStyle==='buns')for(const sign of [-1,1]){
+ block('Bun '+sign,.19,.19,.19,hc,sign*.225*d.faceWidth,1.39,-.01);
+ block('Bun tie '+sign,.20,.025,.20,'#c59286',sign*.225*d.faceWidth,1.32,-.01);
+}
+// Remap vertices and joint pivots together. Limb vertices are joint-local,
+// so simply stretching geometry would detach the elbows and knees.
+const bodyY=y=>y<=.43?y*.72/.43:.72+(y-.43)*(.40/.28);
+const armY=y=>bodyY(.66)+(y-.66)*1.34;
+const headY=y=>1.10+(y-.70)*.46;
+const snapshots=[];
+function capture(obj,parentPosition=new T.Vector3(),arm=false){
+ const world=parentPosition.clone().add(obj.position);
+ arm=arm||/shoulder|elbow/.test(obj.name);
+ const head=/Head|hair|Hair|fringe|Fringe|Sideburn| ear$|nose|glasses|Glasses|Face pixel|Mouth|Cap |Braid|Ponytail|Bun/.test(obj.name);
+ snapshots.push({obj,world,parent:parentPosition.clone(),arm,head});
+ for(const child of obj.children)capture(child,world,arm);
+}
+capture(model);
+for(const {obj,world,parent,arm,head} of snapshots){
+ const map=(v,h=false)=>new T.Vector3(v.x*(h?.64:.82),(h?headY:arm?armY:bodyY)(v.y),v.z*(h?.64:.82));
+ // Meshes inherit the parent's semantic label.
+ if(obj.isMesh){const owner=snapshots.find(x=>x.obj===obj.parent),h=owner?.head||head;
+  const a=obj.geometry.attributes.position,newOrigin=map(world,h);
+  for(let i=0;i<a.count;i++){const v=new T.Vector3(a.getX(i),a.getY(i),a.getZ(i)).add(world);v.copy(map(v,h)).sub(newOrigin);a.setXYZ(i,v.x,v.y,v.z)}
+  obj.geometry.computeVertexNormals();
+ }
+ const parentSnapshot=snapshots.find(x=>x.obj===obj.parent);
+ const parentHead=!!parentSnapshot?.head;
+ const parentOrigin=parentSnapshot?new T.Vector3(parent.x*(parentHead?.64:.82),(parentHead?headY:parentSnapshot.arm?armY:bodyY)(parent.y),parent.z*(parentHead?.64:.82)):new T.Vector3();
+ obj.position.copy(map(world,head||(obj.isMesh&&parentHead)).sub(parentOrigin));
+}
  const arms=[new T.Group(),new T.Group()],legs=[new T.Group(),new T.Group()];for(const n of [...arms,...legs])body.add(n);
  const named=Object.fromEntries(nodes.map(n=>[n.name,n]));
  g.userData={body,arms,legs,step:Math.random()*8,pixelDad:true,updatePose(pose='stand'){
-  model.position.y=pose==='sit'?-.43*scale:0;
+  model.position.y=pose==='sit'?-.72*scale:0;
   for(let i=0;i<2;i++){const label=i?'Right':'Left',hip=named[label+' hip'],knee=named[label+' knee'],shoulder=named[label+' shoulder'],elbow=named[label+' elbow'];hip.rotation.x=pose==='sit'?-Math.PI/2:legs[i].rotation.x;knee.rotation.x=pose==='sit'?Math.PI/2:Math.max(0,-legs[i].rotation.x)*.5;shoulder.rotation.x=pose==='sit'?-.45:arms[i].rotation.x;elbow.rotation.x=pose==='sit'?-1.08:pose==='work'?-.6:0;}
  }};g.userData.updatePose();return g;
 }
+
