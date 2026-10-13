@@ -291,7 +291,7 @@ function animate(now){
   window.homeScene?.updateDoorsAt(character.position.x,character.position.z,houseNPC?[[houseNPC.character.position.x,houseNPC.character.position.z]]:[]);
   animateOthers(dt,now);
   houseNPC?.update(dt,now);
-  if(houseNPC)$('#npc-status').textContent=`小屋主（NPC）· ${houseNPC.action?.label||'在家休息'}`;
+  if(houseNPC)$('#npc-status').textContent=`小屋日常 · ${houseNPC.action?.label||'在家休息'}`;
   updateJoke();
 }
 window.homeGameUpdate=animate;
@@ -593,7 +593,7 @@ async function connect(){
         const code=boundedCode($('#home-code').value);
         if(/^[a-f0-9]{24}$/.test(code))subscribeHome(false);
         else if(u.isAnonymous)subscribeHome(true);
-        else{homeReady=false;clearSubscriptions();$('#account-state').textContent='請輸入原家庭代碼或開啟邀請連結，以讀取原人物；新玩家可建立家庭。';$('#game-dialog').showModal()}
+        else{homeReady=false;clearSubscriptions();$('#account-state').textContent='請輸入原家庭代碼或開啟邀請連結，以讀取原人物；新玩家可建立家庭。';$('#game-dialog').selectPage?.('family');$('#game-dialog').showModal()}
       }else{connectedUid=null;homeReady=false;clearSubscriptions();claims={};renderTasks();accountStatus()}
     });
     accountStatus();if(!auth.currentUser||(!localStorage.getItem('little-home-login-choice')&&auth.currentUser.isAnonymous))login.showModal();
@@ -771,20 +771,41 @@ function renderMonster(){
  for(const x of [-.09,.09]){bodyPart(g,new T.SphereGeometry(.065,10,8),'#647b65',x,.07,.04);bodyPart(g,new T.SphereGeometry(.018,8,6),'#e9e2bb',x*.8,.51,.15)}
  const tail=bodyPart(g,new T.ConeGeometry(.07,.30,10),'#647b65',0,.08,-.22);tail.rotation.x=-1.15;
  for(let i=0;i<4;i++)bodyPart(g,new T.ConeGeometry(.05,.12,4),'#829b81',0,.18+i*.08,-.16);
- scene.add(g);monsterMesh=g;$('#monster-button').hidden=false;$('#monster-button').textContent=`哥吉拉 ${m.hits}／100 · 攻擊`;
+ // 2.45 metres from foot to crown, just under the 2.6 metre walls.
+ g.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(g),height=bounds.max.y-bounds.min.y;
+ const scale=2.45/height;g.scale.setScalar(scale);g.position.y=.08-bounds.min.y*scale+g.position.y*scale;
+ g.position.x=scaleX(1.25);g.position.z=4.25;
+ scene.add(g);monsterMesh=g;$('#monster-button').hidden=false;$('#monster-button').textContent=`攻擊哥吉拉　·　已命中 ${m.hits} / 100`;
 }
 async function attackMonster(){try{await mutateGame((p,meta)=>{const m=meta.monster;if(!m||Date.now()<m.bornAt||m.hits>=100)throw new Error('哥吉拉還沒出現');m.hits++;if(m.hits>=100){m.bornAt=Date.now()+3600000;m.hits=0}});toast(gameMeta.monster.bornAt>Date.now()?'哥吉拉消失了，下次一小時後出現':'命中！')}catch(e){toast(e.message||'攻擊未儲存')}}
 
 
 
+function setupGamePages(){
+ const dialog=$('#game-dialog'),grid=dialog.querySelector?.('.game-grid'),head=dialog.querySelector?.('.dialog-head'),account=dialog.querySelector?.('.account');
+ if(!grid||!head||!account)return;
+ const sections=[...grid.children];const pages={tasks:sections[1],character:sections[0],family:account};
+ const tabs=document.createElement('div');tabs.className='game-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','家事、角色與家庭');
+ const body=document.createElement('div');body.className='game-dialog-body';
+ const note=$('#game-mode');body.append(note,grid,account);
+ const select=key=>{for(const [id,page] of Object.entries(pages))page.hidden=id!==key;note.hidden=key!=='tasks';body.scrollTop=0;head.querySelector('h2').textContent={tasks:'今日家事',character:'我的角色',family:'我的家庭'}[key];for(const button of tabs.children){const active=button.dataset.page===key;button.setAttribute('aria-selected',active);button.tabIndex=active?0:-1}};
+ for(const [key,label] of [['tasks','今日家事'],['character','我的角色'],['family','我的家庭']]){
+  pages[key].id='game-page-'+key;pages[key].setAttribute('role','tabpanel');
+  const b=document.createElement('button');b.id='game-tab-'+key;b.dataset.page=key;b.textContent=label;b.setAttribute('role','tab');b.setAttribute('aria-controls',pages[key].id);pages[key].setAttribute('aria-labelledby',b.id);b.onclick=()=>select(key);
+  b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const order=['tasks','character','family'],next=order[(order.indexOf(key)+(e.key==='ArrowRight'?1:2))%3];select(next);$('#game-tab-'+next).focus()};tabs.append(b);
+ }
+ const foot=document.createElement('div');foot.className='game-dialog-foot';const close=document.createElement('button');close.textContent='回到小屋';close.onclick=()=>dialog.close();foot.append(close);
+ dialog.append(tabs,body,foot);dialog.selectPage=select;select('tasks');
+}
 {
   $('#home-code').value=new URL(location.href).searchParams.get('home')||localStorage.getItem('little-home-code')||'';
   readPlayer();gameMeta.players[playerId()]=player;fillAvatar();setCharacter(avatar);readLocalClaims();renderTasks();clock();setInterval(clock,1000);
   if(scene)houseNPC=createHouseNPC(window.homeScene,makeCharacter,()=>[character,...characters.values()]);
-  const npcStatus=document.createElement('small');npcStatus.id='npc-status';npcStatus.textContent='小屋主（NPC）· 在家休息';$('#game-status').parentElement?.append(npcStatus);
-  $('#game-open').onclick=()=>$('#game-dialog').showModal();
+  const npcStatus=document.createElement('small');npcStatus.id='npc-status';npcStatus.textContent='小屋日常 · 在家休息';$('#game-status').after?.(npcStatus);
+  setupGamePages();
+  $('#game-open').onclick=()=>{$('#game-dialog').selectPage?.('tasks');$('#game-dialog').showModal()};
   $('#game-close').onclick=()=>$('#game-dialog').close();
-  $('#game-dialog').onclick=e=>{if(e.target===$('#game-dialog'))e.target.close()};
+  $('#game-dialog').onclick=e=>{if(e.target!==$('#game-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()};
   $('#avatar-save').onclick=saveAvatar;
   document.querySelectorAll('[data-pose]').forEach(b=>b.onclick=()=>setPose(b.dataset.pose));
   $('#task-add').onclick=addTask;
