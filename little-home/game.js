@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
-import {findPath,canTraverse,walkable,crossesWall} from './navigation.js?v=93';
+import {findPath,canTraverse,walkable,crossesWall} from './navigation.js?v=95';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
 
 const scene=window.homeScene?.scene;
@@ -137,18 +137,34 @@ window.homeGameFocus=()=>character?{position:character.position.clone(),angle:ch
 function moveTo(point,kind='walk'){
   if(activity)return toast('先完成目前的家事');
   if(!character)return;
+  if(kind.startsWith('diningChair')){const z=kind==='diningChair0'?5.94:6.63;if(onlinePlayers().some(([,p])=>p.presence.pose==='sit'&&Math.hypot(p.presence.x-1.41,p.presence.z-z)<.25))return toast('這張椅子有人坐，請選另一張')}
   if(pose==='sit')window.homeScene?.showNews(false);
   if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
   restExit=null;travel=null;pose='walk';
   document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose==='walk'));
-  const stops={sofa:furnitureXZ('sofa',[1.72,2.04]),mainBed:furnitureXZ('mainBed',[4.05,1.68]),childBed:furnitureXZ('childBed',[3.98,6.90])};
+  const stops={diningChair0:[.88,5.94],diningChair1:[.88,6.63],entryMirror:[entryZero+.45,9.58],bathMirror:[4.73+furnitureShift.basin,4.80],sofa:furnitureXZ('sofa',[1.72,2.04]),mainBed:furnitureXZ('mainBed',[4.05,1.68]),childBed:furnitureXZ('childBed',[3.98,6.90])};
   const destination=stops[kind]||point;
   const path=findPath([character.position.x,character.position.z],destination);
   if(!path.length||Math.hypot(path.at(-1)[0]-destination[0],path.at(-1)[1]-destination[1])>.45)return toast('這裡目前走不到');
   travel={kind,phase:'run',path,index:0,exit:destination};
-  toast(kind==='walk'?'屋主走過去了':kind==='sofa'?'屋主走去沙發':'屋主走去睡覺');
+  toast(kind.includes('Mirror')?'屋主走去照鏡子':kind.startsWith('diningChair')?'屋主走去餐椅':kind==='walk'?'屋主走過去了':kind==='sofa'?'屋主走去沙發':'屋主走去睡覺');
 }
 window.homeGameMoveTo=moveTo;
+let mirrorRenderer=null,mirrorPortrait=null;
+function makeMirrorAvatar(){const portrait=makeCharacter(outfit(avatar));portrait.name='my-mirror-reflection';return portrait}
+function openMirror(){
+ const dialog=$('#mirror-dialog');if(!dialog)return;
+ $('#mirror-caption').textContent=`鏡中的${avatar.name}`;
+ try{
+  if(!mirrorRenderer){mirrorRenderer=new T.WebGLRenderer({canvas:$('#mirror-canvas'),antialias:true,alpha:false});mirrorRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));mirrorRenderer.setSize(260,350,false)}
+  const mirrorScene=new T.Scene();mirrorScene.background=new T.Color('#dce4df');
+  mirrorScene.add(new T.HemisphereLight('#ffffff','#708b78',2.5));const light=new T.DirectionalLight('#fff5e7',2);light.position.set(2,3,4);mirrorScene.add(light);
+  if(mirrorPortrait)mirrorPortrait.traverse(n=>{n.geometry?.dispose();n.material?.dispose()});mirrorPortrait=makeMirrorAvatar();mirrorScene.add(mirrorPortrait);
+  const camera=new T.PerspectiveCamera(37,260/350,.1,10);camera.position.set(0,.75,2.7);camera.lookAt(0,.55,0);mirrorRenderer.render(mirrorScene,camera);
+  dialog.showModal();
+ }catch(error){toast('鏡子畫面暫時無法顯示');console.warn(error)}
+}
+
 
 const jokeBubble=$('#joke-bubble');
 const jokePoint=new T.Vector3();
@@ -220,19 +236,19 @@ function animate(now){
       const [x,z]=travel.path[travel.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
       if(d<.04){walkStep(character,x,z);travel.index++;if(travel.index>=travel.path.length){
         if(travel.kind==='walk'){const resume=travel.resumeTour;travel=null;pose=resume?'walk':'stand'}
-        else{travel.phase='settle';travel.from=character.position.clone();travel.progress=0}
+        else if(travel.kind.includes('Mirror')){const kind=travel.kind;travel=null;pose='stand';character.rotation.y=kind==='entryMirror'?-Math.PI/2:Math.PI;openMirror()}else{travel.phase='settle';travel.from=character.position.clone();travel.progress=0}
       }}else{const move=Math.min(d,dt*1.6);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
       step+=dt*17;b.position.y=Math.abs(Math.sin(step))*.035;b.rotation.set(0,0,Math.sin(step)*.035);
       leftArm.rotation.x=Math.sin(step)*.5;rightArm.rotation.x=-Math.sin(step)*.5;
       leftLeg.rotation.x=-Math.sin(step)*.4;rightLeg.rotation.x=Math.sin(step)*.4;
     }else{
       travel.progress=Math.min(1,travel.progress+dt/.65);
-      const target=travel.kind==='sofa'?furnitureXYZ('sofa',[2.54,.51,2.03]):travel.kind==='mainBed'?furnitureXYZ('mainBed',[5.16,.78,1.64]):furnitureXYZ('childBed',[5.12,.78,7.00]);
+      const target=travel.kind.startsWith('diningChair')?[1.41,.37,travel.kind==='diningChair0'?5.94:6.63]:travel.kind==='sofa'?furnitureXYZ('sofa',[2.54,.51,2.03]):travel.kind==='mainBed'?furnitureXYZ('mainBed',[5.16,.78,1.64]):furnitureXYZ('childBed',[5.12,.78,7.00]);
       if(crossesWall([travel.from.x,travel.from.z],[target[0],target[2]])){travel=null;pose='stand';toast('家具位置跨越牆面，請重新選擇');return}character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
       if(travel.progress>=1){
         const kind=travel.kind;restExit=travel.exit;travel=null;
-        pose=kind==='sofa'?'sit':'lie';
-        character.rotation.y=kind==='mainBed'?-Math.PI/2:kind==='childBed'?Math.PI:-Math.PI/2;
+        pose=kind==='sofa'||kind.startsWith('diningChair')?'sit':'lie';
+        character.rotation.y=kind.startsWith('diningChair')?Math.PI/2:kind==='mainBed'?-Math.PI/2:kind==='childBed'?Math.PI:-Math.PI/2;
         document.querySelectorAll('[data-pose]').forEach(btn=>btn.classList.toggle('active',btn.dataset.pose===pose));
         if(kind==='sofa')window.homeScene?.showNews(true);
       }
@@ -263,7 +279,7 @@ function animate(now){
     leftArm.rotation.x=Math.sin(step)*.28;rightArm.rotation.x=-Math.sin(step)*.28;
     leftLeg.rotation.x=-Math.sin(step)*.22;rightLeg.rotation.x=Math.sin(step)*.22;
   }else if(pose==='sit'){
-    b.position.y=0;b.rotation.x=-.23;b.rotation.z=0;
+    b.position.y=0;b.rotation.x=restExit?.[0]===.88?0:-.23;b.rotation.z=0;for(const leg of [leftLeg,rightLeg])leg.rotation.x=-.85;
   }else if(pose==='lie'){
     b.position.y=0;b.rotation.x=-Math.PI/2;b.rotation.z=0;
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
@@ -645,8 +661,8 @@ async function publishPresence(force=false,online=true){
 function animateOthers(dt,now){
  for(const item of characters.values()){const p=item.target;if(!p)continue;const body=item.mesh.userData.body;
  if(item.remotePath?.length&&item.remoteIndex<item.remotePath.length){const q=item.remotePath[item.remoteIndex],dx=q[0]-item.mesh.position.x,dz=q[1]-item.mesh.position.z,d=Math.hypot(dx,dz);if(d<.035){walkStep(item.mesh,q[0],q[1]);item.remoteIndex++;}else{const move=Math.min(d,dt*2);walkStep(item.mesh,item.mesh.position.x+dx/d*move,item.mesh.position.z+dz/d*move)}item.mesh.position.y=p.y||.07}else if(!crossesWall([item.mesh.position.x,item.mesh.position.z],[p.x,p.z]))item.mesh.position.lerp(new T.Vector3(p.x,p.y||.07,p.z),Math.min(1,dt*3));item.mesh.rotation.y=p.angle||0;
- body.rotation.x=p.pose==='lie'?-Math.PI/2:p.pose==='sit'?-.23:0;body.rotation.z=0;body.position.y=p.pose==='walk'?Math.abs(Math.sin(now*.008))*.02:0;
- for(const [i,limb] of [...item.mesh.userData.arms,...item.mesh.userData.legs].entries())limb.rotation.x=p.pose==='walk'?Math.sin(now*.009+i%2*Math.PI)*.3:p.pose==='work'&&i<2?-.75:0;
+ body.rotation.x=p.pose==='lie'?-Math.PI/2:p.pose==='sit'?(p.approach?.[0]===.88?0:-.23):0;body.rotation.z=0;body.position.y=p.pose==='walk'?Math.abs(Math.sin(now*.008))*.02:0;
+ for(const [i,limb] of [...item.mesh.userData.arms,...item.mesh.userData.legs].entries())limb.rotation.x=p.pose==='walk'?Math.sin(now*.009+i%2*Math.PI)*.3:p.pose==='work'&&i<2?-.75:p.pose==='sit'&&i>=2?-.85:0;
  }
 }
 function renderMonster(){
@@ -684,13 +700,14 @@ async function attackMonster(){try{await mutateGame((p,meta)=>{const m=meta.mons
   document.querySelectorAll('[data-inventory-tab]').forEach(b=>b.onclick=()=>{inventoryTab=b.dataset.inventoryTab;renderInventory()});
   $('#placement-room').onchange=previewPlacement;$('#placement-confirm').onclick=()=>confirmPlacement();$('#placement-return').onclick=()=>confirmPlacement(true);
   $('#placement-dialog').addEventListener('close',()=>{pendingPlacement=null;renderPlacements()});
-  $('#monster-button').onclick=attackMonster;
+  $('#monster-button').onclick=attackMonster;$('#mirror-close').onclick=()=>$('#mirror-dialog').close();
   $('#task-cancel').onclick=()=>{if(activity?.phase==='return')return;activity=null;pose='stand';renderTasks();toast('已取消，未領取獎勵')};
   for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=>lastHumanInput=Date.now());
   document.addEventListener('visibilitychange',()=>publishPresence(true,!document.hidden));
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
