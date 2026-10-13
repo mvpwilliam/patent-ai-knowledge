@@ -11,6 +11,8 @@ try{
  const homeId=localStorage.getItem('little-home-code');log('home',homeId||'none');if(!homeId)return;
  const profile=await getDoc(doc(db,'homes',homeId,'profiles',user.uid));log('profile exists',profile.exists());
  const home=await getDoc(doc(db,'homes',homeId));log('home exists',home.exists());
+ const taskRef=doc(db,'homes',homeId,'settings','tasks');
+ try{await runTransaction(db,async tx=>{const snap=await tx.get(taskRef);const items=snap.data().items.map(t=>t.id==='diagnostic-task'?{...t,doneDay:Math.floor(Date.now()/1800000),doneUid:user.uid,doneName:'測試'}:t);tx.set(taskRef,{items})});log('settings transaction','OK')}catch(e){log('settings transaction',e.code+' '+e.message)}
  for(const [label,day] of [['half-hour',Math.floor(Date.now()/1800000)],['hour',Math.floor(Date.now()/3600000)]]){
   const ref=doc(db,'homes',homeId,'days',String(day),'claims','diagnostic-'+label);try{const empty=await getDoc(ref);log(label+' get',empty.exists()?'exists':'missing allowed')}catch(e){log(label+' get',e.code+' '+e.message)}
   try{await runTransaction(db,async tx=>{const old=await tx.get(ref);if(!old.exists())tx.set(ref,{uid:user.uid,name:'測試',at:serverTimestamp()})});log(label,'OK')}
