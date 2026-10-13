@@ -47,6 +47,10 @@ let tasks=normalizeTasks(safeRead('little-home-tasks',defaults));
 const GAME_DAY_MS=30*60*1000;
 const today=()=>Math.floor(Date.now()/GAME_DAY_MS);
 let gameDay=today(),claims={};
+// Completion is stored on the shared tasks document. The deployed claims
+// collection permits reads but denies creates; the tasks document already
+// supports atomic member updates and is observed by every family member.
+const isClaimed=t=>!!claims[t.id]||(mode==='online'&&t.doneDay===today());
 let mode='preview',auth=null,db=null,api=null,user=null,homeId='',homeReady=false,joining=false,unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
 let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0,activity=null,travel=null,restExit=null;
 const stops=[[1.35,4.25],[1.2,3.7],[1.15,1.25],[.7,2.6],[.72,4.8],[.68,6.1],[.70,7.8],[.65,8.65]].map(pointXZ);
@@ -277,7 +281,7 @@ function renderTasks(){
   $('#home-create').hidden=homeReady;
   const list=$('#task-list');list.replaceChildren();
   for(const t of tasks){
-    if(claims[t.id])continue;
+    if(isClaimed(t))continue;
     const row=document.createElement('div');row.className='task-row';
     const label=document.createElement('span');label.textContent=t.label;
     const button=document.createElement('button');button.textContent='前往';
@@ -304,7 +308,7 @@ function renderMarkers(){
   const layer=$('#chore-markers');layer.replaceChildren();closeTaskPopup();
   if(!scene)return;
   for(const t of tasks){
-    if(claims[t.id])continue;
+    if(isClaimed(t))continue;
     const info=placement(t),button=document.createElement('button');
     button.className='chore-marker';button.dataset.task=t.id;
     button.textContent=info.icon;
@@ -336,7 +340,7 @@ function updateMarkers(){
   }
 }
 function startTask(t){
-  if(activity||claims[t.id])return;
+  if(activity||isClaimed(t))return;
   if(mode==='online'&&(!user||!homeReady))return toast('請先建立家庭或加入家人的家庭');
   if(!character)return toast('請在支援 3D 的瀏覽器啟動場景');
   if(travel)travel=null;
@@ -370,19 +374,25 @@ async function claimTask(t,day=today()){
     renderTasks();toast('完成！下一個遊戲日再重置');return;
   }
   if(!user||!homeReady)return toast('家庭尚未連線');
-  const ref=api.doc(db,'homes',homeId,'days',String(day),'claims',t.id);
+  const ref=api.doc(db,'homes',homeId,'settings','tasks');
   try{
     await api.runTransaction(db,async tx=>{
-      const existing=await tx.get(ref);
-      if(existing.exists())throw new Error('今天這項家事已經有人完成');
+      const snapshot=await tx.get(ref);
+      if(!snapshot.exists())throw new Error('家事清單暫時不存在，請重新整理');
+      const items=normalizeTasks(snapshot.data().items);
+      const current=items.find(item=>item.id===t.id);
+      if(!current)throw new Error('這項家事已從家庭清單移除');
+      if(current.doneDay===day)throw new Error('今天這項家事已經有人完成');
       if(day!==today())throw new Error('新的一天開始了，請再試一次');
-      tx.set(ref,{uid:user.uid,name:avatar.name,at:api.serverTimestamp()});
+      tx.set(ref,{items:items.map(item=>item.id===t.id
+        ?{...item,doneDay:day,doneUid:user.uid,doneName:avatar.name,doneAt:Date.now()}
+        :item)});
     });
     toast('完成！家人現在也會看到');
   }catch(e){
     console.warn('家事完成紀錄寫入失敗',e);
     toast(e?.code==='permission-denied'
-      ?'家事未記錄：Firestore 規則拒絕寫入，請確認已發佈 30 分鐘遊戲日規則。'
+      ?'家事未記錄：家庭任務資料沒有寫入權限。'
       :e.message||'暫時無法完成，請再試一次');
   }
 }
@@ -391,12 +401,19 @@ async function addTask(){
   if(!label)return;
   if(tasks.length>=30)return toast('最多設定 30 項家事');
   const task={id:'custom-'+Math.random().toString(36).slice(2,10),label,room:$('#task-room').value};
-  const next=[...tasks,task];field.value='';
   if(mode==='online'){
     if(!user||!homeReady)return toast('請先建立家庭或加入家人的家庭');
-    try{await api.setDoc(api.doc(db,'homes',homeId,'settings','tasks'),{items:next})}
+    try{
+      const ref=api.doc(db,'homes',homeId,'settings','tasks');
+      await api.runTransaction(db,async tx=>{
+        const snap=await tx.get(ref),items=normalizeTasks(snap.exists()?snap.data().items:defaults);
+        if(items.length>=30)throw new Error('最多設定 30 項家事');
+        tx.set(ref,{items:[...items,task]});
+      });
+      field.value='';
+    }
     catch{toast('新增失敗，請再試一次')}
-  }else{tasks=next;localStorage.setItem('little-home-tasks',JSON.stringify(tasks));renderTasks()}
+  }else{tasks=[...tasks,task];field.value='';localStorage.setItem('little-home-tasks',JSON.stringify(tasks));renderTasks()}
 }
 function fillAvatar(){
   $('#avatar-name').value=avatar.name;$('#avatar-skin').value=avatar.skin;
