@@ -61,8 +61,8 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 .game-head strong{font-size:10px;font-weight:500;letter-spacing:.045em;font-variant-numeric:tabular-nums}
 .joke-bubble{border-color:#ffffffbb;background:#faf9f2ed;border-radius:14px;box-shadow:0 3px 15px #243a3118;padding:10px 14px}
 .joke-bubble p{font-size:12px;line-height:1.7;font-weight:400;letter-spacing:.035em;color:#536358}
-#monster-button{display:block;width:100%;font-size:12px;font-weight:500;letter-spacing:.045em;line-height:1.6;min-height:44px;border:1px solid #d3decd;border-radius:12px;padding:11px 14px;margin:12px 0 0;background:#e8eee1;color:#405b4d;font-variant-numeric:tabular-nums}
-#monster-button[hidden]{display:none}
+.monster-status{font-size:12px;font-weight:500;line-height:1.8;margin:12px 0 0;color:#657c66;pointer-events:none;font-variant-numeric:tabular-nums}
+.monster-status[hidden]{display:none}
 #game-dialog #account-open{background:#405f50;color:#fff;border:1px solid #405f50;border-radius:12px;min-height:44px;padding:10px 16px;font-size:12px;font-weight:500;letter-spacing:.045em;margin:0}
 #game-dialog #account-open:hover{background:#344f42}
 #login-dialog h2{font-size:20px;font-weight:600;letter-spacing:.045em;line-height:1.5}

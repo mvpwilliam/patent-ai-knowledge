@@ -122,7 +122,8 @@ function moveTo(point,kind='walk'){
   if(!path.length||Math.hypot(path.at(-1)[0]-destination[0],path.at(-1)[1]-destination[1])>.45)return toast('這裡目前走不到');
   pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));
   travel={kind,phase:'run',path,index:0,exit:destination};
-  toast(kind.includes('Mirror')?'屋主走去照鏡子':kind.startsWith('diningChair')?'屋主走去餐椅':kind==='walk'?'屋主走過去了':kind==='sofa'?'屋主走去沙發':'屋主走去睡覺');
+  const action=kind.includes('Mirror')?'走去照鏡子':kind.startsWith('diningChair')?'走去餐椅':kind==='walk'?'走過去了':kind==='sofa'?'走去沙發':'走去睡覺';
+  toast(`${avatar.name}${action}`);
 }
 window.homeGameMoveTo=moveTo;
 let mirrorRenderer=null,mirrorPortrait=null;
@@ -720,7 +721,7 @@ function animateOthers(dt,now){
  }
 }
 function renderMonster(){
- $('#monster-button').hidden=true;if(!scene)return;const m=gameMeta.monster;if(monsterMesh){scene.remove(monsterMesh);monsterMesh.traverse(n=>{n.geometry?.dispose();n.material?.dispose()});monsterMesh=null}
+ $('#monster-status').hidden=true;if(!scene)return;const m=gameMeta.monster;if(monsterMesh){scene.remove(monsterMesh);monsterMesh.traverse(n=>{n.geometry?.dispose();n.material?.dispose()});monsterMesh=null}
  if(!m||m.hits>=100||Date.now()<m.bornAt)return;
  const g=new T.Group();g.name='hourly-godzilla';g.position.set(scaleX(.8),.08,7.75);
  bodyPart(g,new T.ConeGeometry(.18,.45,10),'#647b65',0,.22,0);bodyPart(g,new T.SphereGeometry(.13,12,10),'#647b65',0,.48,.06);
@@ -731,9 +732,29 @@ function renderMonster(){
  g.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(g),height=bounds.max.y-bounds.min.y;
  const scale=2.45/height;g.scale.setScalar(scale);g.position.y=.08-bounds.min.y*scale+g.position.y*scale;
  g.position.x=scaleX(1.25);g.position.z=4.25;
- scene.add(g);monsterMesh=g;$('#monster-button').hidden=false;$('#monster-button').textContent=`攻擊哥吉拉　·　已命中 ${m.hits} / 100`;
+ scene.add(g);monsterMesh=g;$('#monster-status').hidden=false;$('#monster-status').textContent=`哥吉拉 · 已命中 ${m.hits} / 100，點擊場景中的哥吉拉攻擊。`;
 }
 async function attackMonster(){try{await mutateGame((p,meta)=>{const m=meta.monster;if(!m||Date.now()<m.bornAt||m.hits>=100)throw new Error('哥吉拉還沒出現');m.hits++;if(m.hits>=100){m.bornAt=Date.now()+3600000;m.hits=0}});toast(gameMeta.monster.bornAt>Date.now()?'哥吉拉消失了，下次一小時後出現':'命中！')}catch(e){toast(e.message||'攻擊未儲存')}}
+const monsterRay=new T.Raycaster(),monsterPointer=new T.Vector2();
+function attackMonsterAt(e){
+ if(!monsterMesh||!gameMeta.monster||Date.now()<gameMeta.monster.bornAt||gameMeta.monster.hits>=100)return false;
+ const rect=$('#scene').getBoundingClientRect();
+ if(rect.width<=0||rect.height<=0||e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)return false;
+ monsterPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+ scene.updateMatrixWorld(true);monsterRay.setFromCamera(monsterPointer,window.homeScene.camera);
+ const hit=monsterRay.intersectObject(monsterMesh,true)[0];if(!hit)return false;
+ // Ignore invisible interaction areas, but do not attack through opaque walls or furniture.
+ const blocker=monsterRay.intersectObject(window.homeScene.root,true).find(h=>{
+  if(h.distance>=hit.distance-.01)return false;
+  for(let node=h.object;node;node=node.parent)if(!node.visible)return false;
+  const materials=Array.isArray(h.object.material)?h.object.material:[h.object.material];
+  return materials.some(m=>m&&m.visible!==false&&(!m.transparent||m.opacity>=.9));
+ });
+ if(blocker)return false;
+ if(!syncBusy)void attackMonster();
+ return true;
+}
+window.homeGameAttackAt=attackMonsterAt;
 
 
 
@@ -779,7 +800,7 @@ function setupGamePages(){
   document.querySelectorAll('[data-inventory-tab]').forEach(b=>b.onclick=()=>{inventoryTab=b.dataset.inventoryTab;renderInventory()});
   $('#placement-room').onchange=previewPlacement;$('#placement-confirm').onclick=()=>confirmPlacement();$('#placement-return').onclick=()=>confirmPlacement(true);
   $('#placement-dialog').addEventListener('close',()=>{pendingPlacement=null;renderPlacements()});
-  $('#monster-button').onclick=attackMonster;$('#mirror-close').onclick=()=>$('#mirror-dialog').close();
+  $('#mirror-close').onclick=()=>$('#mirror-dialog').close();
   $('#task-cancel').onclick=()=>{if(activity?.phase==='return')return;activity=null;pose='stand';renderTasks();toast('已取消，未領取獎勵')};
   for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=>lastHumanInput=Date.now());
   document.addEventListener('visibilitychange',()=>publishPresence(true,!document.hidden));
