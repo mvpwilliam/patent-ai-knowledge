@@ -10,6 +10,7 @@ const obstacles=[
  [entryX(207),entryX(272),9.295,9.995],
  [entryX(273),entryX(378),9.495,9.995],
  [entryX(102),entryX(205),9.555,9.995],
+ [entryX(118.5),entryX(188.5),9.14,9.48], // bent-wood stool below the column pegboard
  [entryZero,entryZero+1.25,7.925,8.275],
  [entryZero+1.25,entryZero+1.295,7.375,8.275], // 90 cm end panel
  [kitchenStart,kitchenEnd,9.295,10.10],
