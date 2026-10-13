@@ -14,6 +14,7 @@ const OUTER_X=7.18+.54/X_SCALE;
 const GLASS_X=6.47+.19/X_SCALE; // 19 cm L return from the toilet-side wall
 const SHAFT_INNER_X=5.895+.35/X_SCALE;
 const SHAFT_OUTER_X=SHAFT_INNER_X+.13;
+const SHAFT_END_Z=5.55+.68; // 55 cm internal Z after two 6.5 cm wall faces
 const END_SPAN=OUTER_X-6.47,END_CENTRE=(6.47+OUTER_X)/2;
 function box(x,y,z,w,h,d,c,round=0,parent=root){let key=[w,h,d,round].join(',');if(!geos.has(key))geos.set(key,round?new RoundedBoxGeometry(w,h,d,2,Math.min(round,w/3,h/3,d/3)):new T.BoxGeometry(w,h,d));let m=new T.Mesh(geos.get(key),typeof c==='string'?mat(c):c);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
 function cyl(x,y,z,r,h,c,r2=r,parent=root){let m=new T.Mesh(new T.CylinderGeometry(r,r2,h,20),mat(c));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
@@ -196,8 +197,8 @@ const applianceDivider=partition(3.05,9.68,.13,.78); // shared kitchen/appliance
 applianceDivider.children.forEach(part=>part.material=mat(C.wall));
 // The solid service shaft touches the child-room corner. Beyond it, the
 // shower projects as far as the outside edge of the utility balcony.
-const serviceShaft=named(wall((5.83+SHAFT_OUTER_X)/2,6.00,SHAFT_OUTER_X-5.83,.90,2.6),'service-shaft');
-partition((SHAFT_INNER_X+SHAFT_OUTER_X)/2,6.00,.13,.90); // 35 cm internal X, fixed inner wall
+const serviceShaft=named(wall((5.83+SHAFT_OUTER_X)/2,(5.55+SHAFT_END_Z)/2,SHAFT_OUTER_X-5.83,SHAFT_END_Z-5.55,2.6),'service-shaft');
+partition((SHAFT_INNER_X+SHAFT_OUTER_X)/2,(5.55+SHAFT_END_Z)/2,.13,SHAFT_END_Z-5.55); // 35 cm internal X, 55 cm internal Z
 partition(6.47,4.63,.13,.26); // solid return on the bath-side corner of shower
 // The bath-facing end is solid. The airtight end window belongs opposite
 // it, at the kitchen/AC-platform end of the balcony.
