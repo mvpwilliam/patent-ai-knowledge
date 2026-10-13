@@ -361,15 +361,16 @@ function windowAt(x,w,living){
     slidingWindow(upper,w-.035,top-divider-.035,(divider+top)/2,'living-upper-sliding-window');
     // Connected pleated fabric gathers at the right edge.
 
+    const curtainWidth=w+2*.18/X_SCALE; // 18 cm overlap beyond each window edge
     const vertices=[],indices=[],folds=160;
     for(let i=0;i<=folds;i++){
-      const xx=x-w/2+i*w/folds,zz=.23+.085*Math.cos(i/folds*Math.PI*16);
+      const xx=x-curtainWidth/2+i*curtainWidth/folds,zz=.23+.085*Math.cos(i/folds*Math.PI*16);
       vertices.push(xx,.12,zz,xx,2.24,zz);
       if(i<folds){const n=i*2;indices.push(n,n+1,n+2,n+1,n+3,n+2)}
     }
     const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geo.setIndex(indices);geo.computeVertexNormals();
-    const fabric=new T.Mesh(geo,sheerMaterial);fabric.name='living-snake-fabric';curtains.add(fabric);livingFabric=fabric;fabric.userData.rightEdge=x+w/2;
-    box(x,2.29,.16,w+.14,.06,.1,'#ffffff',.02);
+    const fabric=new T.Mesh(geo,sheerMaterial);fabric.name='living-snake-fabric';curtains.add(fabric);livingFabric=fabric;fabric.userData.rightEdge=x+curtainWidth/2;
+    named(box(x,2.29,.16,curtainWidth+.02,.06,.1,'#ffffff',.02),'living-curtain-track');
   }else{
     box(x,1.88,.17,w,.055,.10,'#c8cace',.008,masterBlinds);
     for(let i=0;i<25;i++){
