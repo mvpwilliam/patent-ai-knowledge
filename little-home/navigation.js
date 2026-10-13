@@ -2,7 +2,19 @@
 import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=85';
 const radius=.19,cell=.08;
 const shift=(a,b,c,d,s)=>[a+s,b+s,c,d];
-const obstacles=[
+const rect=(x0,x1,z0,z1)=>[scaleX(x0),scaleX(x1),z0,z1];
+export const wallObstacles=[
+ rect(3.28,3.42,0,4.50), // living/master: only the door beyond the end is passable
+ rect(4.45,6.78,3.58,3.72), // master/bath shared wall
+ rect(4.385,4.515,3.75,4.50), // bath front jamb; doorway z 4.50–5.55
+ rect(2.65,3.45,5.485,5.615), // child entry left jamb
+ rect(4.45,5.895,5.485,5.615), // child/bath shared wall
+ rect(2.585,2.715,5.55,8.20), // dining/child wall
+ rect(2.65,5.83,8.135,8.265), // child/kitchen wall
+ rect(5.765,5.895,5.55,8.26), // balcony-facing child wall: glazing is not a doorway
+ rect(5.765,5.895,9.12,10.07), // balcony/kitchen return, leave balcony door clear
+];
+const obstacles=[...wallObstacles,
  shift(0,.49,.60,3.94,furnitureShift.tv),
  shift(2.20,3.14,.77,3.30,furnitureShift.sofa),
  [1.13,2.62,5.57,7.00], // unchanged dining table/chairs
@@ -46,13 +58,22 @@ const nearest=([x,z])=>{
   for(let i=Math.round(x/cell)-5;i<=Math.round(x/cell)+5;i++)
     for(let j=Math.max(0,Math.round(z/cell)-5);j<=Math.round(z/cell)+5;j++){
       const [px,pz]=grid(i,j),d=(px-x)**2+(pz-z)**2;
-      if(d<score&&walkable(px,pz)){best=[i,j];score=d}
+      if(d<score&&walkable(px,pz)&&(!wallObstacles.some(([a,b,c,d])=>x>=a-radius&&x<=b+radius&&z>=c-radius&&z<=d+radius))&&(!walkable(x,z)||canTraverse([x,z],[px,pz]))){best=[i,j];score=d}
     }
   return best;
 };
-const canSee=(a,b)=>{
+function intersectsRect(from,to,[a,b,c,d]){
+ let lo=0,hi=1;
+ for(const [origin,delta,min,max] of [[from[0],to[0]-from[0],a-radius,b+radius],[from[1],to[1]-from[1],c-radius,d+radius]]){
+  if(Math.abs(delta)<1e-12){if(origin<min||origin>max)return false;continue}
+  let t0=(min-origin)/delta,t1=(max-origin)/delta;if(t0>t1)[t0,t1]=[t1,t0];lo=Math.max(lo,t0);hi=Math.min(hi,t1);if(lo>hi)return false;
+ }return true;
+}
+export function crossesWall(from,to){return wallObstacles.some(rect=>intersectsRect(from,to,rect))}
+export const canTraverse=(a,b)=>{
+  if(obstacles.some(rect=>intersectsRect(a,b,rect)))return false;
   const n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.01);
-  for(let i=0;i<=n;i++){const t=i/n;if(!walkable(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t))return false}
+  for(let i=0;i<=n;i++){const t=n?i/n:0;if(!walkable(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t))return false}
   return true;
 };
 export function findPath(from,to){
@@ -68,12 +89,12 @@ export function findPath(from,to){
       while(k){const [i,j]=k.split(',').map(Number);points.push(grid(i,j));k=prev.get(k)}
       points.reverse();
       const smooth=[points[0]];
-      for(let i=1;i<points.length;){let next=points.length-1;while(next>i&&!canSee(smooth.at(-1),points[next]))next--;smooth.push(points[next]);i=next+1}
+      for(let i=1;i<points.length;){let next=points.length-1;while(next>i&&!canTraverse(smooth.at(-1),points[next]))next--;smooth.push(points[next]);i=next+1}
       return smooth;
     }
     for(const [di,dj] of dirs){
       const i=current.i+di,j=current.j+dj,[x,z]=grid(i,j);
-      if(!walkable(x,z))continue;
+      if(!walkable(x,z)||!canTraverse(grid(current.i,current.j),[x,z]))continue;
       if(di&&dj&&(!walkable((current.i+di)*cell,current.j*cell)||!walkable(current.i*cell,(current.j+dj)*cell)))continue;
       const g=current.g+Math.hypot(di,dj),k=key(i,j);
       if(g>=best.get(k))continue;
@@ -83,4 +104,5 @@ export function findPath(from,to){
   }
   return [];
 }
+
 
