@@ -66,8 +66,8 @@ box(4.24,.042,6.84,3.08,.004,2.52,C.floor);woodBoards(4.24,6.84,3.08,2.52,false,
 finishSection('indoor-floors');
 named(floor((entryZero+scaleX(0))/2,(7.85+9.995)/2,scaleX(0)-entryZero,9.995-7.85),'entry-wood-under-cabinet');
 finishSection('entry-wood-floor','exact');
-// The real floor uses muted grey slate. A diagonal transition runs from the
-// refrigerator side to the front tip of the entry cabinet's decorative panel.
+// The real floor uses muted grey slate. The timber/stone edge follows the
+// photographed diagonal from the end panel to the refrigerator corner.
 const entryStoneCanvas=document.createElement('canvas');entryStoneCanvas.width=256;entryStoneCanvas.height=256;
 const stoneCtx=entryStoneCanvas.getContext('2d');stoneCtx.fillStyle='#696c69';stoneCtx.fillRect(0,0,256,256);
 let stoneSeed=1917;const stoneRand=()=>((stoneSeed=(stoneSeed*1664525+1013904223)>>>0)/4294967296);
@@ -80,8 +80,8 @@ const entryStoneTexture=new T.CanvasTexture(entryStoneCanvas);entryStoneTexture.
 const entryStoneMaterial=new T.MeshStandardMaterial({map:entryStoneTexture,roughness:.92});
 // The finish is the only grey surface. The wood beneath it prevents any
 // rectangular grey patch from showing beyond the diagonal outline.
-const panelTip=[entryX(125),7.387],fridgeTip=[entryX(207),9.295];
-const stoneOutline=[[entryZero,stoneStartZ],[panelTip[0],stoneStartZ],panelTip,fridgeTip,[fridgeTip[0],9.995],[entryZero,9.995]];
+const panelTip=[entryX(125),stoneStartZ],fridgeTip=[entryX(207),9.295];
+const stoneOutline=[[entryZero,stoneStartZ],panelTip,fridgeTip,[fridgeTip[0],9.995],[entryZero,9.995]];
 const stoneShape=new T.Shape();stoneShape.moveTo(stoneOutline[0][0],-stoneOutline[0][1]);
 for(const [x,z] of stoneOutline.slice(1))stoneShape.lineTo(x,-z);
 stoneShape.closePath();
@@ -461,8 +461,6 @@ box(ovenX,.59,az,.61,.04,ad-.02,lightCabinet);
 box(ovenX,.10,az,.61,.035,ad-.02,lightCabinet);
 box(ovenX,.26,9.745,.43,.26,.44,'#343b3b',.03);
 for(const y of [.92,.67,.42,.17]){box(drawerX,y,9.504,drawerW-.015,.21,.018,cabinetFace,.004);box(drawerX,y+.045,9.495,.26,.012,.002,'#d8dad7')}
-box(ovenX,1.34,9.745,.22,.22,.20,'#f1f0eb',.035);
-box(drawerX+.07,1.32,9.745,.30,.18,.18,'#f1f0eb',.04);
 finishSection('appliance-cabinet','exact');
 // Exact Panasonic envelope: 65 × 70 × 183 cm, with no scaled appliance.
 const fx=entryX(239.5),fz=9.645;
@@ -505,6 +503,28 @@ box(entryCenter,1.48,entryZ,entryW,.035,entryD,'#e2d3a9');
 for(const x of [entryLeft+.18,entryCenter+entryW/2-.18])cyl(x,1.452,8.17,.035,.015,'#fff0cd');
 // Keep the display niche open and extend every shelf to the end panel.
 box(entryCenter,1.25,7.937,entryW-.06,.42,.016,'#69716e');
+// A single white maneki-neko in the open niche: pink ears and nose, raised
+// left paw, red collar, and a small brass bell echo the supplied photograph.
+const cat=new T.Group();cat.name='entry-maneki-neko';cat.position.set(entryCenter,1.05,entryZ+.065);root.add(cat);
+const porcelain='#f9f7f2',rose='#dc6973',red='#bf353d',gold='#c6a249',ink='#263039';
+ball(0,.14,0,.105,porcelain,[.82,1.12,.82],cat);
+ball(0,.275,.005,.09,porcelain,[1,.90,.90],cat);
+for(const x of [-.056,.056]){
+  const ear=ball(x,.348,-.006,.032,porcelain,[.80,1.18,.65],cat);
+  ear.rotation.z=x<0?-.30:.30;
+  ball(x,.351,.016,.018,rose,[.73,1,.35],cat);
+  ball(x*.75,.282,.078,.011,ink,[.75,.65,.35],cat);
+  ball(x*.75,.283,.082,.004,gold,[1,1,.4],cat);
+  ball(x*.72,.055,.047,.038,porcelain,[1,.65,1],cat);
+}
+ball(0,.247,.088,.011,rose,[1,.75,.5],cat);
+for(const side of [-1,1])for(const y of [.233,.249])rod([side*.018,y,.081],[side*.071,y+.009,.068],.0016,ink,cat);
+ball(-.105,.252,.015,.036,porcelain,[.68,1.55,.70],cat);
+ball(-.108,.326,.037,.034,porcelain,[.9,.7,.7],cat);
+for(const x of [-.119,-.106,-.093])rod([x,.338,.061],[x,.348,.059],.0018,rose,cat);
+cyl(0,.188,.015,.083,.021,red,.083,cat);
+ball(0,.169,.084,.019,gold,[1,1,.6],cat);
+cat.traverse(part=>{if(part.isMesh)part.receiveShadow=false});
 box(entryCenter,1.02,entryZ,entryW,.05,entryD,entryDark);
 for(const [i,x] of entryDoorXs.entries()){
   named(cabinetFront(box(x,.91,entryFrontZ,entryDoorW,.17,.018,entryFace,.004)),`entry-drawer-${i}`);
@@ -512,7 +532,7 @@ for(const [i,x] of entryDoorXs.entries()){
 }
 box(entryCenter,.25,entryZ,entryW,.035,entryD,entryDark,.004);
 // The 90 cm end panel matches the cabinet top and meets its widened side.
-named(cabinetFront(box(entryZero+1.25+.0225,1.30,7.825,.045,2.60,.90,entryDark,.004)),'entry-end-panel');
+named(cabinetFront(box(entryZero+1.25+.0225,1.30,7.825,.045,2.60,.90,C.navy,.004)),'entry-end-panel');
 finishSection('entry-cabinet','exact');
 // The back of the cabinet used to coincide exactly with the wall face.
 root.getObjectByName('entry-cabinet').position.z=.012;
