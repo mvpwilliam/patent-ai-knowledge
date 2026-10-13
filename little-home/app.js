@@ -704,9 +704,12 @@ const fridgeFrontZ=fz-.70/2-.012;
 const fridgeSilver=new T.MeshStandardMaterial({color:'#777d81',metalness:.72,roughness:.20});
 const fridgeGraphite=new T.MeshStandardMaterial({color:'#45494c',metalness:.66,roughness:.21});
 named(box(fx,.96,fz,.65,1.83,.70,'#36393c',.025),'fridge-body');
-for(const [x,m] of [[fx-.16,fridgeSilver],[fx+.16,fridgeGraphite]]){
-  box(x,1.415,fridgeFrontZ,.305,.86,.006,m,.004);
-  box(x,.86,fridgeFrontZ,.305,.20,.006,m,.004);
+const fridgeLeaves=[];let fridgeOpen=false;
+for(const [side,m] of [[-1,fridgeSilver],[1,fridgeGraphite]]){
+ const leaf=new T.Group();leaf.name=side<0?'fridge-left-door':'fridge-right-door';leaf.position.set(fx+side*.3125,0,fridgeFrontZ);root.add(leaf);
+ box(-side*.1525,1.415,0,.305,.86,.006,m,.004,leaf);
+ box(-side*.1525,.86,0,.305,.20,.006,m,.004,leaf);
+ fridgeLeaves.push(leaf);
 }
 box(fx,.56,fridgeFrontZ,.63,.36,.006,fridgeGraphite,.004);
 box(fx,.21,fridgeFrontZ,.63,.31,.006,fridgeGraphite,.004);
@@ -910,14 +913,16 @@ function release(e){
 }
 canvas.addEventListener('dblclick',e=>e.preventDefault());canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();if(followMode)followDistance=Math.max(4,Math.min(14,followDistance*Math.exp(e.deltaY*.001)));else desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
-let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);window.homeGameUpdate?.(performance.now());if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=followDistance;phi=followPitch;const angle=followYaw;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait&&!followMode?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}updateCoverings();renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
+let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);window.homeGameUpdate?.(performance.now());if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=followDistance;phi=followPitch;const angle=followYaw;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait&&!followMode?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}fridgeLeaves.forEach((leaf,i)=>{leaf.rotation.y+=((fridgeOpen?(i===0?1:-1)*Math.PI/3:0)-leaf.rotation.y)*.12});updateCoverings();renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
 window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,getFollowOrbit:()=>({yaw:followYaw,pitch:followPitch,distance:followDistance}),interactionTargets,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
   setBalconyDoor(near){const state=balconyDoorLeaf.userData.door;if(near){state.open=true;state.target=state.openAngle}else if(state.autoNear){state.open=false;state.target=state.closedAngle}state.autoNear=near},
-  updateDoorsAt(x,z){
+  setFridgeOpen(open){fridgeOpen=!!open},
+  setShowerOpen(open){const state=showerDoor.userData.door;state.open=!!open;state.target=state.open?state.openAngle:state.closedAngle},
+  updateDoorsAt(x,z,others=[]){
     const centers=[[3.90,4.50],[4.45,5.025],[3.95,5.55]];
     interiorDoors.forEach((door,i)=>{
-      const state=door.userData.door,near=Math.hypot(x-scaleX(centers[i][0]),z-centers[i][1])<.73;
+      const state=door.userData.door,near=[[x,z],...others].some(p=>Math.hypot(p[0]-scaleX(centers[i][0]),p[1]-centers[i][1])<.73);
       if(near){state.target=state.openAngle;state.open=true}
       else if(state.autoNear){state.target=state.closedAngle;state.open=false}
       state.autoNear=near;
