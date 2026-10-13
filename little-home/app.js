@@ -148,6 +148,9 @@ for(const [a,b] of [[.42,2.92],[3.645,6.195]]){
 }
 wall(-.07,3.9,.15,7.9,2.6);
 named(wall(BATH_EXTERIOR_X,2.25,.15,4.5,2.6),'master-bath-exterior-wall');
+// Fill the corner at the shower window: the adjoining wall bodies have
+// different thicknesses and otherwise leave a visible notch in plan view.
+named(wall(BATH_EXTERIOR_X,4.55,.15,.15,2.6),'bath-shower-corner');
 named(wall(OUTER_X,SHOWER_CENTRE_Z,.13,SHOWER_LENGTH,2.6),'shower-outer-wall');
 // Balcony elevation: the window sits between a lower wall and a solid
 // header. Together the two solid portions occupy about two thirds of 2.6 m.
@@ -201,7 +204,7 @@ partition(5.14,5.55,1.38,.13); // one shared bath/child wall, x 4.45–5.83
 partition(3.05,5.55,.8,.13); // short wall above the child door
 partition(2.65,6.875,.13,2.65); // child-room wall along the dining area
 partition(4.24,8.2,3.18,.13); // child-room wall along the kitchen
-partition(5.83,6.275,.13,1.45); // single solid wall from bath corner to window
+partition(5.83,(SHAFT_END_Z+7.0)/2,.13,7.0-SHAFT_END_Z); // no overlapping face on the shaft; continue flush to the window
 partition(5.83,8.08,.13,.36); // jamb closes the child-room edge before balcony door
 partition(5.83,9.595,.13,.95); // tiled return between balcony door and hob
 const applianceDivider=partition(3.05,9.68,.13,.78); // shared kitchen/appliance wall
@@ -210,8 +213,10 @@ applianceDivider.children.forEach(part=>part.material=mat(C.wall));
 // shower projects as far as the outside edge of the utility balcony.
 // The shaft's left face shares the exact outer plane of the adjoining wall.
 const SHAFT_LEFT_FACE=5.83-.065;
-const serviceShaft=named(wall((SHAFT_LEFT_FACE+SHAFT_OUTER_X)/2,(5.55+SHAFT_END_Z)/2,SHAFT_OUTER_X-SHAFT_LEFT_FACE,SHAFT_END_Z-5.55,2.6),'service-shaft');
-partition((SHAFT_INNER_X+SHAFT_OUTER_X)/2,(5.55+SHAFT_END_Z)/2,.13,SHAFT_END_Z-5.55); // 28 cm internal X, 55 cm internal Z
+const SHAFT_BATH_FACE_Z=5.55-.065; // flush with the adjoining bath/child wall, not 6.5 cm behind it
+const serviceShaft=named(wall((SHAFT_LEFT_FACE+SHAFT_OUTER_X)/2,(SHAFT_BATH_FACE_Z+SHAFT_END_Z)/2,SHAFT_OUTER_X-SHAFT_LEFT_FACE,SHAFT_END_Z-SHAFT_BATH_FACE_Z,2.6),'service-shaft');
+// The shaft is solid; its outer face already provides this wall. A second
+// coplanar partition caused a seam and overlapping surfaces here.
 // The bath-facing end is solid. The airtight end window belongs opposite
 // it, at the kitchen/AC-platform end of the balcony.
 named(partition(BATH_END_CENTRE,BALCONY_START_Z-.065,BATH_END_SPAN,.13),'balcony-bath-end-wall');
@@ -372,16 +377,18 @@ box(4.74,.77,1.64,.33,.07,1.95,'#8ea48d',.03);
 finishSection('main-bed','translate',furnitureShift.mainBed);
 // Bathroom tiled floor, basin, mirror, toilet and open shower area.
 const bathFloorStart=4.445,bathFloorEnd=BATH_EXTERIOR_X-.075;
-box((bathFloorStart+bathFloorEnd)/2,.07,4.58,bathFloorEnd-bathFloorStart,.06,1.64,'#55585b');for(let x=4.5;x<bathFloorEnd;x+=.32)box(x,.105,4.58,.01,.004,1.64,'#777b7c');for(let z=3.8;z<5.4;z+=.32)box((bathFloorStart+bathFloorEnd)/2,.105,z,bathFloorEnd-bathFloorStart,.004,.01,'#777b7c');finishSection('bath-floor');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);finishSection('basin','translate',furnitureShift.basin);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
+const bathFloorNear=3.65,bathFloorFar=5.55,bathFloorMiddle=(bathFloorNear+bathFloorFar)/2,bathFloorDepth=bathFloorFar-bathFloorNear;
+box((bathFloorStart+bathFloorEnd)/2,.07,bathFloorMiddle,bathFloorEnd-bathFloorStart,.06,bathFloorDepth,'#55585b');for(let x=4.5;x<bathFloorEnd;x+=.32)box(x,.105,bathFloorMiddle,.01,.004,bathFloorDepth,'#777b7c');for(let z=3.65;z<5.55;z+=.32)box((bathFloorStart+bathFloorEnd)/2,.105,z,bathFloorEnd-bathFloorStart,.004,.01,'#777b7c');finishSection('bath-floor');box(4.73,.42,4.1,.57,.63,.60,C.woodlight,.035);box(4.73,.77,4.1,.62,.10,.64,'#45474b',.03);ball(4.73,.827,4.1,.21,C.white,[1,.12,1]);rod([4.73,.83,3.88],[4.73,1,3.88],.025,C.metal);rod([4.73,1,3.88],[4.73,1,4.0],.025,C.metal);box(4.73,1.27,3.76,.54,.7,.035,'#859e9c',.02);finishSection('basin','translate',furnitureShift.basin);box(5.76,.53,3.98,.47,.76,.23,C.white,.07);ball(5.76,.40,4.33,.28,C.white,[.78,.7,1.15]);ball(5.76,.57,4.33,.22,'#d3ddd4',[.83,.15,1.14]);
 finishSection('toilet','translate',furnitureShift.toilet);
 // The shower remains open, with no panes, metal frames, handles or door arc.
 box(SHOWER_WINDOW_CENTRE,.07,SHOWER_CENTRE_Z,SHOWER_WINDOW_SPAN,.06,SHOWER_LENGTH-.13,'#55585b');
 box((SHAFT_OUTER_X+BATH_EXTERIOR_X)/2,.07,(5.55+BALCONY_START_Z-.065)/2,BATH_EXTERIOR_X-SHAFT_OUTER_X,.06,BALCONY_START_Z-.065-5.55,'#55585b');
 finishSection('shower-floor');
-const showerHeadX=OUTER_X-.20;
-rod([showerHeadX,.12,5.50],[showerHeadX,1.53,5.50],.02,C.metal);
-rod([showerHeadX,1.53,5.50],[showerHeadX-.20,1.53,5.50],.02,C.metal);
-cyl(showerHeadX-.20,1.51,5.50,.085,.03,C.metal);
+// Mount the shower on the solid wall marked X, opposite the window wall.
+const showerHeadX=(BATH_EXTERIOR_X+OUTER_X)/2,showerHeadWallZ=BALCONY_START_Z-.13;
+rod([showerHeadX,.12,showerHeadWallZ],[showerHeadX,1.53,showerHeadWallZ],.02,C.metal);
+rod([showerHeadX,1.53,showerHeadWallZ],[showerHeadX,1.53,showerHeadWallZ-.20],.02,C.metal);
+cyl(showerHeadX,1.51,showerHeadWallZ-.20,.085,.03,C.metal);
 finishSection('shower-fixtures');
 // Child room: only the bed; the headboard faces the opposite kitchen-side wall.
 box(5.12,.25,7.00,1.1,.35,1.95,C.wood,.06);
