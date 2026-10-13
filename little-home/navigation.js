@@ -1,5 +1,5 @@
 // Walking envelopes share the revised model's metre coordinates.
-import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift} from './layout.js?v=66';
+import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=85';
 const radius=.19,cell=.08;
 const shift=(a,b,c,d,s)=>[a+s,b+s,c,d];
 const obstacles=[
@@ -18,7 +18,7 @@ const obstacles=[
  [scaleX(3.27),scaleX(3.43),0,4.50],
  shift(4.42,5.04,3.76,4.46,furnitureShift.basin),
  shift(5.48,6.10,3.85,4.67,furnitureShift.toilet),
- shift(6.18,6.83,6.50,7.23,furnitureShift.washer),
+ [washerPosition.x-.32,washerPosition.x+.32,washerPosition.z-.35,washerPosition.z+.35],
  shift(4.45,6.43,.50,2.96,furnitureShift.mainBed),
  shift(4.47,5.76,5.91,8.12,furnitureShift.childBed)
 ];
