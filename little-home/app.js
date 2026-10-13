@@ -55,19 +55,16 @@ function floor(x,z,w,d,color=C.floor,finish='wood'){
   else{for(let xx=x-w/2+.60;xx<x+w/2;xx+=.60)box(xx,.038,z,.006,.002,d,'#77756e');for(let zz=z-d/2+.60;zz<z+d/2;zz+=.60)box(x,.038,zz,w,.002,.006,'#77756e')}
   return surface;
 }
-// Stop the public-area wood at the square entry-stone boundary. The old
-// full-room floor covered most of the lower stone surface.
-const stoneEndX=entryX(205),stoneStartZ=8.345;
-const stoneEndRawX=X_PIVOT+(stoneEndX-X_PIVOT)/X_SCALE;
-floor(2.915,stoneStartZ/2,5.83,stoneStartZ);
-floor((stoneEndRawX+5.83)/2,(stoneStartZ+10)/2,5.83-stoneEndRawX,10-stoneStartZ);
-// Wood continues beneath the full-width cabinet up to the entry threshold.
+// Wood continues beneath the diagonal transition. Its former rectangular
+// grey base remained visible on the wood side of the intended red-line edge.
+const stoneStartZ=8.345;
+floor(2.915,5,5.83,10);
 floor(6.115,3.225,.57,6.45);
 floor(6.115,9.60,.57,.80);
 // The second-bedroom boards turn 90 degrees, following the flooring plan.
 box(4.24,.042,6.84,3.08,.004,2.52,C.floor);woodBoards(4.24,6.84,3.08,2.52,false,.048);
 finishSection('indoor-floors');
-named(floor((entryZero+scaleX(0))/2,(7.85+stoneStartZ)/2,scaleX(0)-entryZero,stoneStartZ-7.85),'entry-wood-under-cabinet');
+named(floor((entryZero+scaleX(0))/2,(7.85+9.995)/2,scaleX(0)-entryZero,9.995-7.85),'entry-wood-under-cabinet');
 finishSection('entry-wood-floor','exact');
 // The real floor uses muted grey slate. A diagonal transition runs from the
 // refrigerator side to the front tip of the entry cabinet's decorative panel.
@@ -81,9 +78,8 @@ for(let i=0;i<11500;i++){
 }
 const entryStoneTexture=new T.CanvasTexture(entryStoneCanvas);entryStoneTexture.colorSpace=T.SRGBColorSpace;
 const entryStoneMaterial=new T.MeshStandardMaterial({map:entryStoneTexture,roughness:.92});
-const stoneCenterX=entryZero+1.025,stoneCenterZ=(stoneStartZ+9.995)/2;
-named(box(stoneCenterX,-.18,stoneCenterZ,2.05,.32,1.65,'#c9baa0',.004),'entry-stone-base');
-box(stoneCenterX,.005,stoneCenterZ,2.05,.06,1.65,'#696c69',.001);
+// The finish is the only grey surface. The wood beneath it prevents any
+// rectangular grey patch from showing beyond the diagonal outline.
 const panelTip=[entryX(125),7.387],fridgeTip=[entryX(207),9.295];
 const stoneOutline=[[entryZero,stoneStartZ],[panelTip[0],stoneStartZ],panelTip,fridgeTip,[fridgeTip[0],9.995],[entryZero,9.995]];
 const stoneShape=new T.Shape();stoneShape.moveTo(stoneOutline[0][0],-stoneOutline[0][1]);
