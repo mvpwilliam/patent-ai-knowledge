@@ -6,6 +6,8 @@ export const entryZero=scaleX(2.985)-3.80;
 export const entryX=cm=>entryZero+cm/100;
 export const sinkX=kitchenEnd-.04-.65-.32-.36;
 export const stoveX=kitchenEnd-.04-.325;
+// Washer centered between balcony inner wall faces, 2 cm clear of its rear wall.
+export const washerPosition={x:(scaleX(5.895)+scaleX(7.18+.54/X_SCALE-.065))/2,z:6.60};
 export const furnitureShift={
   tv:scaleX(.005)-.005,
   sofa:scaleX(3.28)-3.28,
