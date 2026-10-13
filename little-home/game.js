@@ -60,7 +60,7 @@ let gameDay=today(),claims={};
 // Each player completes the daily rotation once; awards and completion commit together.
 const isClaimed=t=>taskDone(t);
 let mode='preview',auth=null,db=null,api=null,user=null,homeId='',homeReady=false,joining=false,unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
-let character=null,characters=new Map(),pose='walk',step=0,lastFrame=0,route=1,poseStarted=0,activity=null,travel=null,restExit=null;
+let character=null,characters=new Map(),pose='stand',step=0,lastFrame=0,route=1,poseStarted=0,activity=null,travel=null,restExit=null;
 let houseNPC=null,authBusy=false,connectedUid=null;
 const stops=[[1.35,4.25],[1.2,3.7],[1.15,1.25],[.7,2.6],[.72,4.8],[.68,6.1],[.70,7.8],[.65,8.65]].map(pointXZ);
 const tour=stops.flatMap((point,i)=>findPath(point,stops[(i+1)%stops.length]).slice(i?1:0));
@@ -103,12 +103,7 @@ function setPose(next){
  if(activity)return toast('先完成目前的家事');if(!character)return;
  if(next==='sit')return moveTo(null,'sofa');if(next==='lie')return moveTo(null,'mainBed');
  if(pose==='sit')window.homeScene?.showNews(false);leaveRest();travel=null;
- if(next==='walk'){
-   const nearest=tour.reduce((best,p,i)=>Math.hypot(p[0]-character.position.x,p[1]-character.position.z)<best.distance?{index:i,distance:Math.hypot(p[0]-character.position.x,p[1]-character.position.z)}:best,{index:0,distance:Infinity}).index;
-   const path=findPath([character.position.x,character.position.z],tour[nearest]);
-   if(!path.length)return toast('目前沒有可通行的路線');travel={kind:'walk',phase:'run',path,index:0,exit:path.at(-1),resumeTour:true};route=(nearest+1)%tour.length;
- }
- pose=next;poseStarted=performance.now();document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===next));toast(next==='walk'?'開始沿走道散步':'在原地站著');
+ pose='stand';poseStarted=performance.now();document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===pose));toast('在原地站著');
 }
 function walkStep(mesh,x,z){
  const from=[mesh.position.x,mesh.position.z];if(!canTraverse(from,[x,z]))return false;mesh.position.x=x;mesh.position.z=z;return true;
@@ -120,12 +115,12 @@ function moveTo(point,kind='walk'){
   if(kind.startsWith('diningChair')){const z=kind==='diningChair0'?5.94:6.63;if(onlinePlayers().some(([,p])=>p.presence.pose==='sit'&&Math.hypot(p.presence.x-1.41,p.presence.z-z)<.25))return toast('這張椅子有人坐，請選另一張')}
   if(pose==='sit')window.homeScene?.showNews(false);
   if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
-  restExit=null;travel=null;pose='walk';
-  document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose==='walk'));
+  restExit=null;travel=null;pose='stand';
   const stops={diningChair0:[.88,5.94],diningChair1:[.88,6.63],entryMirror:[entryZero+.45,9.58],bathMirror:[4.73+furnitureShift.basin,4.80],sofa:furnitureXZ('sofa',[1.72,2.04]),mainBed:furnitureXZ('mainBed',[4.05,1.68]),childBed:furnitureXZ('childBed',[3.98,6.90])};
   const destination=stops[kind]||point;
   const path=findPath([character.position.x,character.position.z],destination);
   if(!path.length||Math.hypot(path.at(-1)[0]-destination[0],path.at(-1)[1]-destination[1])>.45)return toast('這裡目前走不到');
+  pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));
   travel={kind,phase:'run',path,index:0,exit:destination};
   toast(kind.includes('Mirror')?'屋主走去照鏡子':kind.startsWith('diningChair')?'屋主走去餐椅':kind==='walk'?'屋主走過去了':kind==='sofa'?'屋主走去沙發':'屋主走去睡覺');
 }
@@ -216,7 +211,7 @@ function animate(now){
     if(travel.phase==='run'){
       const [x,z]=travel.path[travel.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
       if(d<.04){walkStep(character,x,z);travel.index++;if(travel.index>=travel.path.length){
-        if(travel.kind==='walk'){const resume=travel.resumeTour;travel=null;pose=resume?'walk':'stand'}
+        if(travel.kind==='walk'){travel=null;pose='stand'}
         else if(travel.kind.includes('Mirror')){const kind=travel.kind;travel=null;pose='stand';character.rotation.y=kind==='entryMirror'?-Math.PI/2:Math.PI;openMirror()}else{travel.phase='settle';travel.from=character.position.clone();travel.progress=0}
       }}else{const move=Math.min(d,dt*1.6);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
       step+=dt*17;b.position.y=Math.abs(Math.sin(step))*.035;b.rotation.set(0,0,Math.sin(step)*.035);
@@ -237,7 +232,7 @@ function animate(now){
   }else if(activity?.phase==='run'||activity?.phase==='return'){
     const [x,z]=activity.path[activity.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
     if(d<.035){walkStep(character,x,z);activity.index++;if(activity.index>=activity.path.length){
-      if(activity.phase==='return'){route=activity.route;activity=null;renderTasks()}
+      if(activity.phase==='return'){activity=null;pose='stand';renderTasks()}
       else{activity.phase='work';activity.started=now;character.userData.body.position.y=0;if(activity.task.id==='scenery'){character.rotation.y=Math.PI;showScenery()}toast(`開始${activity.task.label}`)}
     }}
     else{const move=Math.min(d,dt*2.05);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
@@ -252,13 +247,6 @@ function animate(now){
     leftArm.rotation.x=rightArm.rotation.x=-.75;
     if(activity.task.id==='scenery'){b.position.y=.008*Math.sin(t*3);b.rotation.set(0,0,0);leftArm.position.set(-.20,.42,.015);rightArm.position.set(.20,.42,.015);leftArm.rotation.x=rightArm.rotation.x=0}
     if(t>=(activity.task.id==='scenery'?7:2)){if(activity.task.id==='scenery')hideScenery();const finished=activity;activity=null;b.rotation.x=0;finishTask(finished)}
-  }else if(pose==='walk'){
-    const [x,z]=tour[route],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
-    if(d<.04){walkStep(character,x,z);route=(route+1)%tour.length;}
-    else {const move=Math.min(d,dt*.53);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
-    step+=dt*10;b.position.y=Math.abs(Math.sin(step))*.028;b.rotation.z=Math.sin(step)*.035;b.rotation.x=0;
-    leftArm.rotation.x=Math.sin(step)*.28;rightArm.rotation.x=-Math.sin(step)*.28;
-    leftLeg.rotation.x=-Math.sin(step)*.22;rightLeg.rotation.x=Math.sin(step)*.22;
   }else if(pose==='sit'){
     b.position.y=0;b.rotation.x=restExit?.[0]===.88?0:-.23;b.rotation.z=0;for(const leg of [leftLeg,rightLeg])leg.rotation.x=-.85;
   }else if(pose==='lie'){
@@ -280,7 +268,6 @@ function readLocalClaims(){claims=safeRead(claimKey(),{})}
 function clock(){
   const current=today();
   if(current!==gameDay){gameDay=current;claims={};if(mode==='preview')readLocalClaims();else subscribeClaims();renderTasks()}
-  if(Date.now()-lastHumanInput>90000&&!activity&&!travel&&pose==='walk')pose='stand';
   if(!document.hidden)publishPresence();syncCharacters();renderMonster();
   const left=GAME_DAY_MS-Date.now()%GAME_DAY_MS;
   $('#game-clock').textContent=`下個遊戲日 ${String(Math.floor(left/60000)).padStart(2,'0')}:${String(Math.floor(left%60000/1000)).padStart(2,'0')}`;
@@ -336,18 +323,17 @@ function startTask(t){
   if(pose==='sit')window.homeScene?.showNews(false);
   leaveRest();
   restExit=null;character.position.y=.07;
-  pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose==='walk'));
+  pose='stand';
   const path=findPath([character.position.x,character.position.z],placement(t).stop);
   if(path.length<2)return toast('目前找不到通往家事位置的路');
+  pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));
   activity={task:t,phase:'run',path,index:0,day:today()};
   if($('#game-dialog').open)$('#game-dialog').close();
   toast(`${avatar.name} 跑去${t.label}`);renderTasks();
 }
 async function finishTask(job){
-  const nearest=tour.reduce((best,p,i)=>Math.hypot(p[0]-character.position.x,p[1]-character.position.z)<best.distance?{index:i,distance:Math.hypot(p[0]-character.position.x,p[1]-character.position.z)}:best,{index:0,distance:Infinity}).index;
-  const path=findPath([character.position.x,character.position.z],tour[nearest]);
-  activity={task:job.task,phase:'return',path,index:0,route:(nearest+1)%tour.length};
-  if(path.length<2){route=nearest;activity=null}
+  activity=null;pose='stand';
+  document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===pose));
   renderTasks();
   if(job.day!==today()){toast('新的一天開始了，請重新選家事');return}
   await claimTask(job.task,job.day);
@@ -357,46 +343,56 @@ async function claimTask(t,day=today()){
  const previousLevel=levelInfo(player.xp).level,previousXP=player.xp;
  try{await mutateGame(p=>{if(day!==today())throw new Error('新的一天開始了，請重新選家事');rewardPlayer(p,t,day)});renderTasks();const info=levelInfo(player.xp),r=taskReward(t);toast(`完成！＋${r.coins} 幣${previousXP<MAX_XP?'、＋20 EXP':''}${info.level>previousLevel?' · 升到 Lv.'+info.level:''}`)}catch(e){toast(e.code==='permission-denied'?'任務未記錄，請確認家庭寫入權限':e.message||'儲存失敗，請再試一次')}
 }
-async function addTask(){
-  const field=$('#task-new'),label=field.value.trim().slice(0,24);
-  if(!label)return;
-  if(tasks.length>=29)return toast('最多設定 29 項家事');
-  const task={id:'custom-'+Math.random().toString(36).slice(2,10),label,room:$('#task-room').value};
-  if(mode==='online'){
-    if(!user||!homeReady)return toast('請先建立家庭或加入家人的家庭');
-    try{
-      const ref=api.doc(db,'homes',homeId,'settings','tasks');
-      await api.runTransaction(db,async tx=>{
-        const snap=await tx.get(ref),items=normalizeTasks(snap.exists()?snap.data().items:defaults);
-        if(items.length>=29)throw new Error('最多設定 29 項家事');
-        tx.set(ref,{items:[...items,task,...(snap.exists()?snap.data().items.filter(t=>t.id===GAME_META_ID):[])]});
-      });
-      field.value='';
-    }
-    catch{toast('新增失敗，請再試一次')}
-  }else{tasks=[...tasks,task];field.value='';localStorage.setItem('little-home-tasks',JSON.stringify(tasks));renderTasks()}
-}
 function fillAvatar(){
   $('#avatar-name').value=avatar.name;$('#avatar-skin').value=avatar.skin;
   $('#avatar-hair').value=avatar.hair;$('#avatar-hair-color').value=avatar.hairColor;$('#avatar-shirt').value=avatar.shirt;
 }
 const appearanceKey=()=>`little-home-appearance-${user?.uid||localActorId}`;
+const nameKey=()=>`little-home-name-confirmed-${user?.uid||localActorId}`;
+function hasChosenName(v=avatar){
+ const name=String(v?.name||'').trim();
+ return name.length>0&&name.length<=12&&(!['玩家','小屋主'].includes(name)||localStorage.getItem(nameKey())==='1');
+}
+function askPlayerName(){return new Promise(resolve=>{
+ const dialog=document.createElement('dialog');dialog.id='name-dialog';dialog.className='game-dialog compact-dialog name-dialog';
+ dialog.innerHTML='<form><div class="dialog-head"><div><span class="mini-label">WELCOME HOME · 01</span><h2>先幫自己取個名字</h2></div></div><p>這是你在小屋裡的名字，之後也能修改。</p><label for="first-player-name">你的名字</label><input id="first-player-name" name="nickname" autocomplete="nickname" maxlength="12" required autofocus placeholder="輸入 1～12 個字"><p class="name-error" role="status"></p><button class="game-primary" type="submit">'+(localStorage.getItem(appearanceKey())?'儲存名字':'下一步：選擇造型')+'</button></form>';
+ const field=dialog.querySelector('input'),error=dialog.querySelector('.name-error');
+ dialog.addEventListener('cancel',e=>e.preventDefault());
+ dialog.querySelector('form').onsubmit=e=>{
+  e.preventDefault();const name=field.value.trim();
+  if(!name||name.length>12){error.textContent='請輸入 1～12 個字的名字。';field.focus();return}
+  dialog.close();dialog.remove();resolve(name);
+ };
+ document.body.append(dialog);dialog.showModal();field.focus();
+})}
 let appearancePending=null;
 async function ensureAppearance(){
- avatarDesign=normalizeAvatarDesign(safeRead(designLocalKey(),avatarDesign));
- if(localStorage.getItem(appearanceKey()))return avatar;
- const result=await openAvatarEditor(avatar,avatarDesign,true);
- avatar=outfit(result.profile);setAvatarDesign(result.design,true);localStorage.setItem('little-home-avatar',JSON.stringify(avatar));localStorage.setItem(appearanceKey(),'1');fillAvatar();setCharacter(avatar);$('#game-status').textContent=`${avatar.name} 正在家裡過日子`;return avatar;
+ if(appearancePending)return appearancePending;
+ appearancePending=(async()=>{
+  avatarDesign=normalizeAvatarDesign(safeRead(designLocalKey(),avatarDesign));
+  if(!hasChosenName()){
+   avatar=outfit({...avatar,name:await askPlayerName()});localStorage.setItem(nameKey(),'1');
+   localStorage.setItem('little-home-avatar',JSON.stringify(avatar));fillAvatar();setCharacter(avatar);
+  }
+  if(!localStorage.getItem(appearanceKey())){
+   const result=await openAvatarEditor(avatar,avatarDesign,true);
+   avatar=outfit(result.profile);setAvatarDesign(result.design,true);localStorage.setItem('little-home-avatar',JSON.stringify(avatar));localStorage.setItem(appearanceKey(),'1');localStorage.setItem(nameKey(),'1');fillAvatar();setCharacter(avatar);
+  }
+  $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;return avatar;
+ })();
+ try{return await appearancePending}finally{appearancePending=null}
 }
 async function editAvatar(){
  const result=await openAvatarEditor(avatar,avatarDesign,false);if(!result)return;
  avatar=outfit(result.profile);setAvatarDesign(result.design,true);fillAvatar();await saveAvatar();
 }
 async function saveAvatar(){
+  const name=$('#avatar-name').value.trim();if(!name||name.length>12){toast('請輸入 1～12 個字的名字');$('#avatar-name').focus();return}
   const appearanceURL=new URL(location.href);appearanceURL.searchParams.delete('avatar');history.replaceState(null,'',appearanceURL);
-  avatar=outfit({name:$('#avatar-name').value.trim()||'小屋主',skin:$('#avatar-skin').value,hair:$('#avatar-hair').value,hairColor:$('#avatar-hair-color').value,shirt:$('#avatar-shirt').value});
+  avatar=outfit({name,skin:$('#avatar-skin').value,hair:$('#avatar-hair').value,hairColor:$('#avatar-hair-color').value,shirt:$('#avatar-shirt').value});
   localStorage.setItem('little-home-avatar',JSON.stringify(avatar));setCharacter(avatar);
   localStorage.setItem(appearanceKey(),'1');
+  localStorage.setItem(nameKey(),'1');
   if(user&&homeReady)try{await api.setDoc(api.doc(db,'homes',homeId,'profiles',user.uid),avatar)}catch{toast('造型已存本機，雲端同步失敗');return}
   if(homeReady){try{await mutateGame(p=>{p.avatarDesign=normalizeAvatarDesign(avatarDesign)});designPending=false}catch{toast('造型已存本機，捏臉同步稍後重試');return}}
   $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;toast('角色造型已儲存');
@@ -444,8 +440,7 @@ async function subscribeHome(create=false){
     if(profile.exists()){
       avatar=outfit(profile.data());localStorage.setItem('little-home-avatar',JSON.stringify(avatar));
       fillAvatar();setCharacter(avatar);
-      const untouchedDefault=['玩家','小屋主'].includes(avatar.name)&&avatar.skin==='#e9b990'&&avatar.hair==='korean'&&avatar.hairColor==='#4d3834'&&avatar.shirt==='#7899a0';
-      if(untouchedDefault&&!localStorage.getItem(appearanceKey())){await ensureAppearance();await api.setDoc(profileRef,outfit(avatar))}
+      if(!hasChosenName()){await ensureAppearance();await api.setDoc(profileRef,outfit(avatar))}
       localStorage.setItem(appearanceKey(),'1');
     }else{await ensureAppearance();await api.setDoc(profileRef,outfit(avatar))}
     const tasksRef=api.doc(db,'homes',homeId,'settings','tasks');
@@ -468,6 +463,7 @@ async function subscribeHome(create=false){
     renderTasks();
   }catch(error){
     homeReady=false;$('#home-share').disabled=true;renderTasks();familyError(error);
+    if(!hasChosenName())await ensureAppearance();
   }finally{joining=false}
 }
 async function shareHome(){
@@ -492,6 +488,20 @@ function accountError(error){
  const messages={'auth/operation-not-allowed':'請在 Firebase Authentication 啟用 Google 登入。','auth/unauthorized-domain':'請在 Firebase 的授權網域加入 mvpwilliam.github.io。','auth/popup-blocked':'登入視窗被阻擋，請允許彈出視窗，或改用 Safari 開啟網站。','auth/popup-closed-by-user':'登入視窗已關閉，可以再試一次。','auth/credential-already-in-use':'這個 Google 已有遊戲帳號，未更動目前訪客資料。可選「登入已有 Google 帳號」；兩份進度不會自動合併。'};
  $('#login-message').textContent=messages[error?.code]||'登入暫時失敗，請檢查網路後重試。';
 }
+async function resumeAccount(){
+ const u=auth?.currentUser;user=u||null;accountStatus();
+ if(!u){connectedUid=null;homeReady=false;clearSubscriptions();claims={};renderTasks();return}
+ if(authBusy||connectedUid===u.uid||(u.isAnonymous&&!localStorage.getItem('little-home-login-choice')))return;
+ connectedUid=u.uid;
+ $('#account-state').textContent=u.isAnonymous?'訪客登入成功。':'Google 登入成功。';
+ const code=boundedCode($('#home-code').value);
+ if(/^[a-f0-9]{24}$/.test(code))await subscribeHome(false);
+ else{
+  await ensureAppearance();
+  if(u.isAnonymous)await subscribeHome(true);
+  else{homeReady=false;clearSubscriptions();$('#account-state').textContent='請輸入原家庭代碼或開啟邀請連結，以讀取原人物；新玩家可建立家庭。';$('#game-dialog').selectPage?.('family');$('#game-dialog').showModal()}
+ }
+}
 function setupAccountUI(){
  const dialog=document.createElement('dialog');dialog.id='login-dialog';dialog.className='game-dialog compact-dialog';
  const title=document.createElement('h2');title.textContent='歡迎回到我們的小日子';
@@ -502,9 +512,10 @@ function setupAccountUI(){
  const open=document.createElement('button');open.id='account-open';open.className='account-manage-button';open.textContent='帳號設定';$('#account-state').parentElement?.querySelector('.account-buttons')?.append(open);
  open.onclick=()=>{accountStatus();dialog.showModal()};
  $('#login-guest').onclick=async()=>{
-  if(authBusy)return;authBusy=true;accountStatus();
-  try{if(auth&&!auth.currentUser)await api.signInAnonymously(auth);localStorage.setItem('little-home-login-choice','guest');dialog.close();if(!auth)await ensureAppearance()}
-   catch(e){accountError(e)}finally{authBusy=false;$('#login-guest').disabled=false;$('#login-google').disabled=!auth;$('#login-existing').disabled=!auth}
+  if(authBusy)return;authBusy=true;accountStatus();let error=null;
+  try{if(auth&&!auth.currentUser)await api.signInAnonymously(auth);localStorage.setItem('little-home-login-choice','guest');dialog.close()}
+   catch(e){error=e}finally{authBusy=false;accountStatus();if(error)accountError(error)}
+  if(!error){if(auth)await resumeAccount();else await ensureAppearance()}
  };
  const google=async existing=>{
   if(authBusy||!auth)return;
@@ -517,6 +528,7 @@ function setupAccountUI(){
    else{await api.signInWithPopup(auth,provider)}
    localStorage.setItem('little-home-login-choice','google');dialog.close();
   }catch(e){error=e}finally{authBusy=false;accountStatus();if(error)accountError(error)}
+  if(!error)await resumeAccount();
  };
  $('#login-google').onclick=()=>google(false);$('#login-existing').onclick=()=>google(true);
  dialog.addEventListener('cancel',e=>{if(!user&&mode==='online')e.preventDefault()});accountStatus();
@@ -537,23 +549,14 @@ async function connect(){
     await authLib.setPersistence(auth,authLib.browserLocalPersistence);
     await auth.authStateReady();
     $('#game-mode').textContent='每人有自己的每日家事、遊戲幣與道具。30 分鐘為一個遊戲日。';
-    authLib.onAuthStateChanged(auth,u=>{
-      user=u;
-      if(u){
-        accountStatus();if(connectedUid===u.uid)return;connectedUid=u.uid;
-        $('#account-state').textContent=u.isAnonymous?'訪客登入成功。':'Google 登入成功。';
-        const code=boundedCode($('#home-code').value);
-        if(/^[a-f0-9]{24}$/.test(code))subscribeHome(false);
-        else if(u.isAnonymous)subscribeHome(true);
-        else{homeReady=false;clearSubscriptions();$('#account-state').textContent='請輸入原家庭代碼或開啟邀請連結，以讀取原人物；新玩家可建立家庭。';$('#game-dialog').selectPage?.('family');$('#game-dialog').showModal()}
-      }else{connectedUid=null;homeReady=false;clearSubscriptions();claims={};renderTasks();accountStatus()}
-    });
+    authLib.onAuthStateChanged(auth,u=>{user=u;accountStatus();if(!authBusy)resumeAccount().catch(error=>{connectedUid=null;familyError(error)})});
     accountStatus();if(!auth.currentUser||(!localStorage.getItem('little-home-login-choice')&&auth.currentUser.isAnonymous))login.showModal();
   }catch(error){
     const message=error.code==='auth/operation-not-allowed'
       ?'請在 Firebase 啟用匿名登入，再重新整理。'
       :'自動登入失敗，請重新整理頁面再試。';
     $('#game-mode').textContent=message;$('#account-state').textContent=message;
+    mode='preview';auth=null;db=null;api=null;accountStatus();renderTasks();login.showModal();
   }
 }
 
@@ -759,11 +762,11 @@ function setupGamePages(){
   $('#game-open').onclick=()=>{$('#game-dialog').selectPage?.('tasks');$('#game-dialog').showModal()};
   $('#game-close').onclick=()=>$('#game-dialog').close();
   $('#game-dialog').onclick=e=>{if(e.target!==$('#game-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()};
+  $('#shop-dialog').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.currentTarget.close()});
   $('#avatar-save').onclick=saveAvatar;
   const editButton=document.createElement('button');editButton.textContent='選範本與捏造型';editButton.className='game-primary';editButton.onclick=editAvatar;$('#avatar-save').before(editButton);
   const dadPresetButton=document.createElement('button');dadPresetButton.id='avatar-pixel-dad';dadPresetButton.textContent='爸爸像素造型 · 白T牛仔褲';dadPresetButton.onclick=()=>{setAvatarDesign({...avatarDesign,glasses:true,hairStyle:'korean'},true);for(const [field,value]of Object.entries(dadWhitePreset))$('#avatar-'+(field==='hairColor'?'hair-color':field)).value=value;saveAvatar()};$('#avatar-save').after(dadPresetButton);
   document.querySelectorAll('[data-pose]').forEach(b=>b.onclick=()=>setPose(b.dataset.pose));
-  $('#task-add').onclick=addTask;
   $('#home-create').onclick=()=>subscribeHome(true);
   $('#home-join').onclick=()=>subscribeHome(false);
   $('#home-share').onclick=shareHome;
@@ -783,6 +786,7 @@ function setupGamePages(){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
