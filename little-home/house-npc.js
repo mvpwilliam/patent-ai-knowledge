@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {findPath,canTraverse,crossesWall} from './navigation.js?v=95';
+import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=103';
 import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero} from './layout.js?v=85';
 
 // A local ambient resident, never a Firebase player or an award recipient.
@@ -62,11 +62,11 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
    if(people().some(p=>Math.hypot(p.position.x-to[0],p.position.z-to[1])<.30))return;
    character.position.x=to[0];character.position.z=to[1];if(d>.01)character.rotation.y=Math.atan2(dx,dz);
    step+=dt*10;b.position.y=Math.abs(Math.sin(step))*.03;left.rotation.x=Math.sin(step)*.35;right.rotation.x=-left.rotation.x;legs[0].rotation.x=-left.rotation.x;legs[1].rotation.x=left.rotation.x;
-   if(d<.04){character.position.x=p[0];character.position.z=p[1];if(++index>=path.length)start(now)}return;
+   if(d<.04){if(!canTraverse([character.position.x,character.position.z],p)){state='wait';until=now+2000;return}character.position.x=p[0];character.position.z=p[1];if(++index>=path.length)start(now)}return;
   }
   if(state==='settle'||state==='return'){
    const target=state==='return'?exit:new T.Vector3(...action.target);
-   if(crossesWall([from.x,from.z],[target.x,target.z])){state='wait';until=now+3000;exit=null;return}
+   if(crossesWall([from.x,from.z],[target.x,target.z])||crossesDynamicObstacle([from.x,from.z],[target.x,target.z])){state='wait';until=now+3000;exit=null;return}
    settle=Math.min(1,settle+dt/.9);character.position.lerpVectors(from,target,settle);character.rotation.y=action.angle;
    if(settle===1){if(state==='return'){if(action.id==='shower'&&!previousShowerOpen)home.setShowerOpen?.(false);exit=null;state='wait';until=now+2000;action=null}else state='act'}return;
   }
@@ -79,3 +79,4 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  }
  return {character,update,actions,get state(){return state},get action(){return action},startAction(id,now=performance.now()){if(state!=='wait')return false;return choose(now,id)}};
 }
+

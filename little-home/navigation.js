@@ -1,6 +1,6 @@
 // Walking envelopes share the revised model's metre coordinates.
 import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=85';
-const radius=.19,cell=.08;
+const radius=.171,cell=.08; // Characters and their walking envelope are both 10% smaller.
 const shift=(a,b,c,d,s)=>[a+s,b+s,c,d];
 const rect=(x0,x1,z0,z1)=>[scaleX(x0),scaleX(x1),z0,z1];
 export const wallObstacles=[
@@ -34,6 +34,11 @@ const obstacles=[...wallObstacles,
  shift(4.45,6.43,.50,2.96,furnitureShift.mainBed),
  shift(4.47,5.76,5.91,8.12,furnitureShift.childBed)
 ];
+let dynamicObstacles=[],movementObstacles=obstacles;
+export function setDynamicObstacles(rectangles=[]){
+ dynamicObstacles=rectangles.map(r=>r.slice());movementObstacles=[...obstacles,...dynamicObstacles];
+}
+export const crossesDynamicObstacle=(from,to)=>dynamicObstacles.some(rect=>intersectsRect(from,to,rect));
 export function walkable(x,z){
  const inX=(a,b)=>x>=scaleX(a)&&x<=scaleX(b);
  const inLiving=inX(.30,3.12)&&z>=.37&&z<=4.50;
@@ -49,7 +54,7 @@ export function walkable(x,z){
  const inBalconyDoor=inX(5.68,6.08)&&z>=8.40&&z<=8.96;
  const inEntry=x>=entryZero+radius&&x<=scaleX(.7)&&z>=8.47&&z<=9.60;
  if(!(inLiving||inHall||inBath||inDining||inKitchen||inMaster||inMasterEntry||inChild||inChildEntry||inBalcony||inBalconyDoor||inEntry))return false;
- return !obstacles.some(([a,b,c,d])=>x>=a-radius&&x<=b+radius&&z>=c-radius&&z<=d+radius);
+ return !movementObstacles.some(([a,b,c,d])=>x>=a-radius&&x<=b+radius&&z>=c-radius&&z<=d+radius);
 }
 const key=(i,j)=>i+','+j;
 const grid=(i,j)=>[i*cell,j*cell];
@@ -71,7 +76,7 @@ function intersectsRect(from,to,[a,b,c,d]){
 }
 export function crossesWall(from,to){return wallObstacles.some(rect=>intersectsRect(from,to,rect))}
 export const canTraverse=(a,b)=>{
-  if(obstacles.some(rect=>intersectsRect(a,b,rect)))return false;
+  if(movementObstacles.some(rect=>intersectsRect(a,b,rect)))return false;
   const n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.01);
   for(let i=0;i<=n;i++){const t=n?i/n:0;if(!walkable(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t))return false}
   return true;
@@ -104,6 +109,7 @@ export function findPath(from,to){
   }
   return [];
 }
+
 
 
 

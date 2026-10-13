@@ -1,10 +1,12 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
-import {findPath,canTraverse,walkable,crossesWall} from './navigation.js?v=95';
+import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=103';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
 import {createPixelDad,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=block-style-2';
 import {openAvatarEditor} from './avatar-editor.js?v=block-style-2';
-import {createHouseNPC} from './house-npc.js?v=97';
+import {createHouseNPC} from './house-npc.js?v=103';
+import {createGodzilla} from './godzilla.js?v=103';
+const PLAYER_SCALE=.9;
 
 let avatarDesign=normalizeAvatarDesign({}),designPending=false;
 const designLocalKey=()=>`little-home-design-${user?.uid||localActorId}`;
@@ -86,14 +88,19 @@ function bodyPart(parent,geometry,color,x,y,z){
   const mesh=new T.Mesh(geometry,new T.MeshStandardMaterial({color,roughness:.75}));
   mesh.position.set(x,y,z);mesh.castShadow=true;parent.add(mesh);return mesh;
 }
-function makeCharacter(v,design={}){return createPixelDad(v,normalizeAvatarDesign({...design,hairStyle:design.hairStyle||v.hair}));}
+function makeCharacter(v,design={}){
+ const mesh=createPixelDad(v,normalizeAvatarDesign({...design,hairStyle:design.hairStyle||v.hair}));
+ mesh.scale.multiplyScalar(PLAYER_SCALE);mesh.updateMatrixWorld(true);
+ const bounds=new T.Box3().setFromObject(mesh);mesh.userData.standingHeight=bounds.max.y-bounds.min.y;return mesh;
+}
 function setCharacter(v){
  if(new URLSearchParams(location.search).get('avatar')==='dad-white'){v=outfit({...v,...dadWhitePreset});avatarDesign=normalizeAvatarDesign({...avatarDesign,glasses:true,hairStyle:'korean'});avatar=v;localStorage.setItem('little-home-avatar',JSON.stringify(v));fillAvatar();}
  if(!scene)return;const previous=character?.position.clone(),angle=character?.rotation.y;
  if(character)scene.remove(character);character=makeCharacter(v,avatarDesign);scene.add(character);
- if(previous){character.position.copy(previous);character.rotation.y=angle;return}
+ if(previous){character.position.copy(previous);character.rotation.y=angle;resolveMonsterOverlap(character);return}
  const start=[...(user?.uid||localActorId)].reduce((sum,c)=>sum+c.charCodeAt(0),0)%tour.length;
  character.position.set(tour[start][0],.07,tour[start][1]);route=(start+1)%tour.length;
+ resolveMonsterOverlap(character);
 }
 function leaveRest(){
  if(restExit){character.position.set(restExit[0],.07,restExit[1]);restExit=null}
@@ -107,6 +114,30 @@ function setPose(next){
 }
 function walkStep(mesh,x,z){
  const from=[mesh.position.x,mesh.position.z];if(!canTraverse(from,[x,z]))return false;mesh.position.x=x;mesh.position.z=z;return true;
+}
+function resolveMonsterOverlap(mesh){
+ if(!mesh||!monsterMesh)return false;
+ const from=[mesh.position.x,mesh.position.z];if(!crossesDynamicObstacle(from,from))return false;
+ const others=[character,houseNPC?.character,...[...characters.values()].map(p=>p.mesh)].filter(p=>p&&p!==mesh);
+ let best=null,distance=Infinity;
+ for(let i=-18;i<=18;i++)for(let j=-18;j<=18;j++){
+  const x=from[0]+i*.08,z=from[1]+j*.08,d=i*i+j*j;
+  if(!d||d>=distance||!walkable(x,z)||crossesWall(from,[x,z])||others.some(p=>Math.hypot(p.position.x-x,p.position.z-z)<.34))continue;
+  best=[x,z];distance=d;
+ }
+ if(!best)return false;mesh.position.x=best[0];mesh.position.z=best[1];return true;
+}
+function refreshMonsterRoutes(){
+ if(resolveMonsterOverlap(character)){travel=null;activity=null;restExit=null;pose='stand';renderTasks();toast('哥吉拉出現，先讓開一步')}
+ resolveMonsterOverlap(houseNPC?.character);for(const p of characters.values())resolveMonsterOverlap(p.mesh);
+ if(travel?.phase==='run'){
+  const path=findPath([character.position.x,character.position.z],travel.path.at(-1));
+  if(path.length){travel.path=path;travel.index=0}else{travel=null;pose='stand';toast('哥吉拉擋住了去路，請選其他位置')}
+ }
+ if(activity?.phase==='run'){
+  const path=findPath([character.position.x,character.position.z],placement(activity.task).stop);
+  if(path.length){activity.path=path;activity.index=0}else{activity=null;pose='stand';renderTasks();toast('哥吉拉擋住了家事位置，請先擊退牠')}
+ }
 }
 window.homeGameFocus=()=>character?{position:character.position.clone(),angle:character.rotation.y}:null;
 function moveTo(point,kind='walk'){
@@ -221,7 +252,7 @@ function animate(now){
     }else{
       travel.progress=Math.min(1,travel.progress+dt/.65);
       const target=travel.kind.startsWith('diningChair')?[1.41,.37,travel.kind==='diningChair0'?5.94:6.63]:travel.kind==='sofa'?furnitureXYZ('sofa',[2.54,.51,2.03]):travel.kind==='mainBed'?furnitureXYZ('mainBed',[5.16,.78,1.64]):furnitureXYZ('childBed',[5.12,.78,7.00]);
-      if(crossesWall([travel.from.x,travel.from.z],[target[0],target[2]])){travel=null;pose='stand';toast('家具位置跨越牆面，請重新選擇');return}character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
+      if(crossesWall([travel.from.x,travel.from.z],[target[0],target[2]])||crossesDynamicObstacle([travel.from.x,travel.from.z],[target[0],target[2]])){travel=null;pose='stand';toast('前方被擋住，請重新選擇');return}character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
       if(travel.progress>=1){
         const kind=travel.kind;restExit=travel.exit;travel=null;
         pose=kind==='sofa'||kind.startsWith('diningChair')?'sit':'lie';
@@ -699,7 +730,7 @@ function syncCharacters(){
  if(!scene)return;const online=onlinePlayers(),visible=online.slice(0,5),ids=new Set(visible.map(([id])=>id));
  for(const [id,item] of characters)if(!ids.has(id)){scene.remove(item.mesh);characters.delete(id)}
  for(const [id,p] of visible){const profile=profileCache[id];if(!profile)continue;let item=characters.get(id);const remoteDesign=normalizeAvatarDesign(gameMeta.players[id]?.avatarDesign||{hairStyle:profile.hair});const signature=JSON.stringify([profile,remoteDesign]);
- if(!item||item.signature!==signature){if(item)scene.remove(item.mesh);const mesh=makeCharacter(outfit(profile),remoteDesign);scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;
+ if(!item||item.signature!==signature){if(item)scene.remove(item.mesh);const mesh=makeCharacter(outfit(profile),remoteDesign);scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach)&&!crossesDynamicObstacle([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;resolveMonsterOverlap(item.mesh);
  }
  const list=$('#member-list');list.replaceChildren();for(const [id,v] of Object.entries(profileCache)){const row=document.createElement('p');const active=id===playerId()||online.some(([uid])=>uid===id);row.textContent=`${v.name} · ${active?'上線':'離線'}${active&&id!==playerId()&&!ids.has(id)?'（成員列）':''}`;list.append(row)}
  $('#member-count').textContent=`上線 ${online.length+1} · 屋內 ${characters.size+1}／6`;
@@ -714,26 +745,27 @@ async function publishPresence(force=false,online=true){
 }
 function animateOthers(dt,now){
  for(const item of characters.values()){const p=item.target;if(!p)continue;const body=item.mesh.userData.body;
- if(item.remotePath?.length&&item.remoteIndex<item.remotePath.length){const q=item.remotePath[item.remoteIndex],dx=q[0]-item.mesh.position.x,dz=q[1]-item.mesh.position.z,d=Math.hypot(dx,dz);if(d<.035){walkStep(item.mesh,q[0],q[1]);item.remoteIndex++;}else{const move=Math.min(d,dt*2);walkStep(item.mesh,item.mesh.position.x+dx/d*move,item.mesh.position.z+dz/d*move)}item.mesh.position.y=p.y||.07}else if(!crossesWall([item.mesh.position.x,item.mesh.position.z],[p.x,p.z]))item.mesh.position.lerp(new T.Vector3(p.x,p.y||.07,p.z),Math.min(1,dt*3));item.mesh.rotation.y=p.angle||0;
+ if(item.remotePath?.length&&item.remoteIndex<item.remotePath.length){const q=item.remotePath[item.remoteIndex],dx=q[0]-item.mesh.position.x,dz=q[1]-item.mesh.position.z,d=Math.hypot(dx,dz);if(d<.035){walkStep(item.mesh,q[0],q[1]);item.remoteIndex++;}else{const move=Math.min(d,dt*2);walkStep(item.mesh,item.mesh.position.x+dx/d*move,item.mesh.position.z+dz/d*move)}item.mesh.position.y=p.y||.07}else if(!crossesWall([item.mesh.position.x,item.mesh.position.z],[p.x,p.z])&&!crossesDynamicObstacle([item.mesh.position.x,item.mesh.position.z],[p.x,p.z]))item.mesh.position.lerp(new T.Vector3(p.x,p.y||.07,p.z),Math.min(1,dt*3));item.mesh.rotation.y=p.angle||0;
  body.rotation.x=p.pose==='lie'?-Math.PI/2:p.pose==='sit'?(p.approach?.[0]===.88?0:-.23):0;body.rotation.z=0;body.position.y=p.pose==='walk'?Math.abs(Math.sin(now*.008))*.02:0;
  for(const [i,limb] of [...item.mesh.userData.arms,...item.mesh.userData.legs].entries())limb.rotation.x=p.pose==='walk'?Math.sin(now*.009+i%2*Math.PI)*.3:p.pose==='work'&&i<2?-.75:p.pose==='sit'&&i>=2?-.85:0;
  item.mesh.userData.updatePose?.(p.pose);
  }
 }
 function renderMonster(){
- $('#monster-status').hidden=true;if(!scene)return;const m=gameMeta.monster;if(monsterMesh){scene.remove(monsterMesh);monsterMesh.traverse(n=>{n.geometry?.dispose();n.material?.dispose()});monsterMesh=null}
- if(!m||m.hits>=100||Date.now()<m.bornAt)return;
- const g=new T.Group();g.name='hourly-godzilla';g.position.set(scaleX(.8),.08,7.75);
- bodyPart(g,new T.ConeGeometry(.18,.45,10),'#647b65',0,.22,0);bodyPart(g,new T.SphereGeometry(.13,12,10),'#647b65',0,.48,.06);
- for(const x of [-.09,.09]){bodyPart(g,new T.SphereGeometry(.065,10,8),'#647b65',x,.07,.04);bodyPart(g,new T.SphereGeometry(.018,8,6),'#e9e2bb',x*.8,.51,.15)}
- const tail=bodyPart(g,new T.ConeGeometry(.07,.30,10),'#647b65',0,.08,-.22);tail.rotation.x=-1.15;
- for(let i=0;i<4;i++)bodyPart(g,new T.ConeGeometry(.05,.12,4),'#829b81',0,.18+i*.08,-.16);
- // 2.45 metres from foot to crown, just under the 2.6 metre walls.
- g.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(g),height=bounds.max.y-bounds.min.y;
- const scale=2.45/height;g.scale.setScalar(scale);g.position.y=.08-bounds.min.y*scale+g.position.y*scale;
- g.position.x=scaleX(1.25);g.position.z=4.25;
- scene.add(g);monsterMesh=g;$('#monster-status').hidden=false;$('#monster-status').textContent=`哥吉拉 · 已命中 ${m.hits} / 100，點擊場景中的哥吉拉攻擊。`;
+ $('#monster-status').hidden=true;if(!scene)return;const m=gameMeta.monster;
+ const height=(character?.userData.standingHeight||.95*PLAYER_SCALE)*1.2;
+ if(!m||m.hits>=100||Date.now()<m.bornAt){
+  if(monsterMesh){scene.remove(monsterMesh);disposeMonster(monsterMesh);monsterMesh=null}setDynamicObstacles();return;
+ }
+ if(!monsterMesh||Math.abs(monsterMesh.userData.standingHeight-height)>.001){
+  if(monsterMesh){scene.remove(monsterMesh);disposeMonster(monsterMesh)}
+  const g=createGodzilla(height);g.position.x=scaleX(1.25);g.position.z=4.25;g.position.y+=.07;
+  scene.add(g);g.updateMatrixWorld(true);monsterMesh=g;
+  setDynamicObstacles(g.userData.collisionBoxes.map(([a,b,c,d])=>[a+g.position.x,b+g.position.x,c+g.position.z,d+g.position.z]));refreshMonsterRoutes();
+ }
+ $('#monster-status').hidden=false;$('#monster-status').textContent=`哥吉拉 · 已命中 ${m.hits} / 100，點擊場景中的哥吉拉攻擊。`;
 }
+function disposeMonster(mesh){const materials=new Set();mesh.traverse(n=>{n.geometry?.dispose();if(n.material)for(const m of Array.isArray(n.material)?n.material:[n.material])materials.add(m)});for(const m of materials)m.dispose()}
 async function attackMonster(){try{await mutateGame((p,meta)=>{const m=meta.monster;if(!m||Date.now()<m.bornAt||m.hits>=100)throw new Error('哥吉拉還沒出現');m.hits++;if(m.hits>=100){m.bornAt=Date.now()+3600000;m.hits=0}});toast(gameMeta.monster.bornAt>Date.now()?'哥吉拉消失了，下次一小時後出現':'命中！')}catch(e){toast(e.message||'攻擊未儲存')}}
 const monsterRay=new T.Raycaster(),monsterPointer=new T.Vector2();
 function attackMonsterAt(e){
@@ -778,6 +810,7 @@ function setupGamePages(){
   $('#home-code').value=new URL(location.href).searchParams.get('home')||localStorage.getItem('little-home-code')||'';
   readPlayer();gameMeta.players[playerId()]=player;fillAvatar();setCharacter(avatar);readLocalClaims();renderTasks();clock();setInterval(clock,1000);
   if(scene)houseNPC=createHouseNPC(window.homeScene,makeCharacter,()=>[character,...characters.values()]);
+  resolveMonsterOverlap(houseNPC?.character);
   const npcStatus=document.createElement('small');npcStatus.id='npc-status';npcStatus.textContent='小屋日常 · 在家休息';$('#game-status').after?.(npcStatus);
   setupGamePages();
   $('#game-open').onclick=()=>{$('#game-dialog').selectPage?.('tasks');$('#game-dialog').showModal()};
@@ -807,7 +840,6 @@ function setupGamePages(){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
-
 
 
 
