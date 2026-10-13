@@ -2,8 +2,13 @@ import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall} from './navigation.js?v=95';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
+import {createPixelDad,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=dad-white-1';
+import {openAvatarEditor} from './avatar-editor.js?v=avatar-studio-1';
 import {createHouseNPC} from './house-npc.js?v=97';
 
+let avatarDesign=normalizeAvatarDesign({}),designPending=false;
+const designLocalKey=()=>`little-home-design-${user?.uid||localActorId}`;
+function setAvatarDesign(d,pending=false){avatarDesign=normalizeAvatarDesign(d);designPending=pending;localStorage.setItem(designLocalKey(),JSON.stringify(avatarDesign));}
 const scene=window.homeScene?.scene;
 const $=s=>document.querySelector(s);
 const GAME_META_ID='__home_game_v1';
@@ -81,38 +86,11 @@ function bodyPart(parent,geometry,color,x,y,z){
   const mesh=new T.Mesh(geometry,new T.MeshStandardMaterial({color,roughness:.75}));
   mesh.position.set(x,y,z);mesh.castShadow=true;parent.add(mesh);return mesh;
 }
-function makeCharacter(v){
-  const g=new T.Group(),body=new T.Group();g.add(body);
-  const sphere=(r,color,x,y,z)=>bodyPart(body,new T.SphereGeometry(r,16,12),color,x,y,z);
-  sphere(.19,v.shirt,0,.40,0).scale.set(.9,1.15,.7);
-  sphere(.24,v.skin,0,.75,0).scale.set(1,1.05,.9);
-  // A full upper hair shell sits outside the scalp instead of below the crown.
-  const hairShell=bodyPart(body,new T.SphereGeometry(.258,24,16,0,Math.PI*2,0,1.22),v.hairColor,0,.75,-.008);
-  hairShell.scale.set(1.03,1.08,1.02);
-  // Side and back volume keeps the hairstyle complete from every camera angle.
-  sphere(.19,v.hairColor,0,.82,-.125).scale.set(1.20,.87,.62);
-  for(const side of [-1,1]){
-    sphere(.10,v.hairColor,side*.203,.826,-.038).scale.set(.63,1.15,1.02);
-    // Two softly swept curtain bangs, with a small off-centre part.
-    const fringe=sphere(.127,v.hairColor,side*.097,.919,.169);
-    fringe.scale.set(1.02,.70,.43);fringe.rotation.z=side*.25;
-    const tip=sphere(.065,v.hairColor,side*.177,.856,.136);
-    tip.scale.set(.58,1.15,.56);tip.rotation.z=side*.34;
-  }
-  if(v.hair==='long')for(const x of [-.20,.20])sphere(.095,v.hairColor,x,.66,-.085).scale.set(.72,1.85,1);
-  if(v.hair==='cap'){sphere(.245,v.shirt,0,.99,-.018).scale.set(1.08,.50,1);sphere(.16,v.shirt,0,.96,.22).scale.set(1.1,.17,.55)}
-  const arms=[],legs=[];
-  for(const x of [-.085,.085]){
-    sphere(.017,'#303135',x,.77,.208);
-    const arm=sphere(.064,v.skin,x*2.35,.42,.015);arm.scale.set(.55,1.6,.6);arms.push(arm);
-    const leg=sphere(.075,'#3c5267',x,.13,.01);leg.scale.set(.7,1.7,.8);legs.push(leg);
-  }
-  const smile=bodyPart(body,new T.TorusGeometry(.037,.007,5,12,Math.PI), '#874e4b',0,.68,.218);smile.rotation.z=Math.PI;
-  g.userData.body=body;g.userData.arms=arms;g.userData.legs=legs;g.userData.step=Math.random()*8;return g;
-}
+function makeCharacter(v,design={}){return createPixelDad(v,normalizeAvatarDesign({...design,hairStyle:design.hairStyle||v.hair}));}
 function setCharacter(v){
+ if(new URLSearchParams(location.search).get('avatar')==='dad-white'){v=outfit({...v,...dadWhitePreset});avatarDesign=normalizeAvatarDesign({...avatarDesign,glasses:true,hairStyle:'korean'});avatar=v;localStorage.setItem('little-home-avatar',JSON.stringify(v));fillAvatar();}
  if(!scene)return;const previous=character?.position.clone(),angle=character?.rotation.y;
- if(character)scene.remove(character);character=makeCharacter(v);scene.add(character);
+ if(character)scene.remove(character);character=makeCharacter(v,avatarDesign);scene.add(character);
  if(previous){character.position.copy(previous);character.rotation.y=angle;return}
  const start=[...(user?.uid||localActorId)].reduce((sum,c)=>sum+c.charCodeAt(0),0)%tour.length;
  character.position.set(tour[start][0],.07,tour[start][1]);route=(start+1)%tour.length;
@@ -153,7 +131,7 @@ function moveTo(point,kind='walk'){
 }
 window.homeGameMoveTo=moveTo;
 let mirrorRenderer=null,mirrorPortrait=null;
-function makeMirrorAvatar(){const portrait=makeCharacter(outfit(avatar));portrait.name='my-mirror-reflection';return portrait}
+function makeMirrorAvatar(){const portrait=makeCharacter(outfit(avatar),avatarDesign);portrait.name='my-mirror-reflection';return portrait}
 function openMirror(){
  const dialog=$('#mirror-dialog');if(!dialog)return;
  $('#mirror-caption').textContent=`鏡中的${avatar.name}`;
@@ -286,11 +264,13 @@ function animate(now){
   }else if(pose==='lie'){
     b.position.y=0;b.rotation.x=-Math.PI/2;b.rotation.z=0;
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
+  character.userData.updatePose?.(activity?.phase==='work'?'work':travel?'walk':pose);
   const nearBalconyDoor=[character,houseNPC?.character].filter(Boolean).some(p=>Math.abs(p.position.x-scaleX(5.83))<1.12&&Math.abs(p.position.z-8.68)<.82);
   window.homeScene?.setBalconyDoor(nearBalconyDoor);
   window.homeScene?.updateDoorsAt(character.position.x,character.position.z,houseNPC?[[houseNPC.character.position.x,houseNPC.character.position.z]]:[]);
   animateOthers(dt,now);
   houseNPC?.update(dt,now);
+  if(houseNPC)houseNPC.character.userData.updatePose?.(houseNPC.state==='act'?houseNPC.action?.pose:houseNPC.state==='walk'?'walk':'stand');
   if(houseNPC)$('#npc-status').textContent=`小屋日常 · ${houseNPC.action?.label||'在家休息'}`;
   updateJoke();
 }
@@ -402,51 +382,23 @@ function fillAvatar(){
 }
 const appearanceKey=()=>`little-home-appearance-${user?.uid||localActorId}`;
 let appearancePending=null;
-function setupAppearanceUI(){
- if($('#appearance-dialog'))return;
- const dialog=document.createElement('dialog');dialog.id='appearance-dialog';dialog.className='game-dialog compact-dialog';
- const title=document.createElement('h2');title.textContent='建立你的角色';
- const intro=document.createElement('p');intro.textContent='取個名字、選好造型，再一起回家。之後也能隨時修改。';
- const canvas=document.createElement('canvas');canvas.id='appearance-preview';canvas.width=220;canvas.height=260;canvas.style.cssText='display:block;width:180px;height:213px;margin:0 auto 12px;border-radius:18px;background:#e5ebe6';
- dialog.append(title,intro,canvas);
- for(const [field,label,options] of [['skin','膚色',[['#e9b990','暖米色'],['#f4d3b0','淺膚色'],['#c78661','小麥色'],['#916044','深棕色']]],['hair','髮型',[['korean','韓系分線瀏海'],['long','長髮'],['cap','帽子']]],['name','名字',null],['hairColor','髮色',null],['shirt','衣服顏色',null]]){
-  const wrap=document.createElement('label');wrap.textContent=label;const input=document.createElement(options?'select':'input');input.id='appearance-'+field;
-  if(options)for(const [value,text] of options){const option=document.createElement('option');option.value=value;option.textContent=text;input.append(option)}
-  else if(field==='name'){input.type='text';input.maxLength=12;input.placeholder='你的暱稱'}else input.type='color';
-  input.value=avatar[field];wrap.append(input);dialog.append(wrap);
- }
- const message=document.createElement('p');message.id='appearance-message';message.setAttribute('role','status');
- const save=document.createElement('button');save.id='appearance-save';save.className='game-primary';save.textContent='完成造型，進入小屋';save.style.width='100%';dialog.append(message,save);document.body.append(dialog);
- let renderer=null,portrait=null;
- const draft=()=>outfit({name:$('#appearance-name').value.trim(),skin:$('#appearance-skin').value,hair:$('#appearance-hair').value,hairColor:$('#appearance-hairColor').value,shirt:$('#appearance-shirt').value});
- const preview=()=>{
-  try{
-   if(!renderer){renderer=new T.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.setSize(220,260,false)}
-   if(portrait)portrait.traverse(n=>{n.geometry?.dispose();n.material?.dispose()});
-   const s=new T.Scene();s.background=new T.Color('#e5ebe6');s.add(new T.HemisphereLight('#ffffff','#708b78',3));portrait=makeCharacter(draft());s.add(portrait);
-   const camera=new T.PerspectiveCamera(37,220/260,.1,10);camera.position.set(0,.72,2.7);camera.lookAt(0,.52,0);renderer.render(s,camera);
-  }catch{canvas.hidden=true}
- };
- for(const field of ['name','skin','hair','hairColor','shirt'])$('#appearance-'+field).oninput=preview;
- save.onclick=()=>{
-  if(!$('#appearance-name').value.trim()){message.textContent='請先輸入你的名字。';$('#appearance-name').focus();return}
-  const result=draft();appearancePending?.(result);appearancePending=null;dialog.close();
- };
- dialog.addEventListener('cancel',e=>e.preventDefault());dialog.preview=preview;
-}
 async function ensureAppearance(){
+ avatarDesign=normalizeAvatarDesign(safeRead(designLocalKey(),avatarDesign));
  if(localStorage.getItem(appearanceKey()))return avatar;
- setupAppearanceUI();const dialog=$('#appearance-dialog');
- for(const field of ['name','skin','hair','hairColor','shirt'])$('#appearance-'+field).value=avatar[field];
- $('#appearance-message').textContent='';dialog.showModal();dialog.preview?.();
- const chosen=await new Promise(resolve=>{appearancePending=resolve});
- avatar=chosen;localStorage.setItem('little-home-avatar',JSON.stringify(avatar));localStorage.setItem(appearanceKey(),'1');fillAvatar();setCharacter(avatar);$('#game-status').textContent=`${avatar.name} 正在家裡過日子`;return avatar;
+ const result=await openAvatarEditor(avatar,avatarDesign,true);
+ avatar=outfit(result.profile);setAvatarDesign(result.design,true);localStorage.setItem('little-home-avatar',JSON.stringify(avatar));localStorage.setItem(appearanceKey(),'1');fillAvatar();setCharacter(avatar);$('#game-status').textContent=`${avatar.name} 正在家裡過日子`;return avatar;
+}
+async function editAvatar(){
+ const result=await openAvatarEditor(avatar,avatarDesign,false);if(!result)return;
+ avatar=outfit(result.profile);setAvatarDesign(result.design,true);fillAvatar();await saveAvatar();
 }
 async function saveAvatar(){
+  const appearanceURL=new URL(location.href);appearanceURL.searchParams.delete('avatar');history.replaceState(null,'',appearanceURL);
   avatar=outfit({name:$('#avatar-name').value.trim()||'小屋主',skin:$('#avatar-skin').value,hair:$('#avatar-hair').value,hairColor:$('#avatar-hair-color').value,shirt:$('#avatar-shirt').value});
   localStorage.setItem('little-home-avatar',JSON.stringify(avatar));setCharacter(avatar);
   localStorage.setItem(appearanceKey(),'1');
   if(user&&homeReady)try{await api.setDoc(api.doc(db,'homes',homeId,'profiles',user.uid),avatar)}catch{toast('造型已存本機，雲端同步失敗');return}
+  if(homeReady){try{await mutateGame(p=>{p.avatarDesign=normalizeAvatarDesign(avatarDesign)});designPending=false}catch{toast('造型已存本機，捏臉同步稍後重試');return}}
   $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;toast('角色造型已儲存');
 }
 function clearSubscriptions(){
@@ -511,7 +463,7 @@ async function subscribeHome(create=false){
     unsubscribeProfiles=api.onSnapshot(api.collection(db,'homes',homeId,'profiles'),snap=>{
       profileCache={};snap.forEach(d=>profileCache[d.id]=outfit(d.data()));syncCharacters();
     },familyError);
-    readPlayer();await mutateGame((p,meta)=>{if(!meta.monster)meta.monster={bornAt:Date.now()+3600000,hits:0}});publishPresence(true);
+    readPlayer();await mutateGame((p,meta)=>{if(designPending)p.avatarDesign=normalizeAvatarDesign(avatarDesign);if(!meta.monster)meta.monster={bornAt:Date.now()+3600000,hits:0}});designPending=false;publishPresence(true);
     const url=new URL(location.href);url.searchParams.delete('home');history.replaceState(null,'',url);
     renderTasks();
   }catch(error){
@@ -667,7 +619,7 @@ async function mutateGame(change){
 function applyMeta(meta){
  const oldItems=JSON.stringify(Object.values(gameMeta.players||{}).map(p=>p.inventory));
  gameMeta=meta||{id:GAME_META_ID,players:{}};gameMeta.players||={};player=normalizePlayer(gameMeta.players[playerId()]);
- localStorage.setItem(playerKey(),JSON.stringify(player));renderEconomy();if(oldItems!==JSON.stringify(Object.values(gameMeta.players).map(p=>p.inventory)))renderPlacements();syncCharacters();renderMonster();
+ localStorage.setItem(playerKey(),JSON.stringify(player));if(player.avatarDesign&&!designPending&&JSON.stringify(normalizeAvatarDesign(player.avatarDesign))!==JSON.stringify(avatarDesign)){setAvatarDesign(player.avatarDesign);if(character)setCharacter(avatar)}renderEconomy();if(oldItems!==JSON.stringify(Object.values(gameMeta.players).map(p=>p.inventory)))renderPlacements();syncCharacters();renderMonster();
 }
 function renderEconomy(){
  const info=levelInfo(player.xp);$('#coin-count').textContent=player.coins.toLocaleString();
@@ -742,8 +694,8 @@ function onlinePlayers(){return Object.entries(gameMeta.players||{}).filter(([id
 function syncCharacters(){
  if(!scene)return;const online=onlinePlayers(),visible=online.slice(0,5),ids=new Set(visible.map(([id])=>id));
  for(const [id,item] of characters)if(!ids.has(id)){scene.remove(item.mesh);characters.delete(id)}
- for(const [id,p] of visible){const profile=profileCache[id];if(!profile)continue;let item=characters.get(id);const signature=JSON.stringify(profile);
- if(!item||item.signature!==signature){if(item)scene.remove(item.mesh);const mesh=makeCharacter(outfit(profile));scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;
+ for(const [id,p] of visible){const profile=profileCache[id];if(!profile)continue;let item=characters.get(id);const remoteDesign=normalizeAvatarDesign(gameMeta.players[id]?.avatarDesign||{hairStyle:profile.hair});const signature=JSON.stringify([profile,remoteDesign]);
+ if(!item||item.signature!==signature){if(item)scene.remove(item.mesh);const mesh=makeCharacter(outfit(profile),remoteDesign);scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;
  }
  const list=$('#member-list');list.replaceChildren();for(const [id,v] of Object.entries(profileCache)){const row=document.createElement('p');const active=id===playerId()||online.some(([uid])=>uid===id);row.textContent=`${v.name} · ${active?'上線':'離線'}${active&&id!==playerId()&&!ids.has(id)?'（成員列）':''}`;list.append(row)}
  $('#member-count').textContent=`上線 ${online.length+1} · 屋內 ${characters.size+1}／6`;
@@ -761,6 +713,7 @@ function animateOthers(dt,now){
  if(item.remotePath?.length&&item.remoteIndex<item.remotePath.length){const q=item.remotePath[item.remoteIndex],dx=q[0]-item.mesh.position.x,dz=q[1]-item.mesh.position.z,d=Math.hypot(dx,dz);if(d<.035){walkStep(item.mesh,q[0],q[1]);item.remoteIndex++;}else{const move=Math.min(d,dt*2);walkStep(item.mesh,item.mesh.position.x+dx/d*move,item.mesh.position.z+dz/d*move)}item.mesh.position.y=p.y||.07}else if(!crossesWall([item.mesh.position.x,item.mesh.position.z],[p.x,p.z]))item.mesh.position.lerp(new T.Vector3(p.x,p.y||.07,p.z),Math.min(1,dt*3));item.mesh.rotation.y=p.angle||0;
  body.rotation.x=p.pose==='lie'?-Math.PI/2:p.pose==='sit'?(p.approach?.[0]===.88?0:-.23):0;body.rotation.z=0;body.position.y=p.pose==='walk'?Math.abs(Math.sin(now*.008))*.02:0;
  for(const [i,limb] of [...item.mesh.userData.arms,...item.mesh.userData.legs].entries())limb.rotation.x=p.pose==='walk'?Math.sin(now*.009+i%2*Math.PI)*.3:p.pose==='work'&&i<2?-.75:p.pose==='sit'&&i>=2?-.85:0;
+ item.mesh.userData.updatePose?.(p.pose);
  }
 }
 function renderMonster(){
@@ -807,6 +760,8 @@ function setupGamePages(){
   $('#game-close').onclick=()=>$('#game-dialog').close();
   $('#game-dialog').onclick=e=>{if(e.target!==$('#game-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()};
   $('#avatar-save').onclick=saveAvatar;
+  const editButton=document.createElement('button');editButton.textContent='選範本與捏造型';editButton.className='game-primary';editButton.onclick=editAvatar;$('#avatar-save').before(editButton);
+  const dadPresetButton=document.createElement('button');dadPresetButton.id='avatar-pixel-dad';dadPresetButton.textContent='爸爸像素造型 · 白T牛仔褲';dadPresetButton.onclick=()=>{setAvatarDesign({...avatarDesign,glasses:true,hairStyle:'korean'},true);for(const [field,value]of Object.entries(dadWhitePreset))$('#avatar-'+(field==='hairColor'?'hair-color':field)).value=value;saveAvatar()};$('#avatar-save').after(dadPresetButton);
   document.querySelectorAll('[data-pose]').forEach(b=>b.onclick=()=>setPose(b.dataset.pose));
   $('#task-add').onclick=addTask;
   $('#home-create').onclick=()=>subscribeHome(true);
@@ -828,6 +783,7 @@ function setupGamePages(){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
