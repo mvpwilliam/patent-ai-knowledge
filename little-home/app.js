@@ -170,14 +170,14 @@ function slidingWindow(parent,width,height,y,name,fixedFraction=0){
   for(let i=0;i<2;i++){
     const leaf=new T.Group();leaf.name=name+'-leaf-'+i;leaf.position.z=left+leafWidth*(i+.5);g.add(leaf);
     const track=i===0?-.027:.027;
-    box(track,y,0,.018,height-.045,leafWidth-.035,balconyPane,0,leaf);
+    box(track,y,0,.018,height-.02,leafWidth-.02,balconyPane,0,leaf);
     for(const z of [-leafWidth/2,leafWidth/2])box(track,y,z,.04,height,.025,'#43494a',0,leaf);
     for(const yy of [y-height/2,y+height/2])box(track,yy,0,.04,.025,leafWidth,'#43494a',0,leaf);
     box(track-.028,y,i===0?leafWidth/2-.045:-leafWidth/2+.045,.025,.14,.018,'#43494a',.003,leaf);
     leaves.push(leaf);
   }
   if(fixedFraction){
-    named(box(0,y,(split+right)/2,.018,height-.045,right-split-.035,balconyPane,0,g),name+'-fixed-pane');
+    named(box(0,y,(split+right)/2,.018,height-.02,right-split-.02,balconyPane,0,g),name+'-fixed-pane');
     box(0,y,split,.05,height,.03,'#43494a',0,g);
   }
   for(const z of [left,right])box(0,y,z,.065,height+.025,.035,'#43494a',0,g);
@@ -187,6 +187,10 @@ function slidingWindow(parent,width,height,y,name,fixedFraction=0){
   slidingWindows.push(g);return g;
 }
 slidingWindow(balconyEastWindow,BALCONY_LENGTH-.15,.82,1.865,'balcony-sliding-window',.20);
+// Close the installation margins between the window frame and end walls.
+for(const [i,sign] of [-1,1].entries())
+  named(box(0,1.865,sign*(BALCONY_LENGTH/2-.04),.13,.90,.08,C.wall,0,balconyEastWindow),'balcony-window-end-jamb-'+i);
+named(box(0,2.295,0,.07,.05,BALCONY_LENGTH-.15,'#43494a',0,balconyEastWindow),'balcony-window-header-seal');
 walls.push(balconyEastWindow);
 // The kitchen backsplash wall and the entrance enclosure reach the ceiling.
 finishSection('exterior-before-entry');
