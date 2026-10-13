@@ -33,7 +33,7 @@ export function walkable(x,z){
  const inMasterEntry=inX(3.50,4.40)&&z>=3.54&&z<=4.72;
  const inChild=inX(2.82,5.68)&&z>=5.69&&z<=8.10;
  const inChildEntry=inX(3.48,4.42)&&z>=5.35&&z<=5.69;
- const inBalcony=inX(6.02,6.96)&&z>=7.23&&z<=9.00;
+ const inBalcony=inX(6.02,7.59)&&z>=7.23&&z<=9.00;
  const inBalconyDoor=inX(5.68,6.08)&&z>=8.40&&z<=8.96;
  const inEntry=x>=entryZero+radius&&x<=scaleX(.7)&&z>=8.47&&z<=9.28;
  if(!(inLiving||inHall||inBath||inDining||inKitchen||inMaster||inMasterEntry||inChild||inChildEntry||inBalcony||inBalconyDoor||inEntry))return false;
