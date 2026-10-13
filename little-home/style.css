@@ -63,4 +63,12 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 .joke-bubble p{font-size:12px;line-height:1.7;font-weight:400;letter-spacing:.035em;color:#536358}
 #monster-button{display:block;width:100%;font-size:12px;font-weight:500;letter-spacing:.045em;line-height:1.6;min-height:44px;border:1px solid #d3decd;border-radius:12px;padding:11px 14px;margin:12px 0 0;background:#e8eee1;color:#405b4d;font-variant-numeric:tabular-nums}
 #monster-button[hidden]{display:none}
+#game-dialog #account-open{background:#405f50;color:#fff;border:1px solid #405f50;border-radius:12px;min-height:44px;padding:10px 16px;font-size:12px;font-weight:500;letter-spacing:.045em;margin:0}
+#game-dialog #account-open:hover{background:#344f42}
+#login-dialog h2{font-size:20px;font-weight:600;letter-spacing:.045em;line-height:1.5}
+#login-message{font-size:12px;line-height:1.85;color:#758278;margin:14px 0 18px}
+#login-dialog button{border-radius:12px;min-height:46px;padding:11px 16px;font-size:13px;font-weight:500;letter-spacing:.035em;background:#e9eee4;border:1px solid #dce4d6}
+#login-dialog #login-google{background:#405f50;color:#fff;border-color:#405f50}
+#login-dialog #login-existing{background:transparent;font-size:11px;color:#71816f;border-color:transparent}
+#login-dialog button:disabled{opacity:.55;cursor:wait}
 @media(max-width:700px){#game-dialog{width:92vw;height:70dvh;max-height:calc(100dvh - 32px)}#game-dialog .dialog-head{padding:14px 16px 10px}#game-dialog .dialog-head h2{font-size:19px}.game-dialog-body{padding:4px 16px 14px}.game-tabs{padding:0 14px 10px}.joke-bubble p{font-size:11px}.game-tools button{font-weight:500;letter-spacing:.035em}.game-dialog-foot{padding:10px 14px}}
