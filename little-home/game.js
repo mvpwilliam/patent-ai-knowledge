@@ -400,9 +400,52 @@ function fillAvatar(){
   $('#avatar-name').value=avatar.name;$('#avatar-skin').value=avatar.skin;
   $('#avatar-hair').value=avatar.hair;$('#avatar-hair-color').value=avatar.hairColor;$('#avatar-shirt').value=avatar.shirt;
 }
+const appearanceKey=()=>`little-home-appearance-${user?.uid||localActorId}`;
+let appearancePending=null;
+function setupAppearanceUI(){
+ if($('#appearance-dialog'))return;
+ const dialog=document.createElement('dialog');dialog.id='appearance-dialog';dialog.className='game-dialog compact-dialog';
+ const title=document.createElement('h2');title.textContent='建立你的角色';
+ const intro=document.createElement('p');intro.textContent='取個名字、選好造型，再一起回家。之後也能隨時修改。';
+ const canvas=document.createElement('canvas');canvas.id='appearance-preview';canvas.width=220;canvas.height=260;canvas.style.cssText='display:block;width:180px;height:213px;margin:0 auto 12px;border-radius:18px;background:#e5ebe6';
+ dialog.append(title,intro,canvas);
+ for(const [field,label,options] of [['skin','膚色',[['#e9b990','暖米色'],['#f4d3b0','淺膚色'],['#c78661','小麥色'],['#916044','深棕色']]],['hair','髮型',[['korean','韓系分線瀏海'],['long','長髮'],['cap','帽子']]],['name','名字',null],['hairColor','髮色',null],['shirt','衣服顏色',null]]){
+  const wrap=document.createElement('label');wrap.textContent=label;const input=document.createElement(options?'select':'input');input.id='appearance-'+field;
+  if(options)for(const [value,text] of options){const option=document.createElement('option');option.value=value;option.textContent=text;input.append(option)}
+  else if(field==='name'){input.type='text';input.maxLength=12;input.placeholder='你的暱稱'}else input.type='color';
+  input.value=avatar[field];wrap.append(input);dialog.append(wrap);
+ }
+ const message=document.createElement('p');message.id='appearance-message';message.setAttribute('role','status');
+ const save=document.createElement('button');save.id='appearance-save';save.className='game-primary';save.textContent='完成造型，進入小屋';save.style.width='100%';dialog.append(message,save);document.body.append(dialog);
+ let renderer=null,portrait=null;
+ const draft=()=>outfit({name:$('#appearance-name').value.trim(),skin:$('#appearance-skin').value,hair:$('#appearance-hair').value,hairColor:$('#appearance-hairColor').value,shirt:$('#appearance-shirt').value});
+ const preview=()=>{
+  try{
+   if(!renderer){renderer=new T.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.setSize(220,260,false)}
+   if(portrait)portrait.traverse(n=>{n.geometry?.dispose();n.material?.dispose()});
+   const s=new T.Scene();s.background=new T.Color('#e5ebe6');s.add(new T.HemisphereLight('#ffffff','#708b78',3));portrait=makeCharacter(draft());s.add(portrait);
+   const camera=new T.PerspectiveCamera(37,220/260,.1,10);camera.position.set(0,.72,2.7);camera.lookAt(0,.52,0);renderer.render(s,camera);
+  }catch{canvas.hidden=true}
+ };
+ for(const field of ['name','skin','hair','hairColor','shirt'])$('#appearance-'+field).oninput=preview;
+ save.onclick=()=>{
+  if(!$('#appearance-name').value.trim()){message.textContent='請先輸入你的名字。';$('#appearance-name').focus();return}
+  const result=draft();appearancePending?.(result);appearancePending=null;dialog.close();
+ };
+ dialog.addEventListener('cancel',e=>e.preventDefault());dialog.preview=preview;
+}
+async function ensureAppearance(){
+ if(localStorage.getItem(appearanceKey()))return avatar;
+ setupAppearanceUI();const dialog=$('#appearance-dialog');
+ for(const field of ['name','skin','hair','hairColor','shirt'])$('#appearance-'+field).value=avatar[field];
+ $('#appearance-message').textContent='';dialog.showModal();dialog.preview?.();
+ const chosen=await new Promise(resolve=>{appearancePending=resolve});
+ avatar=chosen;localStorage.setItem('little-home-avatar',JSON.stringify(avatar));localStorage.setItem(appearanceKey(),'1');fillAvatar();setCharacter(avatar);$('#game-status').textContent=`${avatar.name} 正在家裡過日子`;return avatar;
+}
 async function saveAvatar(){
   avatar=outfit({name:$('#avatar-name').value.trim()||'小屋主',skin:$('#avatar-skin').value,hair:$('#avatar-hair').value,hairColor:$('#avatar-hair-color').value,shirt:$('#avatar-shirt').value});
   localStorage.setItem('little-home-avatar',JSON.stringify(avatar));setCharacter(avatar);
+  localStorage.setItem(appearanceKey(),'1');
   if(user&&homeReady)try{await api.setDoc(api.doc(db,'homes',homeId,'profiles',user.uid),avatar)}catch{toast('造型已存本機，雲端同步失敗');return}
   $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;toast('角色造型已儲存');
 }
@@ -449,7 +492,10 @@ async function subscribeHome(create=false){
     if(profile.exists()){
       avatar=outfit(profile.data());localStorage.setItem('little-home-avatar',JSON.stringify(avatar));
       fillAvatar();setCharacter(avatar);
-    }else await api.setDoc(profileRef,outfit(avatar));
+      const untouchedDefault=['玩家','小屋主'].includes(avatar.name)&&avatar.skin==='#e9b990'&&avatar.hair==='korean'&&avatar.hairColor==='#4d3834'&&avatar.shirt==='#7899a0';
+      if(untouchedDefault&&!localStorage.getItem(appearanceKey())){await ensureAppearance();await api.setDoc(profileRef,outfit(avatar))}
+      localStorage.setItem(appearanceKey(),'1');
+    }else{await ensureAppearance();await api.setDoc(profileRef,outfit(avatar))}
     const tasksRef=api.doc(db,'homes',homeId,'settings','tasks');
     const savedTasks=await api.getDoc(tasksRef);
     if(!savedTasks.exists())await api.setDoc(tasksRef,{items:create?tasks:defaults});
@@ -505,7 +551,7 @@ function setupAccountUI(){
  open.onclick=()=>{accountStatus();dialog.showModal()};
  $('#login-guest').onclick=async()=>{
   if(authBusy)return;authBusy=true;accountStatus();
-  try{if(auth&&!auth.currentUser)await api.signInAnonymously(auth);localStorage.setItem('little-home-login-choice','guest');dialog.close()}
+  try{if(auth&&!auth.currentUser)await api.signInAnonymously(auth);localStorage.setItem('little-home-login-choice','guest');dialog.close();if(!auth)await ensureAppearance()}
    catch(e){accountError(e)}finally{authBusy=false;$('#login-guest').disabled=false;$('#login-google').disabled=!auth;$('#login-existing').disabled=!auth}
  };
  const google=async existing=>{
