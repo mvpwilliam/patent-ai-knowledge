@@ -137,12 +137,13 @@ finishSection('foundation');
 const walls=[];function wall(x,z,w,d,h=1.15){let g=new T.Group();g.position.set(x,0,z);root.add(g);box(0,h/2,0,w,h,d,C.wall,.018,g);box(0,h+.025,0,w+.045,.05,d+.045,C.trim,.012,g);walls.push(g);return g}
 // Two north-facing windows each have a sill and a full-height header. The
 // old continuous 1.75 m wall covered the glazing but left the top open.
-for(const [a,b] of [[-.075,.42],[2.92,3.645],[6.195,BATH_EXTERIOR_X+.005]])wall((a+b)/2,-.07,b-a,.15,2.6);
-for(const [a,b] of [[.42,2.92],[3.645,6.195]]){
+for(const [a,b] of [[-.075,1.0],[3.05,3.645],[6.195,BATH_EXTERIOR_X+.005]])wall((a+b)/2,-.07,b-a,.15,2.6);
+for(const [a,b] of [[1.0,3.05],[3.645,6.195]]){
   const x=(a+b)/2,w=b-a;
-  wall(x,-.07,w,.15,.30);
+  const living=a===1.0,sill=living?.65:.30,top=living?2.20:1.90;
+  wall(x,-.07,w,.15,sill);
   const header=new T.Group();header.position.set(x,0,-.07);root.add(header);
-  box(0,2.25,0,w,.70,.15,C.wall,.018,header);
+  box(0,(top+2.6)/2,0,w,2.6-top,.15,C.wall,.018,header);
   box(0,2.625,0,w+.045,.05,.195,C.trim,.012,header);
   walls.push(header);
 }
@@ -343,30 +344,41 @@ doorFrames.push(balconyDoor);
 const curtains=new T.Group();curtains.name='living-white-sheer';root.add(curtains);
 const sheerMaterial=new T.MeshStandardMaterial({color:'#ffffff',transparent:true,opacity:.52,roughness:1,depthWrite:false,side:T.DoubleSide});
 const masterBlinds=new T.Group();masterBlinds.name='master-light-grey-blinds';root.add(masterBlinds);
+let livingFabric,blindRaised=false,coverProgress=0,blindProgress=0;
+const blindSlats=[],blindCords=[];curtains.userData.covering='sheer';masterBlinds.userData.covering='blinds';
 function windowAt(x,w,living){
-  box(x,1.1,.015,w,1.6,.075,'#607779',.015);
+  if(!living){box(x,1.1,.015,w,1.6,.075,'#607779',.015);
   box(x,1.12,.062,w-.12,1.38,.018,new T.MeshStandardMaterial({color:'#b9d3d1',roughness:.25,emissive:'#9dbabc',emissiveIntensity:.2}));
-  box(x,1.13,.083,.035,1.38,.025,C.dark);box(x,.53,.083,w,.035,.025,C.dark);
+  box(x,1.13,.083,.035,1.38,.025,C.dark);box(x,.53,.083,w,.035,.025,C.dark)}
   if(living){
-    // Connected pleated fabric instead of opaque rods.
+    // Photo proportions: upper 70% sliding, lower 30% fixed, broad left reveal.
+    const sill=.65,top=2.20,divider=sill+(top-sill)*.30;
+    const g=new T.Group();g.name='living-window';g.position.set(x,0,.015);root.add(g);
+    for(const xx of [-w/2,w/2])box(xx,(sill+top)/2,0,.035,top-sill,.075,'#242c2d',0,g);
+    for(const yy of [sill,divider,top])box(0,yy,0,w,.035,.075,'#242c2d',0,g);
+    named(box(0,(sill+divider)/2,0,w-.035,divider-sill-.025,.018,balconyPane,0,g),'living-lower-fixed-pane');
+    const upper=new T.Group();upper.rotation.y=Math.PI/2;g.add(upper);
+    slidingWindow(upper,w-.035,top-divider-.035,(divider+top)/2,'living-upper-sliding-window');
+    // Connected pleated fabric gathers at the right edge.
+
     const vertices=[],indices=[],folds=56;
     for(let i=0;i<=folds;i++){
       const xx=x-w/2+i*w/folds,zz=.18+.035*Math.cos(i*Math.PI/2);
-      vertices.push(xx,.23,zz,xx,1.91,zz);
+      vertices.push(xx,.12,zz,xx,2.24,zz);
       if(i<folds){const n=i*2;indices.push(n,n+1,n+2,n+1,n+3,n+2)}
     }
     const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geo.setIndex(indices);geo.computeVertexNormals();
-    const fabric=new T.Mesh(geo,sheerMaterial);fabric.name='living-sheer-fabric';curtains.add(fabric);
-    box(x,1.95,.16,w+.14,.06,.1,'#ffffff',.02);
+    const fabric=new T.Mesh(geo,sheerMaterial);fabric.name='living-sheer-fabric';curtains.add(fabric);livingFabric=fabric;fabric.userData.rightEdge=x+w/2;
+    box(x,2.29,.16,w+.14,.06,.1,'#ffffff',.02);
   }else{
     box(x,1.88,.17,w,.055,.10,'#c8cace',.008,masterBlinds);
     for(let i=0;i<25;i++){
-      const slat=box(x,.44+i*.056,.18,w-.055,.014,.065,'#c8cace',.004,masterBlinds);slat.rotation.x=-.25;
+      const slat=box(x,.44+i*.056,.18,w-.055,.014,.065,'#c8cace',.004,masterBlinds);slat.rotation.x=-.25;slat.userData.loweredY=slat.position.y;slat.userData.raisedY=1.65+i*.008;blindSlats.push(slat);
     }
-    for(const xx of [x-w*.3,x+w*.3])box(xx,1.13,.205,.008,1.42,.006,'#b9bdc1',0,masterBlinds);
+    for(const xx of [x-w*.3,x+w*.3])blindCords.push(box(xx,1.13,.205,.008,1.42,.006,'#b9bdc1',0,masterBlinds));
   }
 }
-windowAt(1.67,2.5,true);windowAt(4.92,2.55,false);
+windowAt(2.025,2.05,true);windowAt(4.92,2.55,false);
 finishSection('balcony-door-and-north-windows');
 // Living area: the continuous pale oak remains visible around the seating.
 box(.23,.4,2.25,.44,.42,3.2,C.navy,.035);box(.465,.42,1.2,.025,.26,.75,C.white,.008);box(.465,.42,3.25,.025,.26,.75,C.white,.008);box(.465,.42,2.23,.03,.16,.95,C.dark);box(.24,.64,2.28,.43,.045,3.32,C.navy,.014);
@@ -419,8 +431,7 @@ for(const yy of [.22,.49,.71]){box(.5,yy,.31,.30,.21,.025,'#b5aa91',.009,peninsu
 finishSection('dining-and-island','exact');
 // Keep the second-bedroom boundary clear of the former tall wardrobe block.
 // Master bedroom: bed only, with the headboard against the exterior wall.
-box(5.31,.08,1.64,2.28,.06,2.6,'#c7cbbb',.06);
-finishSection('master-rug');
+// No rug underneath the master bed; leave the wood floor exposed.
 box(6.34,.54,1.64,.16,.94,2.05,'#b0ad98',.08);
 box(5.44,.29,1.64,1.85,.35,1.94,C.wood,.045);
 box(5.44,.52,1.64,1.90,.22,1.95,C.white,.08);
@@ -743,7 +754,17 @@ Object.values(rooms).forEach(r=>r.pos[0]=scaleX(r.pos[0]));
 rooms.entry.desc='125 公分玄關櫃、上中下各三片白色面板與開放展示層。';
 rooms.bath.desc='深灰石紋牆磚與淺色磚縫，L 形乾濕分離玻璃門可向內開啟。';
 target.x=scaleX(target.x);desiredTarget.x=scaleX(desiredTarget.x);
-let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台',()=>{desiredTarget.set(scaleX(5.76),1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='bath'){action(showerDoor.userData.door.open?'關閉淋浴門':'推開淋浴門',()=>{toggleShowerDoor();selectRoom('bath')});action(bathWindow.userData.door.open?'關閉浴室窗戶':'打開浴室窗戶',()=>{toggleBathWindow();selectRoom('bath')})}if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{showNews(!tv);selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'拉開窗簾':'合上窗簾',()=>{curtainClosed=!curtainClosed;curtains.visible=curtainClosed;selectRoom('living');toast(curtainClosed?'窗簾合上了':'陽光進來了')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
+let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='kitchen')action('從室內看陽台',()=>{desiredTarget.set(scaleX(5.76),1.35,8.66);desiredDist=3.35;theta=-1.48;phi=1.48;topView=false;$('#top').setAttribute('aria-pressed',false)});if(k==='bath'){action(showerDoor.userData.door.open?'關閉淋浴門':'推開淋浴門',()=>{toggleShowerDoor();selectRoom('bath')});action(bathWindow.userData.door.open?'關閉浴室窗戶':'打開浴室窗戶',()=>{toggleBathWindow();selectRoom('bath')})}if(k==='main')action(blindRaised?'放下百葉窗':'拉起百葉窗',()=>{toggleBlinds();selectRoom('main')});if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{showNews(!tv);selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'紗簾往右收':'展開紗簾',()=>{toggleSheer();selectRoom('living')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
+function toggleSheer(){curtainClosed=!curtainClosed;toast(curtainClosed?'紗簾展開了':'紗簾往右收起了')}
+function toggleBlinds(){blindRaised=!blindRaised;toast(blindRaised?'百葉窗拉起了':'百葉窗放下了')}
+function updateCoverings(){
+  coverProgress+=((curtainClosed?0:1)-coverProgress)*.12;
+  livingFabric.scale.x=1-.88*coverProgress;
+  livingFabric.position.x=livingFabric.userData.rightEdge*(1-livingFabric.scale.x);
+  blindProgress+=((blindRaised?1:0)-blindProgress)*.12;
+  for(const slat of blindSlats)slat.position.y=slat.userData.loweredY+(slat.userData.raisedY-slat.userData.loweredY)*blindProgress;
+  for(const cord of blindCords){cord.scale.y=1-.86*blindProgress;cord.position.y=1.84-.71*cord.scale.y}
+}
 function toggleBathWindow(){const state=bathWindow.userData.door;state.open=!state.open;state.target=state.open?state.openAngle:state.closedAngle;toast(state.open?'浴室窗戶打開了':'浴室窗戶關上了')}
 function toggleShowerDoor(){const state=showerDoor.userData.door;state.open=!state.open;state.target=state.open?state.openAngle:state.closedAngle;toast(state.open?'淋浴門向內推開了':'淋浴門關上了')}
 document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#walls').onclick=()=>{wallLow=!wallLow;walls.forEach(w=>w.scale.y=wallLow?.32:1);doorFrames.forEach(g=>g.visible=!wallLow);$('#walls').setAttribute('aria-pressed',wallLow);$('#walls span').textContent=wallLow?'低牆':'完整牆';toast(wallLow?'低牆模式 · 查看室內擺設':'完整牆模式 · 房間隔間 2.6 公尺')};$('#top').onclick=()=>{topView=!topView;phi=topView?.045:.76;$('#top').setAttribute('aria-pressed',topView)};$('#reset').onclick=()=>{selectRoom('all');theta=.77;phi=.76;topView=false;$('#top').setAttribute('aria-pressed',false)};$('#plus').onclick=()=>desiredDist=Math.max(5,desiredDist*.86);$('#minus').onclick=()=>desiredDist=Math.min(30,desiredDist/ .86);
@@ -789,11 +810,12 @@ function toggleDoorAt(e){
   const rect=canvas.getBoundingClientRect();
   doorPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
   doorRay.setFromCamera(doorPointer,camera);
-  const hits=doorRay.intersectObjects([...interiorDoors,showerDoor,bathWindow,bathWindowHit,...slidingWindows],true);
+  const hits=doorRay.intersectObjects([...interiorDoors,showerDoor,bathWindow,bathWindowHit,...slidingWindows,curtains,masterBlinds],true);
   if(!hits.length)return;
   let door=hits[0].object;
-  while(door&&!door.userData.door&&!door.userData.slider&&!door.userData.windowTarget)door=door.parent;
+  while(door&&!door.userData.door&&!door.userData.slider&&!door.userData.windowTarget&&!door.userData.covering)door=door.parent;
   if(!door)return;
+  if(door.userData.covering){if(door.userData.covering==='sheer')toggleSheer();else toggleBlinds();if(current==='living'||current==='main')selectRoom(current);return}
   if(door.userData.slider){const state=door.userData.slider;const z=door.worldToLocal(hits[0].point.clone()).z;if(z>state.split)return;const i=Math.abs(z-state.origins[0])<=Math.abs(z-state.origins[1])?0:1;state.opens[i]=!state.opens[i];toast(state.opens[i]?'橫拉窗打開了':'橫拉窗關上了');return}
   if(door===bathWindow||door.userData.windowTarget===bathWindow){toggleBathWindow();if(current==='bath')selectRoom('bath');return}
   if(door===showerDoor){toggleShowerDoor();if(current==='bath')selectRoom('bath');return}
@@ -819,9 +841,9 @@ function release(e){
 }
 canvas.addEventListener('dblclick',e=>e.preventDefault());canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
-let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
+let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);target.lerp(desiredTarget,.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?1.37:1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}updateCoverings();window.homeGameUpdate?.(performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,
+window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,updateCoverings,
   setBalconyDoor(){},
   updateDoorsAt(x,z){
     const centers=[[3.90,4.50],[4.45,5.025],[3.95,5.55]];
