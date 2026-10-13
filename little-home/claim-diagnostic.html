@@ -2,7 +2,7 @@
 import {firebaseConfig} from './firebase-config.js';
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {getAuth,signInAnonymously,browserLocalPersistence,setPersistence} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import {getFirestore,doc,getDoc,runTransaction,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {getFirestore,doc,getDoc,setDoc,runTransaction,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 const out=document.querySelector('#out');const log=(label,value)=>out.textContent+=label+': '+value+'\n';
 document.querySelector('#run').onclick=async()=>{
 out.textContent='';const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
@@ -12,9 +12,9 @@ try{
  const profile=await getDoc(doc(db,'homes',homeId,'profiles',user.uid));log('profile exists',profile.exists());
  const home=await getDoc(doc(db,'homes',homeId));log('home exists',home.exists());
  for(const [label,day] of [['half-hour',Math.floor(Date.now()/1800000)],['hour',Math.floor(Date.now()/3600000)]]){
-  const ref=doc(db,'homes',homeId,'days',String(day),'claims','diagnostic-'+label);
+  const ref=doc(db,'homes',homeId,'days',String(day),'claims','diagnostic-'+label);try{const empty=await getDoc(ref);log(label+' get',empty.exists()?'exists':'missing allowed')}catch(e){log(label+' get',e.code+' '+e.message)}
   try{await runTransaction(db,async tx=>{const old=await tx.get(ref);if(!old.exists())tx.set(ref,{uid:user.uid,name:'測試',at:serverTimestamp()})});log(label,'OK')}
-  catch(e){log(label,e.code+' '+e.message)}
+  catch(e){log(label,e.code+' '+e.message)}\n  try{await setDoc(doc(db,'homes',homeId,'days',String(day),'claims','diagnostic-direct-'+label),{uid:user.uid,name:'測試',at:serverTimestamp()});log(label+' direct','OK')}catch(e){log(label+' direct',e.code+' '+e.message)}
  }
 }catch(e){log('setup',e.code+' '+e.message)}
 };</script></body></html>
