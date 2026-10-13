@@ -61,16 +61,17 @@ function woodBoards(x,z,w,d,alongZ=true,y=.041){
       if(hi-lo<.02)continue;
       const a=s0+sw/2,b=(lo+hi)/2;
       const p=alongZ?box(x+a,y,z+b,sw-.004,.008,hi-lo-.005,woodShades[(i*3+j)%woodShades.length]):box(x+b,y,z+a,hi-lo-.005,.008,sw-.004,woodShades[(i*3+j)%woodShades.length]);
+      p.name='wood-plank';p.castShadow=false;
       // Subtle lengthwise grain follows each plank without dark stripes.
       const grain=(i*7+j*11)%5;
-      if(grain<3){if(alongZ)box(x+a+(grain-1)*.035,y+.005,z+b,.003,.001,Math.max(.05,(hi-lo)*.55),'#dac9ab');else box(x+b,y+.005,z+a+(grain-1)*.035,Math.max(.05,(hi-lo)*.55),.001,.003,'#dac9ab')}
+      if(grain<3){const line=alongZ?box(x+a+(grain-1)*.035,y+.005,z+b,.003,.001,Math.max(.05,(hi-lo)*.55),'#dac9ab'):box(x+b,y+.005,z+a+(grain-1)*.035,Math.max(.05,(hi-lo)*.55),.001,.003,'#dac9ab');line.name='wood-grain';line.castShadow=false}
     }
   }
 }
 function floor(x,z,w,d,color=C.floor,finish='wood'){
-  box(x,-.18,z,w,.32,d,'#c9baa0',.04);const surface=box(x,.005,z,w,.06,d,color);
+  box(x,-.18,z,w,.32,d,'#c9baa0',.04).castShadow=false;const surface=box(x,.005,z,w,.06,d,color);surface.castShadow=false;
   if(finish==='wood')woodBoards(x,z,w,d,true);
-  else{for(let xx=x-w/2+.60;xx<x+w/2;xx+=.60)box(xx,.038,z,.006,.002,d,'#77756e');for(let zz=z-d/2+.60;zz<z+d/2;zz+=.60)box(x,.038,zz,w,.002,.006,'#77756e')}
+  else{for(let xx=x-w/2+.60;xx<x+w/2;xx+=.60)box(xx,.038,z,.006,.002,d,'#77756e').castShadow=false;for(let zz=z-d/2+.60;zz<z+d/2;zz+=.60)box(x,.038,zz,w,.002,.006,'#77756e').castShadow=false}
   return surface;
 }
 // Wood continues beneath the diagonal transition. Its former rectangular
