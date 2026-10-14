@@ -4,8 +4,9 @@ import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDyn
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
 import {createPixelDad,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=block-style-2';
 import {openAvatarEditor} from './avatar-editor.js?v=106';
-import {createHouseNPC} from './house-npc.js?v=103';
+import {createHouseNPC} from './house-npc.js?v=107';
 import {createGodzilla} from './godzilla.js?v=103';
+import {bedSlots,sameBed} from './bed-slots.js?v=107';
 const PLAYER_SCALE=.9;
 
 let avatarDesign=normalizeAvatarDesign({}),designPending=false;
@@ -106,12 +107,42 @@ function leaveRest(){
  if(restExit){character.position.set(restExit[0],.07,restExit[1]);restExit=null}
  character.position.y=.07;
 }
+let currentBed=null,movementRequest=0,floorPose=false,poseLift=0;
+function releaseBed(){currentBed=null;if(character)character.userData.bedReservation=null}
 function setPose(next){
  if(activity)return toast('先完成目前的家事');if(!character)return;
- if(next==='sit')return moveTo(null,'sofa');if(next==='lie')return moveTo(null,'mainBed');
- cancelHandAction();if(pose==='sit')window.homeScene?.showNews(false);leaveRest();travel=null;
- pose='stand';poseStarted=performance.now();document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===pose));toast('在原地站著');
+ movementRequest++;cancelHandAction();travel=null;
+ if(pose==='sit')window.homeScene?.showNews(false);
+ // Keep the root at the clicked location, including when already on furniture.
+ pose=next;floorPose=true;poseLift=0;poseStarted=performance.now();
+ const body=character.userData.body;body.position.y=0;body.rotation.set(next==='lie'?-Math.PI/2:0,0,0);
+ for(const limb of [...character.userData.arms,...character.userData.legs])limb.rotation.set(0,0,0);
+ character.userData.updatePose?.(next);character.updateMatrixWorld(true);
+ if(next!=='stand'){const bounds=new T.Box3().setFromObject(character);poseLift=Math.max(0,(character.position.y-bounds.min.y)/character.scale.y);body.position.y=poseLift}
+ if(next==='stand'||currentBed&&(character.position.y<.5||Math.hypot(character.position.x-currentBed.target[0],character.position.z-currentBed.target[2])>.2))releaseBed();
+ document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===pose));publishPresence(true);
 }
+function bedOccupied(slot,meta=gameMeta){
+ const now=Date.now();
+ for(const [id,p] of Object.entries(meta.players||{})){
+  if(id===playerId())continue;
+  if(p.bedReservation&&now-p.bedReservation.at<45000&&sameBed(slot,p.bedReservation))return true;
+  const v=p.presence;if(v?.online&&now-v.at<45000&&['lie','sit','stand'].includes(v.pose)&&Math.hypot(v.x-slot.target[0],v.z-slot.target[2])<.36&&v.y>.5)return true;
+ }
+ const npc=houseNPC;
+ return !!(npc&&((npc.state!=='wait'&&npc.state!=='return'&&sameBed(slot,npc.action?.bed))||Math.hypot(npc.character.position.x-slot.target[0],npc.character.position.z-slot.target[2])<.36&&npc.character.position.y>.5));
+}
+async function moveToBed(point,kind){
+ if(activity||!character)return toast('先完成目前的家事');
+ const request=++movementRequest,slots=bedSlots(kind),from=restExit||[character.position.x,character.position.z];
+ const path=findPath(from,slots[0].exit);if(!path.length||Math.hypot(path.at(-1)[0]-slots[0].exit[0],path.at(-1)[1]-slots[0].exit[1])>.45)return toast('這裡目前走不到');
+ const destination=point||from;slots.sort((a,b)=>Math.hypot(a.target[0]-destination[0],a.target[2]-destination[1])-Math.hypot(b.target[0]-destination[0],b.target[2]-destination[1]));
+ let chosen;
+ try{await mutateGame((p,meta)=>{chosen=slots.find(slot=>!bedOccupied(slot,meta));if(!chosen)throw new Error('這張床已經躺滿了');p.bedReservation={kind,index:chosen.index,at:Date.now()}})}catch(e){toast(e.message||'躺位暫時無法預約');return}
+ if(request!==movementRequest){publishPresence(true);return}
+ moveTo(point,kind,chosen);
+}
+
 function walkStep(mesh,x,z){
  const from=[mesh.position.x,mesh.position.z];if(!canTraverse(from,[x,z]))return false;mesh.position.x=x;mesh.position.z=z;return true;
 }
@@ -167,14 +198,15 @@ function approachTarget(point,onArrival=null,label='走到旁邊',maxRadius=.9){
  candidates.sort((a,b)=>a.score-b.score);let path=null;
  for(const c of candidates){const p=findPath(from,c.point);if(p.length&&Math.hypot(p.at(-1)[0]-c.point[0],p.at(-1)[1]-c.point[1])<.16){path=p;break}}
  if(!path){toast('目前走不到目標旁邊');return false}
- cancelHandAction();if(pose==='sit')window.homeScene?.showNews(false);leaveRest();restExit=null;pose='walk';
+ movementRequest++;releaseBed();floorPose=false;poseLift=0;cancelHandAction();if(pose==='sit')window.homeScene?.showNews(false);leaveRest();restExit=null;pose='walk';
  travel={kind:'interact',phase:'run',path,index:0,exit:path.at(-1),target:point,onArrival};
  document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));toast(`${avatar.name}${label}`);return true;
 }
 window.homeGameApproach=approachTarget;
-function moveTo(point,kind='walk'){
+function moveTo(point,kind='walk',bedSlot=null){
   if(activity)return toast('先完成目前的家事');
-  if(!character)return;cancelHandAction();
+  if(!character)return;if((kind==='mainBed'||kind==='childBed')&&!bedSlot)return moveToBed(point,kind);
+  movementRequest++;releaseBed();currentBed=bedSlot;if(character)character.userData.bedReservation=bedSlot;floorPose=false;poseLift=0;cancelHandAction();
   if(kind.startsWith('diningChair')){const z=kind==='diningChair0'?5.94:6.63;if(onlinePlayers().some(([,p])=>p.presence.pose==='sit'&&Math.hypot(p.presence.x-1.41,p.presence.z-z)<.25))return toast('這張椅子有人坐，請選另一張')}
   if(pose==='sit')window.homeScene?.showNews(false);
   if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
@@ -184,7 +216,7 @@ function moveTo(point,kind='walk'){
   const path=findPath([character.position.x,character.position.z],destination);
   if(!path.length||Math.hypot(path.at(-1)[0]-destination[0],path.at(-1)[1]-destination[1])>.45)return toast('這裡目前走不到');
   pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));
-  travel={kind,phase:'run',path,index:0,exit:destination};
+  travel={kind,phase:'run',path,index:0,exit:destination,bedSlot};publishPresence(true);
   const action=kind.includes('Mirror')?'走去照鏡子':kind.startsWith('diningChair')?'走去餐椅':kind==='walk'?'走過去了':kind==='sofa'?'走去沙發':'走去睡覺';
   toast(`${avatar.name}${action}`);
 }
@@ -287,9 +319,10 @@ function animate(now){
       leftArm.rotation.x=Math.sin(step)*.5;rightArm.rotation.x=-Math.sin(step)*.5;
       leftLeg.rotation.x=-Math.sin(step)*.4;rightLeg.rotation.x=Math.sin(step)*.4;
     }else{
+      if(travel.bedSlot&&bedOccupied(travel.bedSlot)){releaseBed();travel=null;pose='stand';publishPresence(true);toast('躺位有人了，請再點一次床');return}
       travel.progress=Math.min(1,travel.progress+dt/.65);
-      const target=travel.kind.startsWith('diningChair')?[1.41,.37,travel.kind==='diningChair0'?5.94:6.63]:travel.kind==='sofa'?furnitureXYZ('sofa',[2.54,.51,2.03]):travel.kind==='mainBed'?furnitureXYZ('mainBed',[5.16,.78,1.64]):furnitureXYZ('childBed',[5.12,.78,7.00]);
-      if(crossesWall([travel.from.x,travel.from.z],[target[0],target[2]])||crossesDynamicObstacle([travel.from.x,travel.from.z],[target[0],target[2]])){travel=null;pose='stand';toast('前方被擋住，請重新選擇');return}character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
+      const target=travel.bedSlot?.target|| (travel.kind.startsWith('diningChair')?[1.41,.37,travel.kind==='diningChair0'?5.94:6.63]:travel.kind==='sofa'?furnitureXYZ('sofa',[2.54,.51,2.03]):travel.kind==='mainBed'?furnitureXYZ('mainBed',[5.16,.78,1.64]):furnitureXYZ('childBed',[5.12,.78,7.00]));
+      if(crossesWall([travel.from.x,travel.from.z],[target[0],target[2]])||crossesDynamicObstacle([travel.from.x,travel.from.z],[target[0],target[2]])){releaseBed();travel=null;pose='stand';publishPresence(true);toast('前方被擋住，請重新選擇');return}character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
       if(travel.progress>=1){
         const kind=travel.kind;restExit=travel.exit;travel=null;
         pose=kind==='sofa'||kind.startsWith('diningChair')?'sit':'lie';
@@ -317,9 +350,9 @@ function animate(now){
     if(activity.task.id==='scenery'){b.position.y=.008*Math.sin(t*3);b.rotation.set(0,0,0);leftArm.position.set(-.20,.42,.015);rightArm.position.set(.20,.42,.015);leftArm.rotation.x=rightArm.rotation.x=0}
     if(t>=(activity.task.id==='scenery'?7:2)){if(activity.task.id==='scenery')hideScenery();const finished=activity;activity=null;b.rotation.x=0;finishTask(finished)}
   }else if(pose==='sit'){
-    b.position.y=0;b.rotation.x=restExit?.[0]===.88?0:-.23;b.rotation.z=0;for(const leg of [leftLeg,rightLeg])leg.rotation.x=-.85;
+    b.position.y=floorPose?poseLift:0;b.rotation.x=floorPose||restExit?.[0]===.88?0:-.23;b.rotation.z=0;for(const leg of [leftLeg,rightLeg])leg.rotation.x=-.85;
   }else if(pose==='lie'){
-    b.position.y=0;b.rotation.x=-Math.PI/2;b.rotation.z=0;
+    b.position.y=floorPose?poseLift:0;b.rotation.x=-Math.PI/2;b.rotation.z=0;
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
   updateHandAction(now,rightArm);
   character.userData.updatePose?.(activity?.phase==='work'?'work':travel?'walk':pose);
@@ -329,7 +362,7 @@ function animate(now){
   animateOthers(dt,now);
   houseNPC?.update(dt,now);
   if(houseNPC)houseNPC.character.userData.updatePose?.(houseNPC.state==='act'?houseNPC.action?.pose:houseNPC.state==='walk'?'walk':'stand');
-  if(houseNPC)$('#npc-status').textContent=`小屋日常 · ${houseNPC.action?.label||'在家休息'}`;
+  if(houseNPC&&$('#npc-status'))$('#npc-status').textContent=`小屋日常 · ${houseNPC.action?.label||'在家休息'}`;
   updateJoke();
 }
 window.homeGameUpdate=animate;
@@ -389,7 +422,7 @@ function startTask(t){
   if(t.id==='fold'&&!taskDone({id:'collect'}))return toast('先收衣，再摺衣');
   if(mode==='online'&&(!user||!homeReady))return toast('請先建立家庭或加入家人的家庭');
   if(!character)return toast('請在支援 3D 的瀏覽器啟動場景');
-  if(travel)travel=null;
+  movementRequest++;releaseBed();floorPose=false;poseLift=0;cancelHandAction();if(travel)travel=null;
   if(pose==='sit')window.homeScene?.showNews(false);
   leaveRest();
   restExit=null;character.position.y=.07;
@@ -770,7 +803,7 @@ function syncCharacters(){
  if(!scene)return;const online=onlinePlayers(),visible=online.slice(0,5),ids=new Set(visible.map(([id])=>id));
  for(const [id,item] of characters)if(!ids.has(id)){scene.remove(item.mesh);characters.delete(id)}
  for(const [id,p] of visible){const profile=profileCache[id];if(!profile)continue;let item=characters.get(id);const remoteDesign=normalizeAvatarDesign(gameMeta.players[id]?.avatarDesign||{hairStyle:profile.hair});const signature=JSON.stringify([profile,remoteDesign]);
- if(!item||item.signature!==signature){if(item)scene.remove(item.mesh);const mesh=makeCharacter(outfit(profile),remoteDesign);scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach)&&!crossesDynamicObstacle([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;resolveMonsterOverlap(item.mesh);
+ if(!item||item.signature!==signature){if(item)scene.remove(item.mesh);const mesh=makeCharacter(outfit(profile),remoteDesign);scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach)&&!crossesDynamicObstacle([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;item.mesh.userData.bedReservation=p.bedReservation;resolveMonsterOverlap(item.mesh);
  }
  const list=$('#member-list');list.replaceChildren();for(const [id,v] of Object.entries(profileCache)){const row=document.createElement('p');const active=id===playerId()||online.some(([uid])=>uid===id);row.textContent=`${v.name} · ${active?'上線':'離線'}${active&&id!==playerId()&&!ids.has(id)?'（成員列）':''}`;list.append(row)}
  $('#member-count').textContent=`上線 ${online.length+1} · 屋內 ${characters.size+1}／6`;
@@ -780,13 +813,13 @@ async function publishPresence(force=false,online=true){
  const moving=!!activity||!!travel||pose==='walk',interval=moving?4000:18000;
  if(!force&&Date.now()-lastPresence<interval)return;
  presenceBusy=true;lastPresence=Date.now();
- const data={online,at:Date.now(),x:character.position.x,y:character.position.y,z:character.position.z,angle:character.rotation.y,approach:restExit||null,pose:activity?'work':travel?'walk':pose};
- try{const ref=api.doc(db,'homes',homeId,'settings','tasks');await api.runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())return;const items=snap.data().items,meta=structuredClone(items.find(t=>t.id===GAME_META_ID)||{id:GAME_META_ID,players:{}});meta.players[playerId()]=normalizePlayer(meta.players[playerId()]);meta.players[playerId()].presence=data;tx.set(ref,{items:[...items.filter(t=>t.id!==GAME_META_ID),meta]})})}catch(e){console.warn('人物狀態同步暫時中斷',e)}finally{presenceBusy=false}
+ const data={online,at:Date.now(),x:character.position.x,y:character.position.y,z:character.position.z,angle:character.rotation.y,approach:restExit||null,pose:activity?'work':travel?'walk':pose,floorPose,poseLift};
+ try{const ref=api.doc(db,'homes',homeId,'settings','tasks');await api.runTransaction(db,async tx=>{const snap=await tx.get(ref);if(!snap.exists())return;const items=snap.data().items,meta=structuredClone(items.find(t=>t.id===GAME_META_ID)||{id:GAME_META_ID,players:{}});meta.players[playerId()]=normalizePlayer(meta.players[playerId()]);meta.players[playerId()].presence=data;meta.players[playerId()].bedReservation=online&&currentBed?{kind:currentBed.kind,index:currentBed.index,at:Date.now()}:null;tx.set(ref,{items:[...items.filter(t=>t.id!==GAME_META_ID),meta]})})}catch(e){console.warn('人物狀態同步暫時中斷',e)}finally{presenceBusy=false}
 }
 function animateOthers(dt,now){
  for(const item of characters.values()){const p=item.target;if(!p)continue;const body=item.mesh.userData.body;
  if(item.remotePath?.length&&item.remoteIndex<item.remotePath.length){const q=item.remotePath[item.remoteIndex],dx=q[0]-item.mesh.position.x,dz=q[1]-item.mesh.position.z,d=Math.hypot(dx,dz);if(d<.035){walkStep(item.mesh,q[0],q[1]);item.remoteIndex++;}else{const move=Math.min(d,dt*2);walkStep(item.mesh,item.mesh.position.x+dx/d*move,item.mesh.position.z+dz/d*move)}item.mesh.position.y=p.y||.07}else if(!crossesWall([item.mesh.position.x,item.mesh.position.z],[p.x,p.z])&&!crossesDynamicObstacle([item.mesh.position.x,item.mesh.position.z],[p.x,p.z]))item.mesh.position.lerp(new T.Vector3(p.x,p.y||.07,p.z),Math.min(1,dt*3));item.mesh.rotation.y=p.angle||0;
- body.rotation.x=p.pose==='lie'?-Math.PI/2:p.pose==='sit'?(p.approach?.[0]===.88?0:-.23):0;body.rotation.z=0;body.position.y=p.pose==='walk'?Math.abs(Math.sin(now*.008))*.02:0;
+ body.rotation.x=p.pose==='lie'?-Math.PI/2:p.pose==='sit'?(p.floorPose||p.approach?.[0]===.88?0:-.23):0;body.rotation.z=0;body.position.y=p.pose==='walk'?Math.abs(Math.sin(now*.008))*.02:p.floorPose?p.poseLift||0:0;
  for(const [i,limb] of [...item.mesh.userData.arms,...item.mesh.userData.legs].entries())limb.rotation.x=p.pose==='walk'?Math.sin(now*.009+i%2*Math.PI)*.3:p.pose==='work'&&i<2?-.75:p.pose==='sit'&&i>=2?-.85:0;
  item.mesh.userData.updatePose?.(p.pose);
  }
@@ -869,7 +902,7 @@ function setupGamePages(){
   readPlayer();gameMeta.players[playerId()]=player;fillAvatar();setCharacter(avatar);readLocalClaims();renderTasks();clock();setInterval(clock,1000);
   if(scene)houseNPC=createHouseNPC(window.homeScene,makeCharacter,()=>[character,...characters.values()]);
   resolveMonsterOverlap(houseNPC?.character);
-  const npcStatus=document.createElement('small');npcStatus.id='npc-status';npcStatus.textContent='小屋日常 · 在家休息';$('#game-status').after?.(npcStatus);
+
   setupGamePages();
   $('#game-open').onclick=()=>{$('#game-dialog').selectPage?.('tasks');$('#game-dialog').showModal()};
   $('#game-close').onclick=()=>$('#game-dialog').close();

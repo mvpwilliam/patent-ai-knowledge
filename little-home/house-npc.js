@@ -2,6 +2,8 @@ import * as T from './vendor/three.module.js';
 import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=103';
 import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero} from './layout.js?v=85';
 
+import {bedSlots,sameBed} from './bed-slots.js?v=107';
+
 // A local ambient resident, never a Firebase player or an award recipient.
 export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  const character=makeCharacter({name:'小屋主',skin:'#e9b990',hair:'korean',hairColor:'#4d3834',shirt:'#7899a0'});
@@ -12,7 +14,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  const bathX=5.35+furnitureShift.toilet;
  const actions=[
   {id:'tv',label:'坐沙發看電視',approach:furnitureXZ('sofa',[1.72,2.04]),target:furnitureXYZ('sofa',[2.54,.51,2.03]),pose:'sit',angle:-Math.PI/2},
-  {id:'sleep',label:'在主臥睡覺',approach:furnitureXZ('mainBed',[4.05,1.68]),target:furnitureXYZ('mainBed',[5.16,.78,1.64]),pose:'lie',angle:-Math.PI/2},
+  ...bedSlots('mainBed').map(bed=>({id:'sleep',label:'在主臥睡覺',approach:bed.exit,target:bed.target,pose:'lie',angle:bed.angle,bed})),
   {id:'curtain',label:'拉客廳窗簾',approach:pointXZ([1.55,.50]),angle:Math.PI,pose:'work'},
   {id:'toilet',label:'坐馬桶',approach:[bathX,4.96],target:[5.72+furnitureShift.toilet,.49,4.28],angle:Math.PI,pose:'sit'},
   {id:'hands',label:'洗手',approach:[4.73+furnitureShift.basin,4.78],angle:Math.PI,pose:'work'},
@@ -24,6 +26,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  const people=()=>getPeople().filter(Boolean);
  const occupied=a=>people().some(p=>{
   const v=p.position;
+  if(a.bed){if(sameBed(a.bed,p.userData.bedReservation))return true;return v.y>.5&&Math.hypot(v.x-a.target[0],v.z-a.target[2])<.36}
   if(['toilet','hands','shower'].includes(a.id))return v.x>4.05&&v.x<6.8&&v.z>3.6&&v.z<5.49;
   const t=a.target||[a.approach[0],.07,a.approach[1]];return Math.hypot(v.x-t[0],v.z-t[2])<.62;
  });
