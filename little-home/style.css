@@ -158,8 +158,31 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #inventory-dialog .inventory-tabs button{min-height:44px;touch-action:manipulation;cursor:pointer;pointer-events:auto}
 #inventory-dialog .inventory-tabs button[aria-pressed=true]{background:#405f50;color:#fff}
 
-@font-face{font-family:"Cubic11";src:url("https://cdn.jsdelivr.net/gh/ACh-K/Cubic-11@main/fonts/web/Cubic_11.woff2") format("woff2"),url("https://raw.githubusercontent.com/ACh-K/Cubic-11/main/fonts/web/Cubic_11.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-0.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+20-3C5}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-1.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+3C6-247D}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-2.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+247E-3314}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-3.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+3318-5077}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-4.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+5078-5421}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-5.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+5426-5783}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-6.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+5788-5BB0}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-7.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+5BB3-5FCC}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-8.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+5FCD-6388}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-9.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+6389-6714}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-10.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+6715-6B17}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-11.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+6B1D-6F01}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-12.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+6F02-73B9}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-13.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+73BB-778E}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-14.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+7791-7BF2}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-15.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+7BF3-8070}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-16.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+8071-8423}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-17.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+8429-887E}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-18.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+887F-8DC6}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-19.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+8DC8-91E1}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-20.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+91E3-96D1}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-21.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+96D2-9C04}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-22.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+9C06-FF83}
+@font-face{font-family:"HomeRoundedLabel";src:url("./assets/fonts/jf-openhuninn-23.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+FF84-FF545}
 
 .scene-wallet-tools .gold-coin{width:28px;height:28px;object-fit:contain}
 
-#character-names .character-name{position:absolute;transform:translate(-50%,4px);padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;text-shadow:none;filter:none;color:#000;font-family:"Cubic11","PingFang TC",sans-serif;font-size:12px;font-weight:400;letter-spacing:0;line-height:1.4;white-space:nowrap;pointer-events:none}
+#character-names .character-name{position:absolute;transform:translate(-50%,4px);padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;text-shadow:none;filter:none;color:#000;font-family:"HomeRoundedLabel","PingFang TC",sans-serif;font-size:12px;font-weight:400;letter-spacing:0;line-height:1.4;white-space:nowrap;pointer-events:none}
