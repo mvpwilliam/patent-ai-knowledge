@@ -1,4 +1,5 @@
 import * as T from './vendor/three.module.js';
+import {installToyDefense} from './toy-defense.js?v=toy3-1';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=entry-expand-1';
@@ -769,6 +770,7 @@ async function connect(){
 const MAX_XP=1200;
 const roomNames={living:'客廳',dining:'餐廳',kitchen:'廚房',main:'主臥',child:'次臥',bath:'浴室',balcony:'陽台',entry:'玄關'};
 const catalog=[
+ {id:'toy-trophy',name:'積木恐龍獎盃',icon:'🦖',price:0,type:'裝飾',rewardOnly:true},
  {id:'plant',name:'小盆栽',icon:'🪴',price:60,type:'裝飾'},
  {id:'flowers',name:'花瓶與花',icon:'🌷',price:90,type:'裝飾'},
  {id:'cat',name:'招財貓',icon:'🐱',price:150,type:'裝飾'},
@@ -878,7 +880,7 @@ function itemCard(item,owned=null){
  button.onclick=()=>owned?choosePlacement(owned,item):buyItem(item);
  card.append(icon,name,note,button);return card;
 }
-function renderShop(){const list=$('#shop-list');list.replaceChildren();for(const item of catalog)list.append(itemCard(item))}
+function renderShop(){const list=$('#shop-list');list.replaceChildren();for(const item of catalog.filter(item=>!item.rewardOnly))list.append(itemCard(item))}
 function renderInventory(){
  const list=$('#inventory-list');list.replaceChildren();
  for(const owned of player.inventory){const item=catalog.find(c=>c.id===owned.item);if(!item)continue;
@@ -887,6 +889,7 @@ function renderInventory(){
  document.querySelectorAll('[data-inventory-tab]').forEach(b=>{const active=b.dataset.inventoryTab===inventoryTab;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
 }
 async function buyItem(item){
+ if(item.rewardOnly)return;
  try{const id=crypto.randomUUID();await mutateGame(p=>{if(p.coins<item.price)throw new Error('遊戲幣不足');if(p.inventory.length>=40)throw new Error('道具欄已滿（40 件）');p.coins-=item.price;p.inventory.push({id,item:item.id,room:null,slot:null});record(p,`購買${item.name}`,-item.price)});toast(`${item.name}已放入道具欄`)}catch(e){toast(e.message||'購買未成功，沒有扣幣')}
 }
 // Small tabletop items use reserved surface slots and never occupy walkways.
@@ -913,7 +916,8 @@ function makeDecoration(item){
  const g=new T.Group();g.name='owned-'+item;const part=(geometry,color,x,y,z)=>bodyPart(g,geometry,color,x,y,z);
  const box=(w,h,d,color,x=0,y=h/2,z=0)=>part(new T.BoxGeometry(w,h,d),color,x,y,z);
  const ball=(r,color,x,y,z)=>part(new T.SphereGeometry(r,12,10),color,x,y,z);
- if(item==='plant'||item==='flowers'){part(new T.CylinderGeometry(.045,.032,.07,12),'#c49b75',0,.035,0);for(let i=0;i<5;i++){const a=i*1.25;ball(.036,item==='flowers'?'#e6a3b1':'#719077',Math.cos(a)*.025,.10+i*.007,Math.sin(a)*.025)}}
+ if(item==='toy-trophy'){box(.21,.035,.18,'#a78342');box(.13,.035,.11,'#e6c778',0,.05);box(.10,.08,.12,'#779875',0,.11);box(.07,.07,.07,'#779875',0,.17,.055);box(.04,.035,.10,'#779875',0,.10,-.09);for(const x of [-.034,.034])box(.025,.045,.035,'#597b58',x,.07);box(.045,.018,.045,'#ebdbad',0,.145,.085)}
+ else if(item==='plant'||item==='flowers'){part(new T.CylinderGeometry(.045,.032,.07,12),'#c49b75',0,.035,0);for(let i=0;i<5;i++){const a=i*1.25;ball(.036,item==='flowers'?'#e6a3b1':'#719077',Math.cos(a)*.025,.10+i*.007,Math.sin(a)*.025)}}
  else if(item==='cat'){ball(.055,'#f4f1e6',0,.065,0);ball(.044,'#f4f1e6',0,.14,0);for(const x of [-.025,.025])part(new T.ConeGeometry(.018,.035,8),'#f4f1e6',x,.18,0);ball(.022,'#f4f1e6',-.065,.14,0);box(.07,.012,.07,'#bb4b48',0,.115,0);for(const x of [-.018,.018])ball(.006,'#293532',x,.145,.04)}
  else if(item==='lamp'){box(.10,.012,.10,'#8b9694');box(.015,.16,.015,'#8b9694',0,.09);part(new T.ConeGeometry(.07,.07,12),'#e6d9b6',0,.19,0)}
  else if(item==='frame'){box(.13,.16,.025,'#be9a72');box(.105,.13,.008,'#8cab99',0,.085,.018)}
@@ -1046,6 +1050,27 @@ function openHomePanel(page){
   resolveMonsterOverlap(houseNPC?.character);
 
   setupSceneMenu();
+  let battleOwner='';
+  installToyDefense({
+   canStart(){
+    if(activity){toast('先完成或取消目前的家事，再開始保衛戰');return false}
+    if(!character||!scene||syncBusy||(mode==='online'&&(!homeReady||!user))){toast('角色資料尚未就緒，請稍候再試');return false}
+    battleOwner=`${homeId||'preview'}:${playerId()}`;return true;
+   },
+   makeHero(){const copy=makeCharacter(avatar,{...avatarDesign});copy.userData.updatePose?.('stand');return copy},
+   async onWin(runId){
+    if(battleOwner!==`${homeId||'preview'}:${playerId()}`)throw new Error('帳號或家庭已切換，無法把這局獎勵存入不同角色');
+    await mutateGame(p=>{
+     if((p.toyDefenseRuns||[]).includes(runId))return;
+     p.toyDefenseRuns=[runId,...(p.toyDefenseRuns||[])].slice(0,30);
+     p.coins+=30;p.xp=Math.min(MAX_XP,p.xp+20);
+     // One earned trophy may use an extra inventory slot; purchases retain their 40-item limit.
+     if(!p.inventory.some(o=>o.item==='toy-trophy'))p.inventory.push({id:'toy-trophy-'+playerId(),item:'toy-trophy',room:null,slot:null});
+     record(p,'玩具保衛戰 · 三分鐘勝利',30);
+    });
+    return '已保存：30 幣、20 EXP。積木恐龍獎盃已在「我的道具」，可以選擇房間擺放。';
+   }
+  });
   for(const [id,page] of [['character-open','character'],['family-open','family']])$('#'+id).onclick=()=>openHomePanel(page);
   $('#game-close').onclick=()=>$('#game-dialog').close();
   $('#game-dialog').onclick=e=>{if(e.target!==$('#game-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()};
@@ -1070,6 +1095,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
