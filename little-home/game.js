@@ -109,7 +109,7 @@ function leaveRest(){
 function setPose(next){
  if(activity)return toast('先完成目前的家事');if(!character)return;
  if(next==='sit')return moveTo(null,'sofa');if(next==='lie')return moveTo(null,'mainBed');
- if(pose==='sit')window.homeScene?.showNews(false);leaveRest();travel=null;
+ cancelHandAction();if(pose==='sit')window.homeScene?.showNews(false);leaveRest();travel=null;
  pose='stand';poseStarted=performance.now();document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',b.dataset.pose===pose));toast('在原地站著');
 }
 function walkStep(mesh,x,z){
@@ -140,6 +140,23 @@ function refreshMonsterRoutes(){
  }
 }
 window.homeGameFocus=()=>character?{position:character.position.clone(),angle:character.rotation.y}:null;
+// An explicit interaction raises the right arm, acts at full reach, then lowers it.
+let handAction=null;
+function cancelHandAction(){if(handAction){handAction.resolve(false);handAction=null}}
+function interactWithHand(action){
+ if(!character||travel||activity)return Promise.resolve(false);
+ cancelHandAction();
+ return new Promise(resolve=>{handAction={started:performance.now(),action,resolve,acted:false}});
+}
+window.homeGameInteract=interactWithHand;
+function updateHandAction(now,rightArm){
+ if(!handAction)return;
+ const h=handAction,t=Math.max(0,(now-h.started)/1000);
+ const lift=t<.25?t/.25:t<.45?1:Math.max(0,1-(t-.45)/.3);
+ rightArm.rotation.x=-Math.PI/2*(lift*lift*(3-2*lift));
+ if(t>=.25&&!h.acted){h.acted=true;Promise.resolve().then(h.action).then(()=>h.resolve(true)).catch(()=>{h.resolve(false);toast('互動暫時失敗，請再試一次')})}
+ if(t>=.75){rightArm.rotation.x=0;handAction=null}
+}
 function approachTarget(point,onArrival=null,label='走到旁邊',maxRadius=.9){
  if(activity){toast('先完成目前的家事');return false}if(!character)return false;
  const from=restExit||[character.position.x,character.position.z],candidates=[];
@@ -150,14 +167,14 @@ function approachTarget(point,onArrival=null,label='走到旁邊',maxRadius=.9){
  candidates.sort((a,b)=>a.score-b.score);let path=null;
  for(const c of candidates){const p=findPath(from,c.point);if(p.length&&Math.hypot(p.at(-1)[0]-c.point[0],p.at(-1)[1]-c.point[1])<.16){path=p;break}}
  if(!path){toast('目前走不到目標旁邊');return false}
- if(pose==='sit')window.homeScene?.showNews(false);leaveRest();restExit=null;pose='walk';
+ cancelHandAction();if(pose==='sit')window.homeScene?.showNews(false);leaveRest();restExit=null;pose='walk';
  travel={kind:'interact',phase:'run',path,index:0,exit:path.at(-1),target:point,onArrival};
  document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));toast(`${avatar.name}${label}`);return true;
 }
 window.homeGameApproach=approachTarget;
 function moveTo(point,kind='walk'){
   if(activity)return toast('先完成目前的家事');
-  if(!character)return;
+  if(!character)return;cancelHandAction();
   if(kind.startsWith('diningChair')){const z=kind==='diningChair0'?5.94:6.63;if(onlinePlayers().some(([,p])=>p.presence.pose==='sit'&&Math.hypot(p.presence.x-1.41,p.presence.z-z)<.25))return toast('這張椅子有人坐，請選另一張')}
   if(pose==='sit')window.homeScene?.showNews(false);
   if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
@@ -246,7 +263,7 @@ function hideScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=true}
 function showScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=false;sceneryTimer=setTimeout(hideScenery,7000)}
 sceneryOverlay.onclick=hideScenery;
 function animate(now){
-  updateMarkers();
+  updateMarkers();updateMonsterLabel();
   if(!character)return;
   const dt=Math.min(.06,(now-lastFrame)/1000||0);lastFrame=now;
   const b=character.userData.body;
@@ -304,6 +321,7 @@ function animate(now){
   }else if(pose==='lie'){
     b.position.y=0;b.rotation.x=-Math.PI/2;b.rotation.z=0;
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
+  updateHandAction(now,rightArm);
   character.userData.updatePose?.(activity?.phase==='work'?'work':travel?'walk':pose);
   const nearBalconyDoor=[character,houseNPC?.character].filter(Boolean).some(p=>Math.abs(p.position.x-scaleX(5.83))<1.12&&Math.abs(p.position.z-8.68)<.82);
   window.homeScene?.setBalconyDoor(nearBalconyDoor);
@@ -636,7 +654,7 @@ const playerId=()=>user?.uid||localActorId;
 const playerKey=()=>`little-home-player-${homeId||'preview'}-${playerId()}`;
 const normalizePlayer=p=>({...newPlayer(),...p,inventory:Array.isArray(p?.inventory)?p.inventory:[],completed:p?.completed||{},bonuses:p?.bonuses||{},ledger:p?.ledger||[]});
 function readPlayer(){player=normalizePlayer(safeRead(playerKey(),newPlayer()))}
-function levelInfo(xp){const level=Math.min(20,1+Math.floor(Math.min(MAX_XP,xp)*19/MAX_XP));const titles=['新手屋主','家事小幫手','居家達人','小屋管家','家的守護者'];return {level,title:titles[Math.floor(level/5)],progress:level===20?1:(xp-(level-1)*MAX_XP/19)/(MAX_XP/19)}}
+function levelInfo(xp){const level=Math.min(20,1+Math.floor(Math.min(MAX_XP,xp)*19/MAX_XP));const titles=['家事新手','居家小幫手','整理達人','家務高手','家庭神隊友'];return {level,title:titles[Math.floor(level/5)],progress:level===20?1:(xp-(level-1)*MAX_XP/19)/(MAX_XP/19)}}
 function dayTasks(){
  const pool=tasks.filter(t=>t.id!=='scenery');
  if(gameDay%3===0&&['laundry','collect','fold'].every(id=>pool.some(t=>t.id===id)))return ['floor','dishes','trash','laundry','collect','fold'].map(id=>pool.find(t=>t.id===id)).filter(Boolean);
@@ -783,7 +801,15 @@ function renderMonster(){
   scene.add(g);g.updateMatrixWorld(true);monsterMesh=g;
   setDynamicObstacles(g.userData.collisionBoxes.map(([a,b,c,d])=>[a+g.position.x,b+g.position.x,c+g.position.z,d+g.position.z]));refreshMonsterRoutes();
  }
- $('#monster-status').hidden=false;$('#monster-status').textContent=`哥吉拉 · 已命中 ${m.hits} / 100，點擊場景中的哥吉拉攻擊。`;
+ $('#monster-status').textContent=`生命 ${100-m.hits}/100`;updateMonsterLabel();
+}
+const monsterLabelPoint=new T.Vector3();
+function updateMonsterLabel(){
+ const label=$('#monster-status'),camera=window.homeScene?.camera,world=$('#world');
+ if(!monsterMesh||!camera||!gameMeta.monster||Date.now()<gameMeta.monster.bornAt){label.hidden=true;return}
+ monsterLabelPoint.set(monsterMesh.position.x,monsterMesh.position.y+monsterMesh.userData.standingHeight+.16,monsterMesh.position.z).project(camera);
+ if(monsterLabelPoint.z<=-1||monsterLabelPoint.z>=1||Math.abs(monsterLabelPoint.x)>1||Math.abs(monsterLabelPoint.y)>1){label.hidden=true;return}
+ label.hidden=false;label.style.left=(monsterLabelPoint.x+1)*world.clientWidth/2+'px';label.style.top=(1-monsterLabelPoint.y)*world.clientHeight/2+'px';
 }
 function disposeMonster(mesh){const materials=new Set();mesh.traverse(n=>{n.geometry?.dispose();if(n.material)for(const m of Array.isArray(n.material)?n.material:[n.material])materials.add(m)});for(const m of materials)m.dispose()}
 async function attackMonster(){try{await mutateGame((p,meta)=>{const m=meta.monster;if(!m||Date.now()<m.bornAt||m.hits>=100)throw new Error('哥吉拉還沒出現');m.hits++;if(m.hits>=100){m.bornAt=Date.now()+3600000;m.hits=0}});toast(gameMeta.monster.bornAt>Date.now()?'哥吉拉消失了，下次一小時後出現':'命中！')}catch(e){toast(e.message||'攻擊未儲存')}}
@@ -811,7 +837,7 @@ function attackMonsterAt(e){
    const bounds=r?{min:{x:r[0]+monsterMesh.position.x,z:r[2]+monsterMesh.position.z},max:{x:r[1]+monsterMesh.position.x,z:r[3]+monsterMesh.position.z}}:new T.Box3().setFromObject(monsterMesh);
    const gap=Math.hypot(Math.max(bounds.min.x-character.position.x,0,character.position.x-bounds.max.x),Math.max(bounds.min.z-character.position.z,0,character.position.z-bounds.max.z));
    if(gap>.55)return toast('再靠近哥吉拉一點才能攻擊');
-   return attackMonster();
+   return interactWithHand(()=>{if(monsterMesh&&gameMeta.monster?.bornAt===bornAt&&Date.now()>=bornAt)return attackMonster()});
   },'走去攻擊哥吉拉',.7);
  }
  return true;
