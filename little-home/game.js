@@ -7,6 +7,7 @@ import {openAvatarEditor} from './avatar-editor.js?v=tiger-eyewear-1';
 import {createHouseNPC} from './house-npc.js?v=107';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed} from './bed-slots.js?v=107';
+import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS} from './character-motion.js?v=120';
 const PLAYER_SCALE=.9;
 
 let avatarDesign=normalizeAvatarDesign({}),designPending=false;
@@ -344,16 +345,16 @@ function animate(now){
          document.querySelectorAll('[data-pose]').forEach(btn=>btn.classList.toggle('active',btn.dataset.pose==='stand'));
          if(done.onArrival)Promise.resolve(done.onArrival()).catch(()=>toast('互動暫時失敗，請再試一次'));
         }
-        else if(travel.kind.includes('Mirror')){const kind=travel.kind;travel=null;pose='stand';character.rotation.y=kind==='entryMirror'?-Math.PI/2:Math.PI;openMirror()}else{travel.phase='settle';travel.from=character.position.clone();travel.progress=0}
+        else if(travel.kind.includes('Mirror')){const kind=travel.kind;travel=null;pose='stand';character.rotation.y=kind==='entryMirror'?-Math.PI/2:Math.PI;openMirror()}else{travel.phase='settle';travel.from=character.position.clone();travel.fromAngle=character.rotation.y;travel.progress=0}
       }}else{const move=Math.min(d,dt*1.6);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
       step+=dt*17;b.position.y=Math.abs(Math.sin(step))*.035;b.rotation.set(0,0,Math.sin(step)*.035);
       leftArm.rotation.x=Math.sin(step)*.5;rightArm.rotation.x=-Math.sin(step)*.5;
       leftLeg.rotation.x=-Math.sin(step)*.4;rightLeg.rotation.x=Math.sin(step)*.4;
     }else{
       if(travel.bedSlot&&bedOccupied(travel.bedSlot)){releaseBed();travel=null;pose='stand';publishPresence(true);toast('躺位有人了，請再點一次床');return}
-      travel.progress=Math.min(1,travel.progress+dt/.65);
+      const isBed=!!travel.bedSlot,isSeat=travel.kind==='sofa'||travel.kind.startsWith('diningChair');travel.progress=Math.min(1,travel.progress+dt/(isBed?BED_SETTLE_SECONDS:isSeat?SEAT_SETTLE_SECONDS:.65));
       const target=travel.bedSlot?.target|| (travel.kind.startsWith('diningChair')?[1.41,.37,travel.kind==='diningChair0'?5.94:6.63]:travel.kind==='sofa'?furnitureXYZ('sofa',[2.54,.51,2.03]):travel.kind==='mainBed'?furnitureXYZ('mainBed',[5.16,.78,1.64]):furnitureXYZ('childBed',[5.12,.78,7.00]));
-      if(crossesWall([travel.from.x,travel.from.z],[target[0],target[2]])||crossesDynamicObstacle([travel.from.x,travel.from.z],[target[0],target[2]])){releaseBed();travel=null;pose='stand';publishPresence(true);toast('前方被擋住，請重新選擇');return}character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
+      if(crossesWall([travel.from.x,travel.from.z],[target[0],target[2]])||crossesDynamicObstacle([travel.from.x,travel.from.z],[target[0],target[2]])){releaseBed();travel=null;pose='stand';publishPresence(true);toast('前方被擋住，請重新選擇');return}if(isBed)animateBedEntry(character,travel.from,target,travel.bedSlot.angle,travel.progress,travel.fromAngle);else if(isSeat)animateSeatEntry(character,travel.from,target,travel.kind.startsWith('diningChair')?Math.PI/2:-Math.PI/2,travel.progress,travel.fromAngle,travel.kind==='sofa');else character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
       if(travel.progress>=1){
         const kind=travel.kind;restExit=travel.exit;travel=null;
         pose=kind==='sofa'||kind.startsWith('diningChair')?'sit':'lie';
@@ -386,7 +387,7 @@ function animate(now){
     b.position.y=floorPose?poseLift:0;b.rotation.x=-Math.PI/2;b.rotation.z=0;
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
   updateHandAction(now,rightArm);
-  character.userData.updatePose?.(activity?.phase==='work'?'work':travel?'walk':pose);
+  if(!(travel?.phase==='settle'&&(travel.bedSlot||travel.kind==='sofa'||travel.kind.startsWith('diningChair')))){character.userData.updatePose?.(activity?.phase==='work'?'work':travel?'walk':pose);for(const side of ['Left','Right']){const shoulder=character.getObjectByName(side+' shoulder');if(shoulder)shoulder.rotation.z=0}}
   const nearBalconyDoor=[character,houseNPC?.character].filter(Boolean).some(p=>Math.abs(p.position.x-scaleX(5.83))<1.12&&Math.abs(p.position.z-8.68)<.82);
   window.homeScene?.setBalconyDoor(nearBalconyDoor);
   window.homeScene?.updateDoorsAt(character.position.x,character.position.z,houseNPC?[[houseNPC.character.position.x,houseNPC.character.position.z]]:[]);
@@ -874,16 +875,17 @@ function animateOthers(dt,now){
 function updateMonsterRoam(dt,now){
  if(!monsterMesh||!gameMeta.monster||Date.now()<gameMeta.monster.bornAt)return;
  const g=monsterMesh,origin=g.userData.roamOrigin;if(!origin)return;
- // Stop during a close interaction so the approached target remains in reach.
- if(travel?.kind==='interact'||handAction){for(const p of g.userData.roamLegs||[])p.mesh.position.y=p.y;return}
+ const idle=()=>animateMonsterStride(g,0,dt);
+ if(travel?.kind==='interact'||handAction){idle();return}
  const phase=(Date.now()-gameMeta.monster.bornAt)/1000,tx=origin[0]+Math.sin(phase*.18)*.28,tz=origin[1]+Math.sin(phase*.13)*.22;
- const dx=tx-g.position.x,dz=tz-g.position.z,distance=Math.hypot(dx,dz);if(distance<.001)return;
+ const dx=tx-g.position.x,dz=tz-g.position.z,distance=Math.hypot(dx,dz);if(distance<.001){idle();return}
  const step=Math.min(distance,Math.max(0,dt)*.12),x=g.position.x+dx/distance*step,z=g.position.z+dz/distance*step;
- const boxes=g.userData.collisionBoxes.map(([a,b,c,d])=>[a+x,b+x,c+z,d+z]);
+ const desired=Math.atan2(dx,dz),delta=Math.atan2(Math.sin(desired-g.rotation.y),Math.cos(desired-g.rotation.y));
+ const yaw=g.rotation.y+Math.sign(delta)*Math.min(Math.abs(delta),dt*.55);
+ const boxes=monsterBoxesAt(g,x,z,yaw);
  const people=[character,houseNPC?.character,...[...characters.values()].map(p=>p.mesh)].filter(Boolean);
- if(boxes.some(([a,b,c,d])=>people.some(p=>p.position.x>=a-.19&&p.position.x<=b+.19&&p.position.z>=c-.19&&p.position.z<=d+.19)||crossesWall([a,c],[b,c])||crossesWall([b,c],[b,d])||crossesWall([b,d],[a,d])||crossesWall([a,d],[a,c])))return;
- g.position.x=x;g.position.z=z;setDynamicObstacles(boxes);
- for(const p of g.userData.roamLegs||[])p.mesh.position.y=p.y+Math.max(0,Math.sin(now*.004+p.side*Math.PI/2))*.015;
+ if(boxes.some(([a,b,c,d])=>people.some(p=>p.position.x>=a-.19&&p.position.x<=b+.19&&p.position.z>=c-.19&&p.position.z<=d+.19)||crossesWall([a,c],[b,c])||crossesWall([b,c],[b,d])||crossesWall([b,d],[a,d])||crossesWall([a,d],[a,c]))){idle();return}
+ g.position.x=x;g.position.z=z;g.rotation.y=yaw;setDynamicObstacles(boxes);animateMonsterStride(g,step,dt);
  const blocked=job=>job?.phase==='run'&&job.path.slice(Math.max(0,job.index-1)).some((p,i,path)=>i&&crossesDynamicObstacle(path[i-1],p));
  if(blocked(travel)||blocked(activity))refreshMonsterRoutes();
 }
@@ -897,8 +899,8 @@ function renderMonster(){
  if(!monsterMesh||Math.abs(monsterMesh.userData.standingHeight-height)>.001){
   if(monsterMesh){scene.remove(monsterMesh);disposeMonster(monsterMesh)}
   const g=createGodzilla(height);g.position.x=scaleX(1.25);g.position.z=4.25;g.position.y+=.07;
-  g.userData.roamOrigin=[g.position.x,g.position.z];g.userData.roamLegs=g.children.filter(p=>/^(powerful-thigh|shin|wide-foot|foot-claw)-/.test(p.name)).map(mesh=>({mesh,y:mesh.position.y,side:mesh.name.includes('--1')?-1:1}));scene.add(g);g.updateMatrixWorld(true);monsterMesh=g;
-  setDynamicObstacles(g.userData.collisionBoxes.map(([a,b,c,d])=>[a+g.position.x,b+g.position.x,c+g.position.z,d+g.position.z]));refreshMonsterRoutes();
+  g.userData.roamOrigin=[g.position.x,g.position.z];rigMonster(g);scene.add(g);g.updateMatrixWorld(true);monsterMesh=g;
+  setDynamicObstacles(monsterBoxesAt(g,g.position.x,g.position.z));refreshMonsterRoutes();
  }
  $('#monster-status').textContent=`生命 ${100-m.hits}/100`;updateMonsterLabel();
 }
@@ -932,8 +934,8 @@ function attackMonsterAt(e){
   const bornAt=gameMeta.monster.bornAt;
   approachTarget([monsterMesh.position.x,monsterMesh.position.z],()=>{
    if(!monsterMesh||gameMeta.monster?.bornAt!==bornAt||Date.now()<bornAt)return toast('哥吉拉已經離開了');
-   const r=monsterMesh.userData.collisionBoxes?.[0];
-   const bounds=r?{min:{x:r[0]+monsterMesh.position.x,z:r[2]+monsterMesh.position.z},max:{x:r[1]+monsterMesh.position.x,z:r[3]+monsterMesh.position.z}}:new T.Box3().setFromObject(monsterMesh);
+   const r=monsterBoxesAt(monsterMesh,monsterMesh.position.x,monsterMesh.position.z)[0];
+   const bounds=r?{min:{x:r[0],z:r[2]},max:{x:r[1],z:r[3]}}:new T.Box3().setFromObject(monsterMesh);
    const gap=Math.hypot(Math.max(bounds.min.x-character.position.x,0,character.position.x-bounds.max.x),Math.max(bounds.min.z-character.position.z,0,character.position.z-bounds.max.z));
    if(gap>.55)return toast('再靠近哥吉拉一點才能攻擊');
    return interactWithHand(()=>{if(monsterMesh&&gameMeta.monster?.bornAt===bornAt&&Date.now()>=bornAt)return attackMonster()});
