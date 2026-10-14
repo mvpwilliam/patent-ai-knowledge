@@ -1,6 +1,6 @@
 import {createWallFader} from './camera-walls.js?v=111';
 import * as T from './vendor/three.module.js';
-import {X_SCALE,X_PIVOT,scaleX,entryZero,entryX,kitchenStart,kitchenEnd,sinkX,stoveX,furnitureShift,washerPosition} from './layout.js?v=128';
+import {X_SCALE,X_PIVOT,scaleX,entryZero,entryX,kitchenStart,kitchenEnd,sinkX,stoveX,furnitureShift,washerPosition} from './layout.js?v=walkways-20-1';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 const $=s=>document.querySelector(s), canvas=$('#scene'), host=$('#world');
 let renderer;try{renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'default'});}catch(e){$('#loading').hidden=true;$('#error').hidden=false;throw e}
@@ -480,6 +480,7 @@ function chair(x,z){for(let dx of [-.20,.20])for(let dz of [-.20,.20])rod([x+dx*
 box(2.22,.76,6.30,.75,.12,1.35,C.woodlight,.10);
 box(2.22,.39,6.30,.52,.69,.76,'#c8b493',.12);
 chair(1.41,5.94);chair(1.41,6.63);
+finishSection('dining-and-island','translate',furnitureShift.dining);
 // A 1.39 m island runs across the dining/kitchen axis, with its right end
 // against the bedroom-side wall and circulation to its left.
 // Oven and open shelf face the entry; three drawers occupy the right end.
@@ -491,7 +492,7 @@ box(-.38,.54,.37,.29,.19,.006,'#697877',0,peninsula);
 box(-.38,.65,.387,.25,.018,.025,C.metal,0,peninsula);
 box(.095,.55,.314,.43,.38,.024,'#303e3d',0,peninsula);
 for(const yy of [.22,.49,.71]){box(.5,yy,.31,.30,.21,.025,'#b5aa91',.009,peninsula);box(.5,yy+.065,.33,.20,.013,.017,C.dark,0,peninsula)}
-finishSection('dining-and-island','translate',furnitureShift.dining);
+finishSection('island','translate',furnitureShift.island);
 // Keep the second-bedroom boundary clear of the former tall wardrobe block.
 // Master bedroom: bed only, with the headboard against the exterior wall.
 // No rug underneath the master bed; leave the wood floor exposed.

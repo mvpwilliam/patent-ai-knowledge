@@ -1,9 +1,9 @@
 import * as T from './vendor/three.module.js';
-import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=128';
-import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero} from './layout.js?v=128';
+import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=walkways-20-1';
+import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero} from './layout.js?v=walkways-20-1';
 
-import {bedSlots,sameBed} from './bed-slots.js?v=128';
-import {furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=128';
+import {bedSlots,sameBed} from './bed-slots.js?v=walkways-20-1';
+import {furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=walkways-20-1';
 
 // A local ambient resident, never a Firebase player or an award recipient.
 export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){

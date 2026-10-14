@@ -1,15 +1,15 @@
 import * as T from './vendor/three.module.js';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
-import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=128';
-import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=128';
+import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=walkways-20-1';
+import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=walkways-20-1';
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=legendary-detail-2';
 import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=legendary-detail-2';
 import {openAvatarEditor} from './avatar-editor.js?v=legendary-detail-2';
-import {createHouseNPC} from './house-npc.js?v=child-seat-1';
+import {createHouseNPC} from './house-npc.js?v=walkways-20-1';
 import {createGodzilla} from './godzilla.js?v=103';
-import {bedSlots,sameBed} from './bed-slots.js?v=128';
-import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=128';
+import {bedSlots,sameBed} from './bed-slots.js?v=walkways-20-1';
+import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=walkways-20-1';
 const PLAYER_SCALE=1;
 
 let avatarDesign=normalizeAvatarDesign({}),designPending=false;

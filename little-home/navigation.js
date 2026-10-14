@@ -1,5 +1,5 @@
 // Walking envelopes share the revised model's metre coordinates.
-import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=128';
+import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=walkways-20-1';
 const radius=.19,cell=.08; // Restored full-size character walking envelope.
 const shift=(a,b,c,d,s)=>[a+s,b+s,c,d];
 const rect=(x0,x1,z0,z1)=>[scaleX(x0),scaleX(x1),z0,z1];
@@ -18,7 +18,7 @@ const obstacles=[...wallObstacles,
  shift(0,.49,.60,3.94,furnitureShift.tv),
  shift(2.20,3.14,.77,3.30,furnitureShift.sofa),
  shift(1.13,2.62,5.57,7.00,furnitureShift.dining), // unchanged dining table/chairs
- shift(1.23,2.65,6.96,7.64,furnitureShift.dining), // unchanged island countertop
+ shift(1.23,2.65,6.96,7.64,furnitureShift.island), // unchanged island countertop
  [entryX(207),entryX(272),9.295,9.995],
  [entryX(273),entryX(378),9.495,9.995],
  [entryX(102),entryX(205),9.555,9.995],
