@@ -532,11 +532,11 @@ async function ensureAppearance(){
  try{return await appearancePending}finally{appearancePending=null}
 }
 async function editAvatar(){
- const parent=$('#game-dialog'),returnToCharacter=parent.open;if(returnToCharacter)parent.close();
+ const parent=$('#character-dialog'),returnToCharacter=parent.open;if(returnToCharacter)parent.close();
  try{
   const result=await openAvatarEditor(avatar,avatarDesign,false);if(!result)return;
   avatar=outfit(result.profile);setAvatarDesign(result.design,true);fillAvatar();await saveAvatar();
- }finally{if(returnToCharacter){parent.selectPage?.('character');parent.showModal();$('#avatar-edit').focus()}}
+ }finally{if(returnToCharacter){renderAvatarPreview();parent.showModal();$('#avatar-edit').focus()}}
 }
 async function saveAvatar(){
   const name=String(avatar.name||'').trim();if(!name||name.length>12){toast('請輸入 1～12 個字的名字');return}
@@ -651,7 +651,7 @@ async function resumeAccount(){
  else{
   await ensureAppearance();
   if(u.isAnonymous)await subscribeHome(true);
-  else{homeReady=false;clearSubscriptions();$('#account-state').textContent='請輸入原家庭代碼或開啟邀請連結，以讀取原人物；新玩家可建立家庭。';$('#game-dialog').selectPage?.('family');$('#game-dialog').showModal()}
+  else{homeReady=false;clearSubscriptions();$('#account-state').textContent='請輸入原家庭代碼或開啟邀請連結，以讀取原人物；新玩家可建立家庭。';openHomePanel('family')}
  }
 }
 function setupAccountUI(){
@@ -938,13 +938,9 @@ function setupSceneMenu(){
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){setSceneMenu(false);toggle.focus()}});
 }
 
-function setupGamePages(){
- const dialog=$('#game-dialog'),grid=dialog.querySelector?.('.game-grid'),head=dialog.querySelector?.('.dialog-head'),account=dialog.querySelector?.('.account');
- if(!grid||!head||!account)return;
- const sections=[...grid.children],pages={tasks:sections[1],character:sections[0],family:account},body=document.createElement('div');body.className='game-dialog-body';
- const note=$('#game-mode');body.append(note,grid,account);
- const select=key=>{for(const [id,page] of Object.entries(pages))page.hidden=id!==key;note.hidden=true;body.scrollTop=0;head.querySelector('h2').hidden=key==='character';head.querySelector('h2').textContent={tasks:'今日家事',character:'我的角色',family:'我的家庭'}[key];dialog.setAttribute('aria-label',{tasks:'今日家事',character:'我的角色',family:'我的家庭'}[key]);if(key==='character')renderAvatarPreview()};
- dialog.append(body);dialog.selectPage=select;select('tasks');
+function openHomePanel(page){
+ const id={tasks:'#game-dialog',character:'#character-dialog',family:'#family-dialog'}[page];if(!id)return;
+ setSceneMenu(false);if(page==='character')renderAvatarPreview();showPanel(id);
 }
 
 {
@@ -953,8 +949,8 @@ function setupGamePages(){
   if(scene)houseNPC=createHouseNPC(window.homeScene,makeCharacter,()=>[character,...characters.values()]);
   resolveMonsterOverlap(houseNPC?.character);
 
-  setupGamePages();setupSceneMenu();
-  for(const [id,page] of [['game-open','tasks'],['character-open','character'],['family-open','family']])$('#'+id).onclick=()=>{setSceneMenu(false);$('#game-dialog').selectPage?.(page);$('#game-dialog').showModal()};
+  setupSceneMenu();
+  for(const [id,page] of [['game-open','tasks'],['character-open','character'],['family-open','family']])$('#'+id).onclick=()=>openHomePanel(page);
   $('#game-close').onclick=()=>$('#game-dialog').close();
   $('#game-dialog').onclick=e=>{if(e.target!==$('#game-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()};
   $('#shop-dialog').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.currentTarget.close()});
@@ -967,7 +963,7 @@ function setupGamePages(){
   $('#wallet-open').onclick=()=>showPanel('#wallet-dialog');
   $('#inventory-open').onclick=()=>{setSceneMenu(false);showPanel('#inventory-dialog')};
   $('#shop-open').onclick=()=>{setSceneMenu(false);showPanel('#shop-dialog')};
-  $('#members-open').onclick=()=>{setSceneMenu(false);showPanel('#members-dialog')};
+
   document.querySelectorAll('[data-close-dialog]').forEach(b=>b.onclick=()=>$(b.dataset.closeDialog).close());
   document.querySelectorAll('[data-inventory-tab]').forEach(b=>b.onclick=()=>{inventoryTab=b.dataset.inventoryTab;renderInventory()});
   $('#placement-room').onchange=previewPlacement;$('#placement-confirm').onclick=()=>confirmPlacement();$('#placement-return').onclick=()=>confirmPlacement(true);
