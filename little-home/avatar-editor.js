@@ -26,7 +26,7 @@ export function openAvatarEditor(profile,design={},required=false){return new Pr
  dialog.querySelector('.av-close')?.addEventListener('click',()=>finish(null));dialog.addEventListener('cancel',e=>{e.preventDefault();if(!required)finish(null)});
  dialog.querySelector('.av-save').onclick=()=>{if(!draft.name.trim()){dialog.querySelector('.av-foot span').textContent='請輸入名字';fields.querySelector('[data-field=name]').focus();return}finish({profile:{...draft,name:draft.name.trim().slice(0,12)},design:normalizeAvatarDesign(shape)})};
  document.body.append(dialog);sync();dialog.showModal();
- try{renderer=new T.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,matchMedia('(pointer:coarse)').matches?1.25:2));renderer.setSize(280,340,false);camera=new T.PerspectiveCamera(35,280/340,.01,10);camera.position.set(0,.55,2.05);camera.lookAt(0,.50,0);rebuild();
+ try{renderer=new T.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(280,340,false);camera=new T.PerspectiveCamera(35,280/340,.01,10);camera.position.set(0,.55,2.05);camera.lookAt(0,.50,0);rebuild();
  draw();
  }catch{dialog.querySelector('.av-foot span').textContent='3D預覽無法啟動，仍可選造型。'}
 })}
