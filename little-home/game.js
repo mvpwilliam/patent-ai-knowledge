@@ -446,9 +446,25 @@ async function claimTask(t,day=today()){
  const previousLevel=levelInfo(player.xp).level,previousXP=player.xp;
  try{await mutateGame(p=>{if(day!==today())throw new Error('新的一天開始了，請重新選家事');rewardPlayer(p,t,day)});renderTasks();const info=levelInfo(player.xp),r=taskReward(t);toast(`完成！＋${r.coins} 幣${previousXP<MAX_XP?'、＋20 EXP':''}${info.level>previousLevel?' · 升到 Lv.'+info.level:''}`)}catch(e){toast(e.code==='permission-denied'?'任務未記錄，請確認家庭寫入權限':e.message||'儲存失敗，請再試一次')}
 }
-function fillAvatar(){
-  $('#avatar-display-name').textContent=avatar.name;
+let avatarPreviewRenderer=null,avatarPreviewActor=null;
+function disposeAvatarPreview(){
+ if(!avatarPreviewActor)return;
+ const materials=new Set();avatarPreviewActor.traverse(n=>{n.geometry?.dispose();if(n.material)for(const m of Array.isArray(n.material)?n.material:[n.material])materials.add(m)});for(const m of materials)m.dispose();avatarPreviewActor=null;
 }
+function renderAvatarPreview(){
+ const canvas=$('#avatar-current-preview');if(!canvas)return;
+ try{
+  if(!avatarPreviewRenderer){avatarPreviewRenderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true});avatarPreviewRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));avatarPreviewRenderer.setSize(240,260,false);avatarPreviewRenderer.setClearColor(0x000000,0)}
+  disposeAvatarPreview();
+  const portraitScene=new T.Scene();portraitScene.add(new T.HemisphereLight('#ffffff','#72816f',2.5));
+  const light=new T.DirectionalLight('#fff7e9',2);light.position.set(-2,4,4);portraitScene.add(light);
+  avatarPreviewActor=createPixelDad(outfit(avatar),normalizeAvatarDesign(avatarDesign));avatarPreviewActor.userData.updatePose?.('stand');avatarPreviewActor.rotation.y=.2;portraitScene.add(avatarPreviewActor);
+  const bounds=new T.Box3().setFromObject(avatarPreviewActor),center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3());
+  const camera=new T.PerspectiveCamera(32,240/260,.01,20),distance=Math.max(size.y,size.x/camera.aspect)/(2*Math.tan(camera.fov*Math.PI/360))*1.2;
+  camera.position.set(center.x,center.y,center.z+distance);camera.lookAt(center);avatarPreviewRenderer.render(portraitScene,camera);canvas.hidden=false;
+ }catch(error){console.warn('角色預覽暫時無法顯示',error);canvas.hidden=true}
+}
+function fillAvatar(){renderAvatarPreview()}
 const appearanceKey=()=>`little-home-appearance-${user?.uid||localActorId}`;
 const nameKey=()=>`little-home-name-confirmed-${user?.uid||localActorId}`;
 function hasChosenName(v=avatar){
@@ -898,7 +914,7 @@ function setupGamePages(){
  const tabs=document.createElement('div');tabs.className='game-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','家事、角色與家庭');
  const body=document.createElement('div');body.className='game-dialog-body';
  const note=$('#game-mode');body.append(note,grid,account);
- const select=key=>{for(const [id,page] of Object.entries(pages))page.hidden=id!==key;note.hidden=key!=='tasks';body.scrollTop=0;head.querySelector('h2').textContent={tasks:'今日家事',character:'我的角色',family:'我的家庭'}[key];for(const button of tabs.children){const active=button.dataset.page===key;button.setAttribute('aria-selected',active);button.tabIndex=active?0:-1}};
+ const select=key=>{for(const [id,page] of Object.entries(pages))page.hidden=id!==key;note.hidden=key!=='tasks';body.scrollTop=0;head.querySelector('h2').hidden=key==='character';if(key==='character')renderAvatarPreview();head.querySelector('h2').textContent={tasks:'今日家事',character:'我的角色',family:'我的家庭'}[key];for(const button of tabs.children){const active=button.dataset.page===key;button.setAttribute('aria-selected',active);button.tabIndex=active?0:-1}};
  for(const [key,label] of [['tasks','今日家事'],['character','我的角色'],['family','我的家庭']]){
   pages[key].id='game-page-'+key;pages[key].setAttribute('role','tabpanel');
   const b=document.createElement('button');b.id='game-tab-'+key;b.dataset.page=key;b.textContent=label;b.setAttribute('role','tab');b.setAttribute('aria-controls',pages[key].id);pages[key].setAttribute('aria-labelledby',b.id);b.onclick=()=>select(key);

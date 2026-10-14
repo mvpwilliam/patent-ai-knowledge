@@ -122,3 +122,7 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 .scene-game-panel #game-open{width:100%;min-height:44px;padding:10px 8px;border-radius:12px;font-size:13px}
 .scene-game-panel .game-tools{gap:6px;margin-top:8px}.scene-game-panel .game-tools button{min-height:44px;font-size:12px;padding:8px 4px}
 @media(max-width:700px){.scene-menu-toggle{top:16px;left:16px}.scene-game-panel{top:68px!important;left:16px!important}}
+
+#avatar-current-preview{display:block;width:200px;max-width:100%;height:auto;margin:0 auto 16px;border-radius:14px;background:radial-gradient(ellipse at 50% 65%,#e0e7d8,#f0f3eb 70%)}
+#avatar-current-preview[hidden]{display:none}.character-overview{padding:14px 18px 18px;margin-top:14px}
+#game-dialog .dialog-head h2[hidden]{display:none}
