@@ -3,10 +3,12 @@ import * as T from './vendor/three.module.js';
 import {X_SCALE,X_PIVOT,scaleX,entryZero,entryX,kitchenStart,kitchenEnd,sinkX,stoveX,furnitureShift,washerPosition} from './layout.js?v=entry-expand-1';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 const $=s=>document.querySelector(s), canvas=$('#scene'), host=$('#world');
-let renderer;try{renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'default'});}catch(e){$('#loading').hidden=true;$('#error').hidden=false;throw e}
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;
+const mobilePowerSave=matchMedia('(pointer:coarse)').matches;
+const renderInterval=1000/(mobilePowerSave?30:60);
+let renderer;try{renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:mobilePowerSave?'low-power':'default'});}catch(e){$('#loading').hidden=true;$('#error').hidden=false;throw e}
+renderer.setPixelRatio(Math.min(devicePixelRatio,mobilePowerSave?1.25:2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(34,1,.1,100);const root=new T.Group();scene.add(root);
-const hemi=new T.HemisphereLight(0xf1f4fa,0x747982,1.35);scene.add(hemi);const sun=new T.DirectionalLight(0xfff6eb,2.1);sun.position.set(-3,12,6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-12,right:12,top:12,bottom:-12,near:1,far:40});sun.shadow.bias=-.0005;sun.shadow.normalBias=.035;sun.shadow.radius=3;scene.add(sun);const fill=new T.DirectionalLight(0xdce7ff,.65);fill.position.set(7,8,-9);scene.add(fill);
+const hemi=new T.HemisphereLight(0xf1f4fa,0x747982,1.35);scene.add(hemi);const sun=new T.DirectionalLight(0xfff6eb,2.1);sun.position.set(-3,12,6);sun.castShadow=true;sun.shadow.mapSize.set(mobilePowerSave?1024:2048,mobilePowerSave?1024:2048);Object.assign(sun.shadow.camera,{left:-12,right:12,top:12,bottom:-12,near:1,far:40});sun.shadow.bias=-.0005;sun.shadow.normalBias=.035;sun.shadow.radius=3;scene.add(sun);const fill=new T.DirectionalLight(0xdce7ff,.65);fill.position.set(7,8,-9);scene.add(fill);
 const mats=new Map(),geos=new Map();function mat(c){if(!mats.has(c))mats.set(c,new T.MeshStandardMaterial({color:c,roughness:.8}));return mats.get(c)}
 const C={wall:'#b8b9ba',trim:'#979b9d',wood:'#a58b6c',woodlight:'#c4ae8b',floor:'#e8d9bd',navy:'#354e63',cream:'#e3e1d9',cab:'#62656b',dark:'#394746',metal:'#6d7773',green:'#789377',white:'#f4f1e6',bed:'#b6c3ac'};
 // Architectural X values below are unscaled model metres. The balcony and
@@ -615,7 +617,11 @@ bathWallFace('z',3.72,bathLeft,bathRight,.10,2.6,1,'bath-tile-master-wall');
 bathWallFace('x',bathLeft,3.72,4.50,.10,2.6,1,'bath-tile-entry-wall');
 // Derive the faces from the actual 14 cm lintel: the old 13 cm wall datum
 // placed both cladding planes inside the grey header body.
-const bathHeaderBounds=new T.Box3().setFromObject(bathDoorFrame.getObjectByName('door-header-body'));
+const bathHeaderBody=bathDoorFrame.getObjectByName('door-header-body');
+// Texture the solid lintel itself as well as its grout overlay: no grey fallback.
+bathHeaderBody.material=bathTileMaterial;
+bathHeaderBody.updateWorldMatrix(true,false);
+const bathHeaderBounds=new T.Box3().setFromObject(bathHeaderBody);
 bathWallFace('x',bathHeaderBounds.max.x,bathHeaderBounds.min.z,bathHeaderBounds.max.z,bathHeaderBounds.min.y,bathHeaderBounds.max.y,1,'bath-tile-door-header');
 bathWallFace('x',bathHeaderBounds.min.x,bathHeaderBounds.min.z,bathHeaderBounds.max.z,bathHeaderBounds.min.y,bathHeaderBounds.max.y,-1,'bath-tile-door-header-outer');
 const bathHeaderTop=new T.Mesh(new T.PlaneGeometry(bathHeaderBounds.max.x-bathHeaderBounds.min.x,bathHeaderBounds.max.z-bathHeaderBounds.min.z),bathTileMaterial);
@@ -928,7 +934,17 @@ function release(e){
 canvas.addEventListener('dblclick',e=>e.preventDefault());canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
 canvas.addEventListener('wheel',e=>{e.preventDefault();if(followMode)followDistance=Math.max(5,Math.min(26,followDistance*Math.exp(e.deltaY*.001)));else desiredDist=Math.max(5,Math.min(30,desiredDist*Math.exp(e.deltaY*.001)))},{passive:false});canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#error').hidden=false});canvas.addEventListener('webglcontextrestored',()=>location.reload());
 const wallFader=createWallFader([...walls,...doorFrames]);
-let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0;function animate(){requestAnimationFrame(animate);window.homeGameUpdate?.(performance.now());if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=followDistance;phi=followPitch;const angle=followYaw;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?(followMode?1.2:1.37):1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}fridgeLeaves.forEach((leaf,i)=>{leaf.rotation.y+=((fridgeOpen?(i===0?1:-1)*Math.PI/3:0)-leaf.rotation.y)*.12});updateCoverings();root.updateMatrixWorld(true);wallFader.update(camera,window.homeGameFocus?.()?.position,followMode,performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}animate();
+let portrait=false;function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;portrait=camera.aspect<.85;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(host);resize();let frame=0,renderHandle=0,lastRender=-Infinity;
+function animate(now=performance.now()){
+renderHandle=0;
+if(document.hidden)return;
+renderHandle=requestAnimationFrame(animate);
+if(now-lastRender<renderInterval-.5)return;
+const elapsed=now-lastRender;lastRender=now-((Number.isFinite(elapsed)&&elapsed>=renderInterval?elapsed%renderInterval:0));
+window.homeGameUpdate?.(now);if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=followDistance;phi=followPitch;const angle=followYaw;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?(followMode?1.2:1.37):1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}fridgeLeaves.forEach((leaf,i)=>{leaf.rotation.y+=((fridgeOpen?(i===0?1:-1)*Math.PI/3:0)-leaf.rotation.y)*.12});updateCoverings();root.updateMatrixWorld(true);wallFader.update(camera,window.homeGameFocus?.()?.position,followMode,performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}document.addEventListener('visibilitychange',()=>{
+if(document.hidden){cancelAnimationFrame(renderHandle);renderHandle=0}
+else if(!renderHandle){lastRender=-Infinity;renderHandle=requestAnimationFrame(animate)}
+});renderHandle=requestAnimationFrame(animate);
 // Scene inventory available for non-rendering diagnostics and future game integration.
 window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,getFollowOrbit:()=>({yaw:followYaw,pitch:followPitch,distance:followDistance}),interactionTargets,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
   setBalconyDoor(near){const state=balconyDoorLeaf.userData.door;if(near){state.open=true;state.target=state.openAngle}else if(state.autoNear){state.open=false;state.target=state.closedAngle}state.autoNear=near},

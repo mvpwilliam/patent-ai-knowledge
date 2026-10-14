@@ -5,7 +5,7 @@ import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDyn
 import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=entry-expand-1';
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=legendary-four-1';
 import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=legendary-four-1';
-import {openAvatarEditor} from './avatar-editor.js?v=legendary-four-1';
+import {openAvatarEditor} from './avatar-editor.js?v=mobile-cool-1';
 import {createHouseNPC} from './house-npc.js?v=pillow-header-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=pillow-header-1';
@@ -255,7 +255,7 @@ function openMirror(){
  const dialog=$('#mirror-dialog');if(!dialog)return;
  $('#mirror-caption').textContent=`鏡中的${avatar.name}`;
  try{
-  if(!mirrorRenderer){mirrorRenderer=new T.WebGLRenderer({canvas:$('#mirror-canvas'),antialias:true,alpha:false});mirrorRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));mirrorRenderer.setSize(260,350,false)}
+  if(!mirrorRenderer){mirrorRenderer=new T.WebGLRenderer({canvas:$('#mirror-canvas'),antialias:true,alpha:false});mirrorRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,matchMedia('(pointer:coarse)').matches?1.25:2));mirrorRenderer.setSize(260,350,false)}
   const mirrorScene=new T.Scene();mirrorScene.background=new T.Color('#dce4df');
   mirrorScene.add(new T.HemisphereLight('#ffffff','#708b78',2.5));const light=new T.DirectionalLight('#fff5e7',2);light.position.set(2,3,4);mirrorScene.add(light);
   if(mirrorPortrait)mirrorPortrait.traverse(n=>{n.geometry?.dispose();n.material?.dispose()});mirrorPortrait=makeMirrorAvatar();mirrorScene.add(mirrorPortrait);
@@ -537,7 +537,7 @@ function disposeAvatarPreview(){
 function renderAvatarPreview(previewOutfit=equippedLegendary(player)){
  const canvas=$('#avatar-current-preview');if(!canvas)return;if(previewOutfit===equippedLegendary(player))$('#legendary-preview-label').textContent='';
  try{
-  if(!avatarPreviewRenderer){avatarPreviewRenderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true});avatarPreviewRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));avatarPreviewRenderer.setSize(240,260,false);avatarPreviewRenderer.setClearColor(0x000000,0)}
+  if(!avatarPreviewRenderer){avatarPreviewRenderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true});avatarPreviewRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,matchMedia('(pointer:coarse)').matches?1.25:2));avatarPreviewRenderer.setSize(240,260,false);avatarPreviewRenderer.setClearColor(0x000000,0)}
   disposeAvatarPreview();
   const portraitScene=new T.Scene();portraitScene.add(new T.HemisphereLight('#ffffff','#72816f',2.5));
   const light=new T.DirectionalLight('#fff7e9',2);light.position.set(-2,4,4);portraitScene.add(light);
