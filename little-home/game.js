@@ -425,10 +425,11 @@ function renderTasks(){
   renderMarkers();renderEconomy();
 }
 let selectedTask=null;
-function closeTaskPopup(){selectedTask=null;$('#chore-popup').hidden=true}
+function closeTaskPopup(){selectedTask=null;$('#chore-popup').hidden=true;for(const marker of $('#chore-markers').children)marker.setAttribute('aria-expanded','false')}
 function chooseTask(t){
   if(selectedTask===t.id){closeTaskPopup();return}
   selectedTask=t.id;$('#chore-name').textContent=t.label;
+  for(const marker of $('#chore-markers').children)marker.setAttribute('aria-expanded',String(marker.dataset.task===t.id));
   $('#chore-start').disabled=!!activity||(mode==='online'&&(!user||!homeReady));
   $('#chore-popup').hidden=false;
 }
@@ -437,17 +438,34 @@ $('#chore-close').onclick=closeTaskPopup;
 $('#scene').addEventListener('pointerdown',closeTaskPopup);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTaskPopup()});
 function renderMarkers(){
- const layer=$('#chore-markers');layer.replaceChildren();$('#chore-popup').hidden=true;
+ closeTaskPopup();const layer=$('#chore-markers');layer.replaceChildren();
  const t=activity&&activity.phase!=='return'?activity.task:null;
  $('#active-task').hidden=!t;$('#task-cancel').hidden=!t;
- if(t){$('#active-task').textContent=`${t.label} · ${activity.phase==='work'?'正在完成':'前往中'}…`;const ring=document.createElement('span');ring.className='task-target-ring';ring.dataset.task=t.id;ring.setAttribute('aria-label',t.label+'的位置');layer.append(ring)}
+ for(const task of dayTasks()){
+  if(isClaimed(task))continue;
+  const marker=document.createElement('button');marker.type='button';marker.className='chore-marker';marker.textContent='!';marker.dataset.task=task.id;
+  marker.setAttribute('aria-label',`查看家事：${task.label}`);marker.setAttribute('aria-controls','chore-popup');marker.setAttribute('aria-expanded','false');
+  marker.disabled=!!activity;marker.classList.toggle('busy',t?.id===task.id);
+  marker.onclick=()=>chooseTask(task);layer.append(marker);
+ }
  updateMarkers();
 }
 function updateMarkers(){
  if(!scene)return;const t=activity&&activity.phase!=='return'?activity.task:null;
- if(!t){$('#chore-markers').replaceChildren();$('#active-task').hidden=true;$('#task-cancel').hidden=true;return}
- $('#active-task').textContent=`${t.label} · ${activity.phase==='work'?'正在完成':'前往中'}…`;
- for(const ring of $('#chore-markers').children){const pos=placement(t).marker;const p=new T.Vector3(pos[0],.12,pos[2]).project(window.homeScene.camera);ring.hidden=p.z<=-1||p.z>=1||Math.abs(p.x)>.95||Math.abs(p.y)>.95;ring.style.left=(p.x+1)*$('#world').clientWidth/2+'px';ring.style.top=(1-p.y)*$('#world').clientHeight/2+'px'}
+ $('#active-task').hidden=!t;$('#task-cancel').hidden=!t;
+ if(t)$('#active-task').textContent=`${t.label} · ${activity.phase==='work'?'正在完成':'前往中'}…`;
+ const width=$('#world').clientWidth,height=$('#world').clientHeight,placed=[];
+ for(const marker of $('#chore-markers').children){
+  const task=tasks.find(item=>item.id===marker.dataset.task);if(!task){marker.hidden=true;continue}
+  const pos=placement(task).marker,p=new T.Vector3(...pos).project(window.homeScene.camera);
+  let x=(p.x+1)*width/2,y=(1-p.y)*height/2;
+  marker.hidden=p.z<=-1||p.z>=1||x<24||x>width-24||y<24||y>height-24;
+  if(marker.hidden)continue;
+  // Keep nearby chores individually tappable, including tasks on the same furniture.
+  while(placed.some(q=>Math.abs(q.x-x)<44&&Math.abs(q.y-y)<44))y-=46;
+  marker.hidden=y<24;if(marker.hidden)continue;
+  placed.push({x,y});marker.style.left=x+'px';marker.style.top=y+'px';
+ }
 }
 function startTask(t){
   if(activity||isClaimed(t))return;
@@ -995,6 +1013,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 

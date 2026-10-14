@@ -188,3 +188,9 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 
 #character-names .character-name{position:absolute;transform:translate(-50%,4px);padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;text-shadow:none;filter:none;color:#626762;font-family:"HomeRoundedLabel","PingFang TC",sans-serif;font-size:12px;font-weight:400;letter-spacing:0;line-height:1.4;white-space:nowrap;pointer-events:none}
 
+
+
+/* Scene chore prompts: names appear only after tapping. */
+.chore-marker{width:44px;height:44px;min-width:44px;font-size:22px!important;font-weight:800;color:#536b4e;background:#fffdf2f2;border:2px solid #fffdf9;cursor:pointer;touch-action:manipulation}
+.chore-marker:focus-visible{outline:3px solid #648572;outline-offset:2px}
+.chore-marker:disabled{cursor:default}
