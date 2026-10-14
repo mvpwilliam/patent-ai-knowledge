@@ -2,9 +2,9 @@ import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=128';
 import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=128';
-import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=legendary-1';
-import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=legendary-1';
-import {openAvatarEditor} from './avatar-editor.js?v=legendary-1';
+import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=legendary-detail-2';
+import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=legendary-detail-2';
+import {openAvatarEditor} from './avatar-editor.js?v=legendary-detail-2';
 import {createHouseNPC} from './house-npc.js?v=child-seat-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed} from './bed-slots.js?v=128';
@@ -122,7 +122,7 @@ function makeCharacter(v,design={}){
 function setCharacter(v){
  if(new URLSearchParams(location.search).get('avatar')==='dad-white'){v=outfit({...v,...dadWhitePreset});avatarDesign=normalizeAvatarDesign({...avatarDesign,glasses:true,eyewear:'round',hairStyle:'korean'});avatar=v;localStorage.setItem('little-home-avatar',JSON.stringify(v));fillAvatar();}
  if(!scene)return;const previous=character?.position.clone(),angle=character?.rotation.y;
- if(character)scene.remove(character);character=makeCharacter(v,{...avatarDesign,legendaryOutfit:equippedLegendary(player)});scene.add(character);
+ if(character){character.userData.disposeCostume?.();scene.remove(character)}character=makeCharacter(v,{...avatarDesign,legendaryOutfit:equippedLegendary(player)});scene.add(character);
  if(previous){character.position.copy(previous);character.rotation.y=angle;resolveMonsterOverlap(character);return}
  const start=[...(user?.uid||localActorId)].reduce((sum,c)=>sum+c.charCodeAt(0),0)%tour.length;
  character.position.set(tour[start][0],.07,tour[start][1]);route=(start+1)%tour.length;
@@ -523,10 +523,11 @@ async function claimTask(t,day=today()){
 let avatarPreviewRenderer=null,avatarPreviewActor=null;
 function disposeAvatarPreview(){
  if(!avatarPreviewActor)return;
+ avatarPreviewActor.userData.disposeCostume?.();
  const materials=new Set();avatarPreviewActor.traverse(n=>{n.geometry?.dispose();if(n.material)for(const m of Array.isArray(n.material)?n.material:[n.material])materials.add(m)});for(const m of materials)m.dispose();avatarPreviewActor=null;
 }
 function renderAvatarPreview(previewOutfit=equippedLegendary(player)){
- const canvas=$('#avatar-current-preview');if(!canvas)return;
+ const canvas=$('#avatar-current-preview');if(!canvas)return;if(previewOutfit===equippedLegendary(player))$('#legendary-preview-label').textContent='';
  try{
   if(!avatarPreviewRenderer){avatarPreviewRenderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true});avatarPreviewRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));avatarPreviewRenderer.setSize(240,260,false);avatarPreviewRenderer.setClearColor(0x000000,0)}
   disposeAvatarPreview();
@@ -917,9 +918,9 @@ function renderPlacements(){
 function onlinePlayers(){return Object.entries(gameMeta.players||{}).filter(([id,p])=>id!==playerId()&&p.presence?.online&&Date.now()-p.presence.at<45000).sort((a,b)=>(b[1].presence.pose==='work')-(a[1].presence.pose==='work')||b[1].presence.at-a[1].presence.at)}
 function syncCharacters(){
  if(!scene)return;const online=onlinePlayers(),visible=online.slice(0,5),ids=new Set(visible.map(([id])=>id));
- for(const [id,item] of characters)if(!ids.has(id)){scene.remove(item.mesh);characters.delete(id)}
+ for(const [id,item] of characters)if(!ids.has(id)){item.mesh.userData.disposeCostume?.();scene.remove(item.mesh);characters.delete(id)}
  for(const [id,p] of visible){const profile=profileCache[id];if(!profile)continue;let item=characters.get(id);const remoteDesign=normalizeAvatarDesign({...p.avatarDesign,hairStyle:p.avatarDesign?.hairStyle||profile.hair,legendaryOutfit:equippedLegendary(p)});const signature=JSON.stringify([profile,remoteDesign]);
- if(!item||item.signature!==signature){if(item)scene.remove(item.mesh);const mesh=makeCharacter(outfit(profile),remoteDesign);scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach)&&!crossesDynamicObstacle([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;item.mesh.userData.bedReservation=p.bedReservation;resolveMonsterOverlap(item.mesh);
+ if(!item||item.signature!==signature){if(item){item.mesh.userData.disposeCostume?.();scene.remove(item.mesh)}const mesh=makeCharacter(outfit(profile),remoteDesign);scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach)&&!crossesDynamicObstacle([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;item.mesh.userData.bedReservation=p.bedReservation;resolveMonsterOverlap(item.mesh);
  }
  const list=$('#member-list');list.replaceChildren();for(const [id,v] of Object.entries(profileCache)){const row=document.createElement('p');const active=id===playerId()||online.some(([uid])=>uid===id);row.textContent=`${v.name} · ${active?'上線':'離線'}${active&&id!==playerId()&&!ids.has(id)?'（成員列）':''}`;list.append(row)}
  $('#member-count').textContent=`上線 ${online.length+1} · 屋內 ${characters.size+1}／6`;
@@ -1061,6 +1062,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
