@@ -394,13 +394,14 @@ function animate(now){
     const [x,z]=activity.path[activity.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
     if(d<.035){walkStep(character,x,z);activity.index++;if(activity.index>=activity.path.length){
       if(activity.phase==='return'){activity=null;pose='stand';renderTasks()}
-      else{activity.phase='work';activity.started=now;character.userData.body.position.y=0;if(activity.task.id==='scenery'){character.rotation.y=Math.PI;showScenery()}toast(`開始${activity.task.label}`)}
+      else{activity.phase='work';activity.started=now;faceTaskTarget(activity.task);character.userData.body.position.y=0;if(activity.task.id==='scenery'){character.rotation.y=Math.PI;showScenery()}toast(`開始${activity.task.label}`)}
     }}
     else{const move=Math.min(d,dt*2.05);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
     step+=dt*19;b.position.y=Math.abs(Math.sin(step))*.050;b.rotation.set(0,0,Math.sin(step)*.055);
     leftArm.rotation.x=Math.sin(step)*.8;rightArm.rotation.x=-Math.sin(step)*.8;
     leftLeg.rotation.x=-Math.sin(step)*.6;rightLeg.rotation.x=Math.sin(step)*.6;
   }else if(activity?.phase==='work'){
+    faceTaskTarget(activity.task);
     const t=(now-activity.started)/1000;
     b.position.y=.012*Math.sin(t*14);b.rotation.x=.12+Math.sin(t*10)*.12;b.rotation.z=0;
     leftArm.position.z=.18;rightArm.position.z=.18;
@@ -490,6 +491,10 @@ function updateMarkers(){
   // Keep the prompt on its world anchor, even when nearby chores overlap.
   marker.style.left=x+'px';marker.style.top=y+'px';
  }
+}
+function faceTaskTarget(task){
+ if(!character)return;const target=placement(task).marker,dx=target[0]-character.position.x,dz=target[2]-character.position.z;
+ if(Math.hypot(dx,dz)>.01)character.rotation.y=Math.atan2(dx,dz);
 }
 function startTask(t){
   if(activity||isClaimed(t))return;
@@ -828,8 +833,6 @@ function renderEconomy(){
  $('#player-level').textContent=`Lv.${info.level} · ${info.title}`;$('#xp-meter').value=info.progress;
  $('#xp-label').textContent=info.level===20?(player.legendaryFreeClaimed?'已滿級 · 家事繼續賺幣':'已滿級 · 下方可免費領取一套傳說套裝'):`${player.xp} / ${MAX_XP} EXP`;
  $('#daily-progress').textContent=`今日家事 ${dayTasks().filter(t=>taskDone(t)).length}／${dayTasks().length}`;
- $('#wallet-list').replaceChildren();for(const row of player.ledger){const li=document.createElement('p');li.textContent=`${row.text}　${row.amount>=0?'+':''}${row.amount} 幣`;$('#wallet-list').append(li)}
- if(!player.ledger.length)$('#wallet-list').textContent='完成家事後，收入會記在這裡。';
  renderInventory();renderShop();renderLegendaryWardrobe();
 }
 function equippedLegendary(p){return p?.xp>=MAX_XP&&Array.isArray(p.legendaryOwned)&&p.legendaryOwned.includes(p.legendaryEquipped)&&outfitById(p.legendaryEquipped)?p.legendaryEquipped:''}
@@ -1046,7 +1049,6 @@ function openHomePanel(page){
   $('#home-join').onclick=()=>subscribeHome(false);
   $('#home-share').onclick=shareHome;
   $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;
-  $('#wallet-open').onclick=()=>showPanel('#wallet-dialog');
   $('#inventory-open').onclick=()=>{setSceneMenu(false);renderInventory();showPanel('#inventory-dialog')};
   $('#shop-open').onclick=()=>{setSceneMenu(false);showPanel('#shop-dialog')};
 

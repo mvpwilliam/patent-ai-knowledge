@@ -613,7 +613,8 @@ function bathWallFace(axis,plane,a,b,lo,hi,facing,name){
 const bathLeft=scaleX(4.515),bathRight=scaleX(BATH_EXTERIOR_X-.075),showerRight=scaleX(OUTER_X-.065);
 bathWallFace('z',3.72,bathLeft,bathRight,.10,2.6,1,'bath-tile-master-wall');
 bathWallFace('x',bathLeft,3.72,4.50,.10,2.6,1,'bath-tile-entry-wall');
-bathWallFace('x',bathLeft,4.50,5.485,2.20,2.6,1,'bath-tile-door-header');
+bathWallFace('x',bathLeft,4.50,5.55,2.17,2.6,1,'bath-tile-door-header');
+bathWallFace('x',scaleX(4.385),4.50,5.55,2.17,2.6,-1,'bath-tile-door-header-outer');
 bathWallFace('x',bathRight,3.72,4.625,.10,2.6,-1,'bath-tile-toilet-wall');
 bathWallFace('z',SHAFT_BATH_FACE_Z,bathLeft,showerP1.x,.10,2.6,-1,'bath-tile-child-and-shaft-wall');
 bathWallFace('x',showerP1.x,SHAFT_BATH_FACE_Z,6.10,.10,2.6,1,'bath-tile-shaft-side');

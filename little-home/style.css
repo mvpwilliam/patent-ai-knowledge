@@ -209,3 +209,9 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 .chore-marker[aria-expanded=true]{color:#ff6860}
 
 
+
+/* Small translucent task halo; preserve the 44px touch target. */
+.chore-marker::before{display:block!important;width:28px;height:28px;background:rgba(255,253,246,.46);border:1px solid rgba(255,255,255,.30);box-shadow:0 1px 5px rgba(35,45,35,.12)}
+.chore-marker:hover::before{background:rgba(255,253,246,.62)}
+.chore-marker[aria-expanded=true]::before{outline:none;background:rgba(255,253,246,.68)}
+#wallet-open{cursor:default;user-select:none}
