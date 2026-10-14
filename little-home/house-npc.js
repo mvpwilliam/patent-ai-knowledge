@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=103';
+import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=127';
 import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero} from './layout.js?v=85';
 
 import {bedSlots,sameBed} from './bed-slots.js?v=107';

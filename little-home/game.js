@@ -1,14 +1,14 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
-import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=103';
+import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=127';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=npc-lego-1';
 import {openAvatarEditor} from './avatar-editor.js?v=tiger-eyewear-1';
-import {createHouseNPC} from './house-npc.js?v=123';
+import {createHouseNPC} from './house-npc.js?v=127';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed} from './bed-slots.js?v=122';
 import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=122';
-const PLAYER_SCALE=.9;
+const PLAYER_SCALE=1;
 
 let avatarDesign=normalizeAvatarDesign({}),designPending=false;
 const designLocalKey=()=>`little-home-design-${user?.uid||localActorId}`;

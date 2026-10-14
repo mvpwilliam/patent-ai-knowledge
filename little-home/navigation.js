@@ -1,6 +1,6 @@
 // Walking envelopes share the revised model's metre coordinates.
 import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=85';
-const radius=.171,cell=.08; // Characters and their walking envelope are both 10% smaller.
+const radius=.19,cell=.08; // Restored full-size character walking envelope.
 const shift=(a,b,c,d,s)=>[a+s,b+s,c,d];
 const rect=(x0,x1,z0,z1)=>[scaleX(x0),scaleX(x1),z0,z1];
 export const wallObstacles=[
