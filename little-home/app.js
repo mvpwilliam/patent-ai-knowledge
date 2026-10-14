@@ -498,9 +498,7 @@ finishSection('dining-and-island','translate',furnitureShift.dining);
 box(6.34,.54,1.64,.16,.94,2.05,'#b0ad98',.08);
 box(5.44,.29,1.64,1.85,.35,1.94,C.wood,.045);
 box(5.44,.52,1.64,1.90,.22,1.95,C.white,.08);
-box(5.13,.67,1.64,1.25,.15,1.94,C.bed,.075);
-for(const z of [1.04,1.64,2.24]){const pillow=box(6.04,.70,z,.45,.17,.48,'#f3ecda',.07);pillow.rotation.z=-.04}
-box(4.74,.77,1.64,.33,.07,1.95,'#8ea48d',.03);
+for(const z of [1.04,1.64,2.24]){const pillow=box(6.04,.70,z,.45,.17,.48,C.white,.07);pillow.rotation.z=-.04}
 finishSection('main-bed','translate',furnitureShift.mainBed);
 // Bathroom tiled floor, basin, mirror, toilet and open shower area.
 const bathFloorStart=4.445,bathFloorEnd=BATH_EXTERIOR_X-.075;
@@ -630,10 +628,8 @@ finishSection('bath-wall-finishes','exact');walls.push(root.getObjectByName('bat
 // Child room: only the bed; the headboard faces the opposite kitchen-side wall.
 box(5.12,.25,7.00,1.1,.35,1.95,C.wood,.06);
 box(5.12,.51,7.00,1.1,.20,1.94,C.white,.055);
-box(5.12,.67,6.73,1.11,.13,1.48,'#c0ccbd',.05);
-for(const x of [4.85,5.39])box(x,.70,7.76,.42,.18,.37,'#f0dfb7',.07);
+for(const x of [4.85,5.39])box(x,.70,7.76,.42,.18,.37,C.white,.07);
 box(5.12,.46,8.08,1.13,.55,.11,C.woodlight,.03);
-box(5.12,.765,6.40,1.12,.04,.36,'#8fa8a0',.02);
 finishSection('child-bed','translate',furnitureShift.childBed);
 // Kitchen and appliances. The refrigerator-side built-in is a separate tall
 // unit: overhead doors, open display shelf, appliance counter and microwave.
