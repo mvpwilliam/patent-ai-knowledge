@@ -2,8 +2,11 @@
 export const X_SCALE=0.9988274809160306, X_PIVOT=3.05;
 export const scaleX=x=>X_PIVOT+(x-X_PIVOT)*X_SCALE;
 export const kitchenStart=scaleX(3.115),kitchenEnd=scaleX(5.765);
-export const entryZero=scaleX(2.985)-3.80;
-export const entryX=cm=>entryZero+cm/100;
+// Keep the kitchen appliances and front door on their existing datum.
+export const entryDatum=scaleX(2.985)-3.80;
+// Expand the entry wing; the 125 cm shoe cabinet's end meets the living wall.
+export const entryZero=scaleX(.005)-1.25;
+export const entryX=cm=>entryDatum+cm/100;
 export const sinkX=kitchenEnd-.04-.65-.32-.36;
 export const stoveX=kitchenEnd-.04-.325;
 // Washer centered between balcony inner wall faces, 2 cm clear of its rear wall.

@@ -1,8 +1,8 @@
 import * as T from './vendor/three.module.js';
-import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=walkways-20-1';
-import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero} from './layout.js?v=walkways-20-1';
+import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=entry-expand-1';
+import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero,entryX} from './layout.js?v=entry-expand-1';
 
-import {bedSlots,sameBed} from './bed-slots.js?v=walkways-20-1';
+import {bedSlots,sameBed} from './bed-slots.js?v=entry-expand-1';
 import {furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=walkways-20-1';
 
 // A local ambient resident, never a Firebase player or an award recipient.
@@ -30,7 +30,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
   {id:'curtain',label:'拉客廳窗簾',approach:pointXZ([1.55,.50]),angle:Math.PI,pose:'work'},
   {id:'toilet',label:'坐馬桶',approach:[bathX,4.96],target:[5.72+furnitureShift.toilet,.49,4.28],angle:Math.PI,pose:'sit'},
   {id:'hands',label:'洗手',approach:[4.73+furnitureShift.basin,4.78],angle:Math.PI,pose:'work'},
-  {id:'fridge',label:'開冰箱',approach:[entryZero+2.39,8.98],angle:0,pose:'work'},
+  {id:'fridge',label:'開冰箱',approach:[entryX(239),8.98],angle:0,pose:'work'},
   {id:'shower',label:'在淋浴間洗澡',approach:[5.68,5.18],target:[6.24,.10,5.17],angle:Math.PI/2,pose:'work'},
   ...[['客廳',1.2,3.7],['餐廳',.7,6.2],['廚房',4.0,8.7],['主臥',3.80,3.2],['次臥',3.25,6.65],['浴室',5.1,5.0],['玄關',.7,8.55],['陽台',6.5,7.6]].map(([label,x,z],i)=>({id:'room'+i,label:'在'+label+'待一下',approach:pointXZ([x,z]),pose:'stand',angle:0}))
  ];

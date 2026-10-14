@@ -1,6 +1,6 @@
 import {createWallFader} from './camera-walls.js?v=111';
 import * as T from './vendor/three.module.js';
-import {X_SCALE,X_PIVOT,scaleX,entryZero,entryX,kitchenStart,kitchenEnd,sinkX,stoveX,furnitureShift,washerPosition} from './layout.js?v=walkways-20-1';
+import {X_SCALE,X_PIVOT,scaleX,entryZero,entryX,kitchenStart,kitchenEnd,sinkX,stoveX,furnitureShift,washerPosition} from './layout.js?v=entry-expand-1';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 const $=s=>document.querySelector(s), canvas=$('#scene'), host=$('#world');
 let renderer;try{renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'default'});}catch(e){$('#loading').hidden=true;$('#error').hidden=false;throw e}
@@ -100,8 +100,8 @@ const entryStoneTexture=new T.CanvasTexture(entryStoneCanvas);entryStoneTexture.
 const entryStoneMaterial=new T.MeshStandardMaterial({map:entryStoneTexture,roughness:.92});
 // The finish is the only grey surface. The wood beneath it prevents any
 // rectangular grey patch from showing beyond the diagonal outline.
-const panelTip=[entryX(125),stoneStartZ],fridgeTip=[entryX(207),9.295];
-const stoneOutline=[[entryZero,7.85],[entryX(125),7.85],panelTip,fridgeTip,[fridgeTip[0],9.995],[entryZero,9.995]];
+const panelTip=[(entryZero+1.25),stoneStartZ],fridgeTip=[entryX(207),9.295];
+const stoneOutline=[[entryZero,7.85],[(entryZero+1.25),7.85],panelTip,fridgeTip,[fridgeTip[0],9.995],[entryZero,9.995]];
 const stoneShape=new T.Shape();stoneShape.moveTo(stoneOutline[0][0],-stoneOutline[0][1]);
 for(const [x,z] of stoneOutline.slice(1))stoneShape.lineTo(x,-z);
 stoneShape.closePath();
@@ -128,7 +128,7 @@ function subtractConvex(poly,cut){
  return outside;
 }
 const stoneCuts=[
- [[entryZero,7.85],[entryX(125),7.85],[entryX(125),stoneStartZ],[entryZero,stoneStartZ]],
+ [[entryZero,7.85],[(entryZero+1.25),7.85],[(entryZero+1.25),stoneStartZ],[entryZero,stoneStartZ]],
  [[entryZero,stoneStartZ],panelTip,fridgeTip,[fridgeTip[0],9.995],[entryZero,9.995]]
 ];
 root.updateMatrixWorld(true);
@@ -244,7 +244,8 @@ named(wall((doorEnd+outerEnd)/2,10.07,outerEnd-doorEnd,.15,2.6),'doorway-exterio
 // (x=0) is completely open to the dining area and kitchen passage.
 wall((entryZero-.12825+scaleX(-.07))/2,7.85,scaleX(-.07)-(entryZero-.12825),.15,2.6); // shoe side turns into the TV exterior wall
 named(wall(entryZero-.064125,8.96,.12825,2.23,2.6),'entry-side-wall'); // solid inner face of the square entry
-wall(entryZero-.064125,10.07,.12825,.15,2.6); // short corner before the front door
+wall(entryZero-.064125,10.07,.12825,.15,2.6);
+named(wall((entryZero+entryX(0))/2,10.07,entryX(0)-entryZero,.15,2.6),'entry-expanded-front-wall'); // short corner before the front door
 // Door opening continues directly to the structural column. // long kitchen wall after the door
 named(wall(entryX(153.5),9.775,1.03,.44,2.6),'entry-column');
 finishSection('entry-walls','exact'); // solid column: door, column, then refrigerator
@@ -371,7 +372,7 @@ walnutDoor(4.45,5.52,.99,.25,Math.PI/2,true); // bathroom, with lower vents
 walnutDoor(3.391875,5.55,1.028125,-.85,0);            // second bedroom
 finishSection('interior-door-leaves');
 // A dark leaf pivots inward toward the small entry square.
-const frontDoor=new T.Group();frontDoor.position.set(entryZero+.025,0,10.00);frontDoor.rotation.y=0;root.add(frontDoor);
+const frontDoor=new T.Group();frontDoor.position.set(entryX(0)+.025,0,10.00);frontDoor.rotation.y=0;root.add(frontDoor);
 box(.485,1.03,-.02,.97,2.04,.055,'#292b2b',.01,frontDoor);
 box(.76,1.02,-.09,.13,.045,.025,C.metal,.01,frontDoor);
 doorFrames.push(frontDoor);

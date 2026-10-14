@@ -1,5 +1,5 @@
 // Walking envelopes share the revised model's metre coordinates.
-import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=walkways-20-1';
+import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=entry-expand-1';
 const radius=.19,cell=.08; // Restored full-size character walking envelope.
 const shift=(a,b,c,d,s)=>[a+s,b+s,c,d];
 const rect=(x0,x1,z0,z1)=>[scaleX(x0),scaleX(x1),z0,z1];
