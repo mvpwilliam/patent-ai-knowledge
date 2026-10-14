@@ -133,10 +133,10 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #character-feedback[hidden]{display:none}
 
 #character-names{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
-.character-name{position:absolute;transform:translate(-50%,4px);padding:2px 6px;border-radius:7px;background:#fbfcf3c9;color:#385347;font-size:11px;font-weight:500;line-height:1.4;white-space:nowrap;text-shadow:0 1px 1px #fff;pointer-events:none}
+
 .character-name[hidden]{display:none}
 
-.character-name{background:transparent;padding:0;border:0;box-shadow:none;text-shadow:0 1px 2px #fff,1px 0 2px #fff,-1px 0 2px #fff,0 -1px 2px #fff}
+
 
 #world .scene-menu-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:0}
 #world .scene-menu-options button{width:100%;min-height:44px;margin:0;padding:10px 5px;background:#e4ebe0;color:#405f50;border-radius:11px;font-size:12px;font-weight:500}
@@ -159,5 +159,7 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #inventory-dialog .inventory-tabs button[aria-pressed=true]{background:#405f50;color:#fff}
 
 @font-face{font-family:"Cubic11";src:url("https://cdn.jsdelivr.net/gh/ACh-K/Cubic-11@main/fonts/web/Cubic_11.woff2") format("woff2"),url("https://raw.githubusercontent.com/ACh-K/Cubic-11/main/fonts/web/Cubic_11.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
-.character-name{font-family:"Cubic11","PingFang TC",sans-serif;font-size:12px;font-weight:400;letter-spacing:0}
+
 .scene-wallet-tools .gold-coin{width:28px;height:28px;object-fit:contain}
+
+#character-names .character-name{position:absolute;transform:translate(-50%,4px);padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;text-shadow:none;filter:none;color:#385347;font-family:"Cubic11","PingFang TC",sans-serif;font-size:12px;font-weight:400;letter-spacing:0;line-height:1.4;white-space:nowrap;pointer-events:none}
