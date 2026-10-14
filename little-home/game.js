@@ -3,7 +3,7 @@ import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=103';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
 import {createPixelDad,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=male-hair-1';
-import {openAvatarEditor} from './avatar-editor.js?v=male-hair-1';
+import {openAvatarEditor} from './avatar-editor.js?v=108';
 import {createHouseNPC} from './house-npc.js?v=107';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed} from './bed-slots.js?v=107';
@@ -881,6 +881,16 @@ window.homeGameAttackAt=attackMonsterAt;
 
 
 
+function setSceneMenu(open){
+ const panel=$('#scene-game-panel'),toggle=$('#scene-menu-toggle');panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));
+}
+function setupSceneMenu(){
+ const panel=$('#scene-game-panel'),toggle=$('#scene-menu-toggle');
+ toggle.onclick=()=>setSceneMenu(panel.hidden);
+ document.addEventListener('pointerdown',e=>{if(!panel.hidden&&!panel.contains(e.target)&&!toggle.contains(e.target))setSceneMenu(false)});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden){setSceneMenu(false);toggle.focus()}});
+}
+
 function setupGamePages(){
  const dialog=$('#game-dialog'),grid=dialog.querySelector?.('.game-grid'),head=dialog.querySelector?.('.dialog-head'),account=dialog.querySelector?.('.account');
  if(!grid||!head||!account)return;
@@ -903,8 +913,8 @@ function setupGamePages(){
   if(scene)houseNPC=createHouseNPC(window.homeScene,makeCharacter,()=>[character,...characters.values()]);
   resolveMonsterOverlap(houseNPC?.character);
 
-  setupGamePages();
-  $('#game-open').onclick=()=>{$('#game-dialog').selectPage?.('tasks');$('#game-dialog').showModal()};
+  setupGamePages();setupSceneMenu();
+  $('#game-open').onclick=()=>{setSceneMenu(false);$('#game-dialog').selectPage?.('tasks');$('#game-dialog').showModal()};
   $('#game-close').onclick=()=>$('#game-dialog').close();
   $('#game-dialog').onclick=e=>{if(e.target!==$('#game-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()};
   $('#shop-dialog').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.currentTarget.close()});
@@ -915,9 +925,9 @@ function setupGamePages(){
   $('#home-share').onclick=shareHome;
   $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;
   $('#wallet-open').onclick=()=>showPanel('#wallet-dialog');
-  $('#inventory-open').onclick=()=>showPanel('#inventory-dialog');
-  $('#shop-open').onclick=()=>showPanel('#shop-dialog');
-  $('#members-open').onclick=()=>showPanel('#members-dialog');
+  $('#inventory-open').onclick=()=>{setSceneMenu(false);showPanel('#inventory-dialog')};
+  $('#shop-open').onclick=()=>{setSceneMenu(false);showPanel('#shop-dialog')};
+  $('#members-open').onclick=()=>{setSceneMenu(false);showPanel('#members-dialog')};
   document.querySelectorAll('[data-close-dialog]').forEach(b=>b.onclick=()=>$(b.dataset.closeDialog).close());
   document.querySelectorAll('[data-inventory-tab]').forEach(b=>b.onclick=()=>{inventoryTab=b.dataset.inventoryTab;renderInventory()});
   $('#placement-room').onchange=previewPlacement;$('#placement-confirm').onclick=()=>confirmPlacement();$('#placement-return').onclick=()=>confirmPlacement(true);

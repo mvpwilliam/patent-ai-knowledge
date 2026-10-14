@@ -113,3 +113,12 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #avatar-edit{width:100%;min-height:44px}
 
 .room-card:has(#roomactions:empty){display:none}.room-card{border-top:0;padding-top:0}#game-status[hidden],#roomtitle[hidden],#roomdesc[hidden]{display:none!important}.game-head{justify-content:flex-end}
+
+/* Compact scene menu: all game entry points live inside the world. */
+.scene-menu-toggle{position:absolute;top:18px;left:18px;z-index:12;min-height:44px;padding:10px 14px;border:1px solid #ffffffb0;border-radius:18px;background:#fbfcf4ed;color:#405f50;box-shadow:0 3px 12px #1c302b18;font-size:13px;font-weight:500;touch-action:manipulation}
+#world .scene-game-panel{position:absolute;top:70px;left:18px;z-index:12;width:min(260px,calc(100% - 36px));margin:0;padding:14px;border:1px solid #dce3d6;border-radius:18px;background:#fbfcf4f5;box-shadow:0 8px 24px #19352b22;backdrop-filter:blur(10px)}
+#world .scene-game-panel[hidden]{display:none!important}
+.scene-game-panel .game-head{margin:0 0 10px}.scene-game-panel #game-clock{font-size:11px;font-weight:500}
+.scene-game-panel #game-open{width:100%;min-height:44px;padding:10px 8px;border-radius:12px;font-size:13px}
+.scene-game-panel .game-tools{gap:6px;margin-top:8px}.scene-game-panel .game-tools button{min-height:44px;font-size:12px;padding:8px 4px}
+@media(max-width:700px){.scene-menu-toggle{top:16px;left:16px}.scene-game-panel{top:68px!important;left:16px!important}}
