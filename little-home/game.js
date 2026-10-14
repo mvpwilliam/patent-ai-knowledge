@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=128';
-import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=128';
+import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=128';
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=npc-lego-1';
 import {openAvatarEditor} from './avatar-editor.js?v=tiger-eyewear-1';
 import {createHouseNPC} from './house-npc.js?v=child-seat-1';
@@ -48,6 +48,26 @@ const chores={
 Object.values(chores).forEach(c=>{c.marker[0]=scaleX(c.marker[0]);c.stop=pointXZ(c.stop)});
 chores.dishes.marker[0]=sinkX;chores.dishes.stop[0]=sinkX;
 for(const id of ['laundry','balcony']){chores[id].marker=[washerPosition.x,1.10,washerPosition.z];chores[id].stop=[washerPosition.x,7.30]}
+// Each built-in task uses its furniture's translated world coordinates.
+Object.assign(chores,{
+ sofa:{room:'living',marker:furnitureXYZ('sofa',[2.54,.78,2.03]),stop:furnitureXZ('sofa',[1.88,2.04])},
+ tvclean:{room:'living',marker:furnitureXYZ('tv',[.25,.85,2.10]),stop:furnitureXZ('tv',[.78,2.10])},
+ table:{room:'dining',marker:furnitureXYZ('dining',[2.22,.91,5.96]),stop:furnitureXZ('dining',[.85,5.94])},
+ tidytable:{room:'dining',marker:furnitureXYZ('dining',[2.22,.91,6.64]),stop:furnitureXZ('dining',[.85,6.63])},
+ counter:{room:'kitchen',marker:[kitchenStart+.24,1.05,9.61],stop:[kitchenStart+.24,8.85]},
+ stove:{room:'kitchen',marker:[stoveX,1.12,9.60],stop:[stoveX,8.85]},
+ mainbed:{room:'main',marker:furnitureXYZ('mainBed',[5.44,.78,1.64]),stop:furnitureXZ('mainBed',[4.25,1.68])},
+ childbed:{room:'child',marker:furnitureXYZ('childBed',[5.12,.76,7.00]),stop:furnitureXZ('childBed',[4.27,6.90])},
+ toys:{room:'child',marker:[scaleX(3.35),.25,7.65],stop:pointXZ([3.35,7.65])},
+ toilet:{room:'bath',marker:furnitureXYZ('toilet',[5.76,.83,4.33]),stop:furnitureXZ('toilet',[5.35,4.96])},
+ basin:{room:'bath',marker:furnitureXYZ('basin',[4.73,.96,4.10]),stop:furnitureXZ('basin',[4.73,4.85])},
+ glass:{room:'bath',marker:[window.homeScene?.layout.showerPoints.H.x||5.873625,1.15,4.84],stop:[scaleX(5.5),5.15]},
+ shoes:{room:'entry',marker:[entryZero+.63,1.12,8.10],stop:[scaleX(.7),8.55]},
+ // No drying rack or laundry basket is modelled: use the balcony work area.
+ collect:{room:'balcony',marker:[washerPosition.x,.55,7.58],stop:[washerPosition.x,7.55]},
+ fold:{room:'balcony',marker:[washerPosition.x,.55,8.15],stop:[washerPosition.x,8.12]}
+});
+chores.dishes.marker=[sinkX,1.10,9.61];
 const placement=t=>chores[t.id]||chores[t.room]||chores.living;
 const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
 let avatar=safeRead('little-home-avatar',{name:'玩家',skin:'#e9b990',hair:'korean',hairColor:'#4d3834',shirt:'#7899a0'});
@@ -457,17 +477,15 @@ function updateMarkers(){
  if(!scene)return;const t=activity&&activity.phase!=='return'?activity.task:null;
  $('#active-task').hidden=!t;$('#task-cancel').hidden=!t;
  if(t)$('#active-task').textContent=`${t.label} · ${activity.phase==='work'?'正在完成':'前往中'}…`;
- const width=$('#world').clientWidth,height=$('#world').clientHeight,placed=[];
+ const width=$('#world').clientWidth,height=$('#world').clientHeight;
  for(const marker of $('#chore-markers').children){
   const task=tasks.find(item=>item.id===marker.dataset.task);if(!task){marker.hidden=true;continue}
   const pos=placement(task).marker,p=new T.Vector3(...pos).project(window.homeScene.camera);
   let x=(p.x+1)*width/2,y=(1-p.y)*height/2;
   marker.hidden=p.z<=-1||p.z>=1||x<24||x>width-24||y<24||y>height-24;
   if(marker.hidden)continue;
-  // Keep nearby chores individually tappable, including tasks on the same furniture.
-  while(placed.some(q=>Math.abs(q.x-x)<44&&Math.abs(q.y-y)<44))y-=46;
-  marker.hidden=y<24;if(marker.hidden)continue;
-  placed.push({x,y});marker.style.left=x+'px';marker.style.top=y+'px';
+  // Keep the prompt on its world anchor, even when nearby chores overlap.
+  marker.style.left=x+'px';marker.style.top=y+'px';
  }
 }
 function startTask(t){

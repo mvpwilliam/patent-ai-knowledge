@@ -200,3 +200,8 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 .chore-marker:disabled{opacity:.55}
 .chore-marker:focus-visible{outline:3px solid #648572;outline-offset:2px}
 .chore-marker:disabled{cursor:default}
+
+/* Furniture-anchored prompts: glyph only, with an invisible touch target. */
+.chore-marker::before,.chore-marker::after{display:none!important}
+.chore-marker,.chore-marker:hover,.chore-marker.busy,.chore-marker:disabled,.chore-marker[aria-expanded=true]{background:transparent;border:0;box-shadow:none;color:#f2c52e;text-shadow:0 1px 1px #765716;-webkit-text-stroke:.35px #96731d}
+.chore-marker[aria-expanded=true]{color:#ffe375}
