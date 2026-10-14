@@ -3,6 +3,7 @@ import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigat
 import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero} from './layout.js?v=128';
 
 import {bedSlots,sameBed} from './bed-slots.js?v=128';
+import {furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=128';
 
 // A local ambient resident, never a Firebase player or an award recipient.
 export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
@@ -23,7 +24,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  const booster=new T.Mesh(new T.BoxGeometry(.36,.09,.34),new T.MeshStandardMaterial({color:'#d4cfad',roughness:1}));booster.name='npc-lego-seat-cushion';booster.position.set(1.50+furnitureShift.dining,.575,5.94);booster.visible=false;home.scene.add(booster);
  const bathX=5.35+furnitureShift.toilet;
  const actions=[
-  {id:'tv',label:'坐沙發看電視',approach:furnitureXZ('sofa',[1.72,2.04]),target:furnitureXYZ('sofa',[2.54,.51,2.03]),pose:'sit',angle:-Math.PI/2},
+  {id:'tv',label:'坐沙發看電視',approach:furnitureXZ('sofa',[1.72,2.04]),target:furnitureXYZ('sofa',[2.48,.59,2.03]),pose:'sit',angle:-Math.PI/2},
   {id:'lego',label:'在餐桌玩樂高',approach:furnitureXZ('dining',[.88,5.94]),target:furnitureXYZ('dining',[1.56,.62,5.94]),pose:'sit',angle:Math.PI/2,duration:60000},
   ...bedSlots('childBed').map(bed=>({id:'sleep',label:'在次臥睡覺',approach:bed.exit,target:bed.target,pose:'lie',angle:bed.angle,bed})),
   {id:'curtain',label:'拉客廳窗簾',approach:pointXZ([1.55,.50]),angle:Math.PI,pose:'work'},
@@ -97,6 +98,9 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
   if(now>=until||occupied(action))finish();
  }
  character.userData.updateNPCDetail=now=>{
+  // Run after the articulated pose is applied, so actual clothing vertices
+  // rest above the cushion while feet may hang over its front edge.
+  if(state==='act'&&action?.id==='tv')keepAboveFurniture(character,furnitureSupportSurfaces(home.scene,'sofa'));
   if(state!=='act'||action?.id!=='lego')return;
   for(const [i,side]of ['Left','Right'].entries()){
    const shoulder=character.getObjectByName(side+' shoulder'),elbow=character.getObjectByName(side+' elbow');
@@ -107,6 +111,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  };
  return {character,update,actions,get state(){return state},get action(){return action},startAction(id,now=performance.now()){if(state!=='wait')return false;return choose(now,id)}};
 }
+
 
 
 

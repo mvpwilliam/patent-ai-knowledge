@@ -4,7 +4,7 @@ import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDyn
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=128';
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=npc-lego-1';
 import {openAvatarEditor} from './avatar-editor.js?v=tiger-eyewear-1';
-import {createHouseNPC} from './house-npc.js?v=128';
+import {createHouseNPC} from './house-npc.js?v=child-seat-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed} from './bed-slots.js?v=128';
 import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=128';
@@ -92,7 +92,10 @@ function bodyPart(parent,geometry,color,x,y,z){
 }
 function makeCharacter(v,design={}){
  const mesh=design.bodyType==='child'?createPixelChild(v):createPixelDad(v,normalizeAvatarDesign({...design,hairStyle:design.hairStyle||v.hair}));
- mesh.scale.multiplyScalar(PLAYER_SCALE);mesh.updateMatrixWorld(true);
+ // Furniture coordinates are metres; normalize the asset's arbitrary units.
+ mesh.updateMatrixWorld(true);
+ const sourceHeight=new T.Box3().setFromObject(mesh).getSize(new T.Vector3()).y;
+ mesh.scale.multiplyScalar((design.bodyType==='child'?1.20:1.80)*PLAYER_SCALE/sourceHeight);mesh.updateMatrixWorld(true);
  const bounds=new T.Box3().setFromObject(mesh);mesh.userData.standingHeight=bounds.max.y-bounds.min.y;return mesh;
 }
 function setCharacter(v){
@@ -1013,6 +1016,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
