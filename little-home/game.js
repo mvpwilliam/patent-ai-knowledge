@@ -941,18 +941,12 @@ function setupSceneMenu(){
 function setupGamePages(){
  const dialog=$('#game-dialog'),grid=dialog.querySelector?.('.game-grid'),head=dialog.querySelector?.('.dialog-head'),account=dialog.querySelector?.('.account');
  if(!grid||!head||!account)return;
- const sections=[...grid.children];const pages={tasks:sections[1],character:sections[0],family:account};
- const tabs=document.createElement('div');tabs.className='game-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','家事、角色與家庭');
- const body=document.createElement('div');body.className='game-dialog-body';
+ const sections=[...grid.children],pages={tasks:sections[1],character:sections[0],family:account},body=document.createElement('div');body.className='game-dialog-body';
  const note=$('#game-mode');body.append(note,grid,account);
- const select=key=>{for(const [id,page] of Object.entries(pages))page.hidden=id!==key;note.hidden=true;body.scrollTop=0;head.querySelector('h2').hidden=key==='character';if(key==='character')renderAvatarPreview();head.querySelector('h2').textContent={tasks:'今日家事',character:'我的角色',family:'我的家庭'}[key];for(const button of tabs.children){const active=button.dataset.page===key;button.setAttribute('aria-selected',active);button.tabIndex=active?0:-1}};
- for(const [key,label] of [['tasks','今日家事'],['character','我的角色'],['family','我的家庭']]){
-  pages[key].id='game-page-'+key;pages[key].setAttribute('role','tabpanel');
-  const b=document.createElement('button');b.id='game-tab-'+key;b.dataset.page=key;b.textContent=label;b.setAttribute('role','tab');b.setAttribute('aria-controls',pages[key].id);pages[key].setAttribute('aria-labelledby',b.id);b.onclick=()=>select(key);
-  b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const order=['tasks','character','family'],next=order[(order.indexOf(key)+(e.key==='ArrowRight'?1:2))%3];select(next);$('#game-tab-'+next).focus()};tabs.append(b);
- }
- dialog.append(tabs,body);dialog.selectPage=select;select('tasks');
+ const select=key=>{for(const [id,page] of Object.entries(pages))page.hidden=id!==key;note.hidden=true;body.scrollTop=0;head.querySelector('h2').hidden=key==='character';head.querySelector('h2').textContent={tasks:'今日家事',character:'我的角色',family:'我的家庭'}[key];dialog.setAttribute('aria-label',{tasks:'今日家事',character:'我的角色',family:'我的家庭'}[key]);if(key==='character')renderAvatarPreview()};
+ dialog.append(body);dialog.selectPage=select;select('tasks');
 }
+
 {
   $('#home-code').value=new URL(location.href).searchParams.get('home')||localStorage.getItem('little-home-code')||'';
   readPlayer();gameMeta.players[playerId()]=player;fillAvatar();setCharacter(avatar);readLocalClaims();renderTasks();clock();setInterval(clock,1000);
@@ -960,7 +954,7 @@ function setupGamePages(){
   resolveMonsterOverlap(houseNPC?.character);
 
   setupGamePages();setupSceneMenu();
-  $('#game-open').onclick=()=>{setSceneMenu(false);$('#game-dialog').selectPage?.('tasks');$('#game-dialog').showModal()};
+  for(const [id,page] of [['game-open','tasks'],['character-open','character'],['family-open','family']])$('#'+id).onclick=()=>{setSceneMenu(false);$('#game-dialog').selectPage?.(page);$('#game-dialog').showModal()};
   $('#game-close').onclick=()=>$('#game-dialog').close();
   $('#game-dialog').onclick=e=>{if(e.target!==$('#game-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()};
   $('#shop-dialog').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.currentTarget.close()});
