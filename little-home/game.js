@@ -1,4 +1,5 @@
 import * as T from './vendor/three.module.js';
+import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=128';
 import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=128';
@@ -213,10 +214,11 @@ function updateHandAction(now,rightArm){
  if(t>=.25&&!h.acted){h.acted=true;Promise.resolve().then(h.action).then(()=>h.resolve(true)).catch(()=>{h.resolve(false);toast('互動暫時失敗，請再試一次')})}
  if(t>=.75){rightArm.rotation.x=0;handAction=null}
 }
-function approachTarget(point,onArrival=null,label='走到旁邊',maxRadius=.9){
+function approachTarget(point,onArrival=null,label='走到旁邊',maxRadius=.9,customPoints=null){
  if(activity){toast('先完成目前的家事');return false}if(!character)return false;
  const from=restExit||[character.position.x,character.position.z],candidates=[];
- for(const r of [0,.3,.5,.7,.9])for(let i=0;i<(r?12:1);i++){
+ if(customPoints){for(const p of customPoints)if(walkable(...p))candidates.push({point:p,score:Math.hypot(p[0]-from[0],p[1]-from[1])})}
+ else for(const r of [0,.3,.5,.7,.9])for(let i=0;i<(r?12:1);i++){
   if(r>maxRadius)continue;const angle=i*Math.PI/6,p=[point[0]+Math.sin(angle)*r,point[1]+Math.cos(angle)*r];
   if(walkable(...p))candidates.push({point:p,score:Math.hypot(p[0]-from[0],p[1]-from[1])+r*.25});
  }
@@ -988,27 +990,24 @@ function attackMonsterAt(e){
  const rect=$('#scene').getBoundingClientRect();
  if(rect.width<=0||rect.height<=0||e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)return false;
  monsterPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
- scene.updateMatrixWorld(true);monsterRay.setFromCamera(monsterPointer,window.homeScene.camera);
+ scene.updateMatrixWorld(true);window.homeScene.camera.updateMatrixWorld(true);monsterRay.setFromCamera(monsterPointer,window.homeScene.camera);
  const hit=monsterRay.intersectObject(monsterMesh,true)[0];if(!hit)return false;
  // Ignore invisible interaction areas, but do not attack through opaque walls or furniture.
- const blocker=monsterRay.intersectObject(window.homeScene.root,true).find(h=>{
-  if(h.distance>=hit.distance-.01)return false;
-  for(let node=h.object;node;node=node.parent)if(!node.visible)return false;
-  const materials=Array.isArray(h.object.material)?h.object.material:[h.object.material];
-  return materials.some(m=>m&&m.visible!==false&&(!m.transparent||m.opacity>=.9));
- });
+ const blocker=monsterRay.intersectObject(window.homeScene.root,true).find(h=>blocksMonsterHit(h,hit.distance));
  if(blocker)return false;
  if(!syncBusy){
   const bornAt=gameMeta.monster.bornAt;
-  approachTarget([monsterMesh.position.x,monsterMesh.position.z],()=>{
+  const torso=monsterBoxesAt(monsterMesh,monsterMesh.position.x,monsterMesh.position.z)[0];
+  const approached=approachTarget([monsterMesh.position.x,monsterMesh.position.z],()=>{
    if(!monsterMesh||gameMeta.monster?.bornAt!==bornAt||Date.now()<bornAt)return toast('哥吉拉已經離開了');
    const r=monsterBoxesAt(monsterMesh,monsterMesh.position.x,monsterMesh.position.z)[0];
    const bounds=r?{min:{x:r[0],z:r[2]},max:{x:r[1],z:r[3]}}:new T.Box3().setFromObject(monsterMesh);
    const gap=Math.hypot(Math.max(bounds.min.x-character.position.x,0,character.position.x-bounds.max.x),Math.max(bounds.min.z-character.position.z,0,character.position.z-bounds.max.z));
    if(gap>.55)return toast('再靠近哥吉拉一點才能攻擊');
    return interactWithHand(()=>{if(monsterMesh&&gameMeta.monster?.bornAt===bornAt&&Date.now()>=bornAt)return attackMonster()});
-  },'走去攻擊哥吉拉',.7);
- }
+  },'走去攻擊哥吉拉',.7,torso?monsterApproachPoints(torso):null);
+  if(approached)toast('走去攻擊哥吉拉');
+ }else toast('上一筆正在儲存，請稍候再攻擊');
  return true;
 }
 window.homeGameAttackAt=attackMonsterAt;
@@ -1062,6 +1061,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
