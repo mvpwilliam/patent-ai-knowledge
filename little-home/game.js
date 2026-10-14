@@ -1040,7 +1040,7 @@ function openHomePanel(page){
   resolveMonsterOverlap(houseNPC?.character);
 
   setupSceneMenu();
-  for(const [id,page] of [['game-open','tasks'],['character-open','character'],['family-open','family']])$('#'+id).onclick=()=>openHomePanel(page);
+  for(const [id,page] of [['character-open','character'],['family-open','family']])$('#'+id).onclick=()=>openHomePanel(page);
   $('#game-close').onclick=()=>$('#game-dialog').close();
   $('#game-dialog').onclick=e=>{if(e.target!==$('#game-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()};
   $('#shop-dialog').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.currentTarget.close()});

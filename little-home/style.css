@@ -215,3 +215,13 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 .chore-marker:hover::before{background:rgba(255,253,246,.62)}
 .chore-marker[aria-expanded=true]::before{outline:none;background:rgba(255,253,246,.68)}
 #wallet-open{cursor:default;user-select:none}
+
+/* Compact, icon-only house menu with full-size touch targets. */
+#world .scene-game-panel{width:172px;max-width:calc(100% - 32px);padding:10px;border-radius:16px}
+#world .scene-game-panel .game-head{margin:0 0 8px;justify-content:center}
+#world .scene-game-panel #game-clock{font-size:10px;white-space:nowrap}
+#world .scene-menu-options{grid-template-columns:repeat(3,44px);gap:8px;justify-content:center}
+#world .scene-menu-options button{width:44px;height:44px;min-height:44px;padding:10px;display:grid;place-items:center;border-radius:12px}
+#world .scene-menu-options svg{display:block;width:24px;height:24px;pointer-events:none}
+#world .scene-menu-options button:hover{background:#d8e4d4}
+#world .scene-menu-options button:focus-visible{outline:2px solid #648572;outline-offset:2px}
