@@ -6,9 +6,9 @@ import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furn
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=legendary-four-1';
 import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=legendary-four-1';
 import {openAvatarEditor} from './avatar-editor.js?v=legendary-four-1';
-import {createHouseNPC} from './house-npc.js?v=entry-expand-1';
+import {createHouseNPC} from './house-npc.js?v=pillow-header-1';
 import {createGodzilla} from './godzilla.js?v=103';
-import {bedSlots,sameBed} from './bed-slots.js?v=entry-expand-1';
+import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=pillow-header-1';
 import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=walkways-20-1';
 const PLAYER_SCALE=1;
 
@@ -231,6 +231,7 @@ function approachTarget(point,onArrival=null,label='走到旁邊',maxRadius=.9,c
 }
 window.homeGameApproach=approachTarget;
 function moveTo(point,kind='walk',bedSlot=null){
+ if(bedSlot&&character)bedSlot=alignBedSlot(character,bedSlot);
   if(activity)return toast('先完成目前的家事');
   if(!character)return;if((kind==='mainBed'||kind==='childBed')&&!bedSlot)return moveToBed(point,kind);
   movementRequest++;furnitureSupport=null;releaseBed();currentBed=bedSlot;if(character)character.userData.bedReservation=bedSlot;floorPose=false;poseLift=0;cancelHandAction();
@@ -1063,6 +1064,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 

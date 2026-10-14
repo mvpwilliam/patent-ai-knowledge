@@ -330,12 +330,12 @@ const doorFrames=[];
 function doorway(x,z,width,alongZ=true,frameColor='#261916'){const g=new T.Group();g.position.set(x,0,z);if(alongZ)g.rotation.y=Math.PI/2;root.add(g);const h=2.1;
 for(const side of [-1,1])box(side*(width/2-.025),h/2,0,.05,h,.18,frameColor,.008,g);
 box(0,h+.035,0,width,.07,.18,frameColor,.008,g);
-box(0,(h+.07+ROOM_WALL_HEIGHT)/2,0,width,ROOM_WALL_HEIGHT-h-.07,.14,C.wall,.008,g);
-doorFrames.push(g)}
+named(box(0,(h+.07+ROOM_WALL_HEIGHT)/2,0,width,ROOM_WALL_HEIGHT-h-.07,.14,C.wall,.008,g),'door-header-body');
+doorFrames.push(g);return g}
 // The marked master entrance crosses the short passage beside the bathroom.
 // Its opening faces the passage, while the sofa-side wall remains continuous.
 doorway(3.85703125,4.5,1.1859375,false);
-doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
+const bathDoorFrame=doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
 doorway(3.9109375,5.55,1.078125,false); // child door, x 3.45–4.45 beside the bath
 finishSection('partitions-and-doorframes');
 doorway(entryX(51),10.07,1.02,false,'#454c57');
@@ -613,8 +613,13 @@ function bathWallFace(axis,plane,a,b,lo,hi,facing,name){
 const bathLeft=scaleX(4.515),bathRight=scaleX(BATH_EXTERIOR_X-.075),showerRight=scaleX(OUTER_X-.065);
 bathWallFace('z',3.72,bathLeft,bathRight,.10,2.6,1,'bath-tile-master-wall');
 bathWallFace('x',bathLeft,3.72,4.50,.10,2.6,1,'bath-tile-entry-wall');
-bathWallFace('x',bathLeft,4.50,5.55,2.17,2.6,1,'bath-tile-door-header');
-bathWallFace('x',scaleX(4.385),4.50,5.55,2.17,2.6,-1,'bath-tile-door-header-outer');
+// Derive the faces from the actual 14 cm lintel: the old 13 cm wall datum
+// placed both cladding planes inside the grey header body.
+const bathHeaderBounds=new T.Box3().setFromObject(bathDoorFrame.getObjectByName('door-header-body'));
+bathWallFace('x',bathHeaderBounds.max.x,bathHeaderBounds.min.z,bathHeaderBounds.max.z,bathHeaderBounds.min.y,bathHeaderBounds.max.y,1,'bath-tile-door-header');
+bathWallFace('x',bathHeaderBounds.min.x,bathHeaderBounds.min.z,bathHeaderBounds.max.z,bathHeaderBounds.min.y,bathHeaderBounds.max.y,-1,'bath-tile-door-header-outer');
+const bathHeaderTop=new T.Mesh(new T.PlaneGeometry(bathHeaderBounds.max.x-bathHeaderBounds.min.x,bathHeaderBounds.max.z-bathHeaderBounds.min.z),bathTileMaterial);
+bathHeaderTop.name='bath-tile-door-header-top';bathHeaderTop.rotation.x=-Math.PI/2;bathHeaderTop.position.set((bathHeaderBounds.min.x+bathHeaderBounds.max.x)/2,bathHeaderBounds.max.y+.003,(bathHeaderBounds.min.z+bathHeaderBounds.max.z)/2);root.add(bathHeaderTop);
 bathWallFace('x',bathRight,3.72,4.625,.10,2.6,-1,'bath-tile-toilet-wall');
 bathWallFace('z',SHAFT_BATH_FACE_Z,bathLeft,showerP1.x,.10,2.6,-1,'bath-tile-child-and-shaft-wall');
 bathWallFace('x',showerP1.x,SHAFT_BATH_FACE_Z,6.10,.10,2.6,1,'bath-tile-shaft-side');
@@ -939,6 +944,7 @@ window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShif
     });
   },
   showNews,get currentRoom(){return current}};
+
 
 
 

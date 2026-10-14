@@ -2,7 +2,7 @@ import * as T from './vendor/three.module.js';
 import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=entry-expand-1';
 import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero,entryX} from './layout.js?v=entry-expand-1';
 
-import {bedSlots,sameBed} from './bed-slots.js?v=entry-expand-1';
+import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=pillow-header-1';
 import {furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=walkways-20-1';
 
 // A local ambient resident, never a Firebase player or an award recipient.
@@ -26,7 +26,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  const actions=[
   {id:'tv',label:'坐沙發看電視',approach:furnitureXZ('sofa',[1.72,2.04]),target:furnitureXYZ('sofa',[2.48,.59,2.03]),pose:'sit',angle:-Math.PI/2},
   {id:'lego',label:'在餐桌玩樂高',approach:furnitureXZ('dining',[.88,5.94]),target:furnitureXYZ('dining',[1.56,.62,5.94]),pose:'sit',angle:Math.PI/2,duration:60000},
-  ...bedSlots('childBed').map(bed=>({id:'sleep',label:'在次臥睡覺',approach:bed.exit,target:bed.target,pose:'lie',angle:bed.angle,bed})),
+  ...bedSlots('childBed').map(slot=>{const bed=alignBedSlot(character,slot);return {id:'sleep',label:'在次臥睡覺',approach:bed.exit,target:bed.target,pose:'lie',angle:bed.angle,bed}}),
   {id:'curtain',label:'拉客廳窗簾',approach:pointXZ([1.55,.50]),angle:Math.PI,pose:'work'},
   {id:'toilet',label:'坐馬桶',approach:[bathX,4.96],target:[5.72+furnitureShift.toilet,.49,4.28],angle:Math.PI,pose:'sit'},
   {id:'hands',label:'洗手',approach:[4.73+furnitureShift.basin,4.78],angle:Math.PI,pose:'work'},
@@ -111,6 +111,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  };
  return {character,update,actions,get state(){return state},get action(){return action},startAction(id,now=performance.now()){if(state!=='wait')return false;return choose(now,id)}};
 }
+
 
 
 
