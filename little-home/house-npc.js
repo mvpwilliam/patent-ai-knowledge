@@ -25,7 +25,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  const actions=[
   {id:'tv',label:'坐沙發看電視',approach:furnitureXZ('sofa',[1.72,2.04]),target:furnitureXYZ('sofa',[2.54,.51,2.03]),pose:'sit',angle:-Math.PI/2},
   {id:'lego',label:'在餐桌玩樂高',approach:[.88,5.94],target:[1.56,.62,5.94],pose:'sit',angle:Math.PI/2,duration:60000},
-  ...bedSlots('mainBed').map(bed=>({id:'sleep',label:'在主臥睡覺',approach:bed.exit,target:bed.target,pose:'lie',angle:bed.angle,bed})),
+  ...bedSlots('childBed').map(bed=>({id:'sleep',label:'在次臥睡覺',approach:bed.exit,target:bed.target,pose:'lie',angle:bed.angle,bed})),
   {id:'curtain',label:'拉客廳窗簾',approach:pointXZ([1.55,.50]),angle:Math.PI,pose:'work'},
   {id:'toilet',label:'坐馬桶',approach:[bathX,4.96],target:[5.72+furnitureShift.toilet,.49,4.28],angle:Math.PI,pose:'sit'},
   {id:'hands',label:'洗手',approach:[4.73+furnitureShift.basin,4.78],angle:Math.PI,pose:'work'},
