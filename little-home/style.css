@@ -135,6 +135,7 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #character-names{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
 
 .character-name[hidden]{display:none}
+#character-names .character-name.character-title{transform:translate(-50%,-100%)}
 
 
 
@@ -234,3 +235,4 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #scene-xp-fill{position:absolute;bottom:0;left:0;width:100%;height:0;background:linear-gradient(to top,#537653,#aac580);border-radius:8px;transition:height .4s ease}
 @media(max-width:700px){#world .scene-xp{top:82px;right:16px}}
 @media(prefers-reduced-motion:reduce){#scene-xp-fill{transition:none}}
+

@@ -1,4 +1,5 @@
 import * as T from './vendor/three.module.js';
+import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=home-fixes-1';
 import {installToyDefense} from './toy-defense.js?v=toy3-1';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
@@ -22,7 +23,7 @@ const GAME_META_ID='__home_game_v1';
 const defaults=[
  {id:'floor',label:'吸地與拖地',room:'living'}, {id:'dishes',label:'洗碗與收碗',room:'kitchen'},
  {id:'trash',label:'倒垃圾與回收',room:'entry'}, {id:'laundry',label:'洗衣',room:'balcony'},
- {id:'collect',label:'收衣',room:'balcony'}, {id:'fold',label:'摺衣',room:'balcony'},
+ {id:'collect',label:'收衣',room:'balcony'}, {id:'fold',label:'摺衣',room:'main'},
  {id:'sofa',label:'整理沙發',room:'living'}, {id:'tvclean',label:'擦電視櫃',room:'living'},
  {id:'table',label:'擦餐桌',room:'dining'}, {id:'tidytable',label:'整理餐桌',room:'dining'},
  {id:'counter',label:'擦流理台',room:'kitchen'}, {id:'stove',label:'清潔爐台',room:'kitchen'},
@@ -64,11 +65,11 @@ Object.assign(chores,{
  toys:{room:'child',marker:[scaleX(3.35),.25,7.65],stop:pointXZ([3.35,7.65])},
  toilet:{room:'bath',marker:furnitureXYZ('toilet',[5.76,.83,4.33]),stop:furnitureXZ('toilet',[5.35,4.96])},
  basin:{room:'bath',marker:furnitureXYZ('basin',[4.73,.96,4.10]),stop:furnitureXZ('basin',[4.73,4.85])},
- glass:{room:'bath',marker:[window.homeScene?.layout.showerPoints.H.x||5.873625,1.15,4.84],stop:[scaleX(5.5),5.15]},
+ glass:{room:'bath',marker:[window.homeScene.layout.showerPoints.H.x,1.15,window.homeScene.layout.showerPoints.H.z],stop:[scaleX(5.5),5.15]},
  shoes:{room:'entry',marker:[entryZero+.63,1.12,8.10],stop:[entryZero+.63,8.63]},
  // No drying rack or laundry basket is modelled: use the balcony work area.
  collect:{room:'balcony',marker:[washerPosition.x,.55,7.58],stop:[washerPosition.x,7.55]},
- fold:{room:'balcony',marker:[washerPosition.x,.55,8.15],stop:[washerPosition.x,8.12]}
+ fold:{room:'main',marker:furnitureXYZ('mainBed',[4.80,.78,2.60]),stop:furnitureXZ('mainBed',[4.15,2.60])}
 });
 chores.dishes.marker=[sinkX,1.10,9.61];
 const placement=t=>chores[t.id]||chores[t.room]||chores.living;
@@ -323,19 +324,31 @@ let sceneryTimer;
 function hideScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=true}
 function showScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=false;sceneryTimer=setTimeout(hideScenery,7000)}
 sceneryOverlay.onclick=hideScenery;
-const characterNameLabels=new Map(),characterNamePoint=new T.Vector3();
+const characterNameLabels=new Map(),characterTitleLabels=new Map(),characterNamePoint=new T.Vector3(),characterTitleBounds=new T.Box3();
 function updateCharacterNames(){
  const layer=$('#character-names'),camera=window.homeScene?.camera,world=$('#world');if(!layer||!camera)return;
- const people=[];if(character)people.push(['self',character,avatar.name]);
- for(const [id,item] of characters){const name=profileCache[id]?.name;if(name)people.push(['player-'+id,item.mesh,name])}
- if(houseNPC?.character)people.push(['npc',houseNPC.character,'小屋主']);
+ const people=[];if(character)people.push(['self',character,avatar.name,levelInfo(player.xp).title]);
+ for(const [id,item] of characters){const name=profileCache[id]?.name;if(name)people.push(['player-'+id,item.mesh,name,levelInfo(gameMeta.players[id]?.xp).title])}
+ if(houseNPC?.character)people.push(['npc',houseNPC.character,'小屋主','小屋主人']);
  const active=new Set(people.map(([id])=>id));for(const [id,label] of characterNameLabels)if(!active.has(id)){label.remove();characterNameLabels.delete(id)}
- for(const [id,mesh,name] of people){
+ for(const [id,label] of characterTitleLabels)if(!active.has(id)){label.remove();characterTitleLabels.delete(id)}
+ for(const [id,mesh,name,title] of people){
   let label=characterNameLabels.get(id);if(!label){label=document.createElement('span');label.className='character-name';layer.append(label);characterNameLabels.set(id,label)}
   if(label.textContent!==name)label.textContent=name;
   characterNamePoint.set(mesh.position.x,mesh.position.y-.03,mesh.position.z).project(camera);
   label.hidden=!mesh.visible||characterNamePoint.z<=-1||characterNamePoint.z>=1||Math.abs(characterNamePoint.x)>.98||Math.abs(characterNamePoint.y)>.96;
   if(!label.hidden){label.style.left=(characterNamePoint.x+1)*world.clientWidth/2+'px';label.style.top=(1-characterNamePoint.y)*world.clientHeight/2+'px'}
+  let titleLabel=characterTitleLabels.get(id);if(!titleLabel){titleLabel=document.createElement('span');titleLabel.className='character-name character-title';layer.append(titleLabel);characterTitleLabels.set(id,titleLabel)}
+  if(titleLabel.textContent!==title)titleLabel.textContent=title;
+  // Refresh bounds only four times a second; project each frame without scanning meshes.
+  const now=performance.now();let anchor=mesh.userData.titleAnchor;
+  if(!anchor||now-anchor.at>250){
+   characterTitleBounds.setFromObject(mesh);const center=characterTitleBounds.getCenter(new T.Vector3());
+   anchor=mesh.userData.titleAnchor={at:now,x:center.x-mesh.position.x,y:characterTitleBounds.max.y-mesh.position.y+.10,z:center.z-mesh.position.z};
+  }
+  characterNamePoint.set(mesh.position.x+anchor.x,mesh.position.y+anchor.y,mesh.position.z+anchor.z).project(camera);
+  titleLabel.hidden=!mesh.visible||(id==='self'&&now<feedbackUntil)||characterNamePoint.z<=-1||characterNamePoint.z>=1||Math.abs(characterNamePoint.x)>.98||Math.abs(characterNamePoint.y)>.96;
+  if(!titleLabel.hidden){titleLabel.style.left=(characterNamePoint.x+1)*world.clientWidth/2+'px';titleLabel.style.top=(1-characterNamePoint.y)*world.clientHeight/2+'px'}
  }
 }
 
@@ -767,7 +780,6 @@ async function connect(){
 
 // Per-character progression, inventory and household presence share the existing
 // member-writable settings document; transactions keep purchases and awards atomic.
-const MAX_XP=1200;
 const roomNames={living:'客廳',dining:'餐廳',kitchen:'廚房',main:'主臥',child:'次臥',bath:'浴室',balcony:'陽台',entry:'玄關'};
 const catalog=[
  {id:'toy-trophy',name:'積木恐龍獎盃',icon:'🦖',price:0,type:'裝飾',rewardOnly:true},
@@ -790,7 +802,6 @@ const playerId=()=>user?.uid||localActorId;
 const playerKey=()=>`little-home-player-${homeId||'preview'}-${playerId()}`;
 const normalizePlayer=p=>({...newPlayer(),...p,inventory:Array.isArray(p?.inventory)?p.inventory:[],legendaryOwned:Array.isArray(p?.legendaryOwned)?[...new Set(p.legendaryOwned.filter(id=>outfitById(id)))]:[],completed:p?.completed||{},bonuses:p?.bonuses||{},ledger:p?.ledger||[]});
 function readPlayer(){player=normalizePlayer(safeRead(playerKey(),newPlayer()))}
-function levelInfo(xp){const level=Math.min(20,1+Math.floor(Math.min(MAX_XP,xp)*19/MAX_XP));const titles=['家事新手','居家小幫手','整理達人','家務高手','家庭神隊友'];return {level,title:titles[Math.floor(level/5)],progress:level===20?1:(xp-(level-1)*MAX_XP/19)/(MAX_XP/19)}}
 function dayTasks(){
  const pool=tasks.filter(t=>t.id!=='scenery');
  if(gameDay%3===0&&['laundry','collect','fold'].every(id=>pool.some(t=>t.id===id)))return ['floor','dishes','trash','laundry','collect','fold'].map(id=>pool.find(t=>t.id===id)).filter(Boolean);
@@ -840,7 +851,7 @@ function renderEconomy(){
  $('#scene-xp-meter').setAttribute('aria-valuenow',String(xpPercent));
  $('#scene-xp-meter').setAttribute('aria-valuetext',info.level===20?'20 級，已滿級':`目前 ${info.level} 級，升級進度 ${xpPercent}%`);
  $('#player-level').textContent=`Lv.${info.level} · ${info.title}`;$('#xp-meter').value=info.progress;
- $('#xp-label').textContent=info.level===20?(player.legendaryFreeClaimed?'已滿級 · 家事繼續賺幣':'已滿級 · 下方可免費領取一套傳說套裝'):`${player.xp} / ${MAX_XP} EXP`;
+ $('#xp-label').textContent=info.level===20?(player.legendaryFreeClaimed?'已滿級 · 家事繼續賺幣':'已滿級 · 下方可免費領取一套傳說套裝'):`${Number(player.xp.toFixed(1))} / ${MAX_XP} EXP`;
  $('#daily-progress').textContent=`今日家事 ${dayTasks().filter(t=>taskDone(t)).length}／${dayTasks().length}`;
  renderInventory();renderShop();renderLegendaryWardrobe();
 }
@@ -997,7 +1008,13 @@ function updateMonsterLabel(){
  label.hidden=false;label.style.left=(monsterLabelPoint.x+1)*world.clientWidth/2+'px';label.style.top=(1-monsterLabelPoint.y)*world.clientHeight/2+'px';
 }
 function disposeMonster(mesh){const materials=new Set();mesh.traverse(n=>{n.geometry?.dispose();if(n.material)for(const m of Array.isArray(n.material)?n.material:[n.material])materials.add(m)});for(const m of materials)m.dispose()}
-async function attackMonster(){try{await mutateGame((p,meta)=>{const m=meta.monster;if(!m||Date.now()<m.bornAt||m.hits>=100)throw new Error('哥吉拉還沒出現');m.hits++;if(m.hits>=100){m.bornAt=Date.now()+3600000;m.hits=0}});toast(gameMeta.monster.bornAt>Date.now()?'哥吉拉消失了，下次一小時後出現':'命中！')}catch(e){toast(e.message||'攻擊未儲存')}}
+async function attackMonster(){
+ let defeated=false;
+ try{
+  await mutateGame((p,meta)=>{defeated=hitHomeMonster(meta,playerId(),p,{memberIds:Object.keys(profileCache),normalize:normalizePlayer,record})});
+  toast(defeated?'哥吉拉擊退！全小屋玩家（含離線）升 5 級，最高 20 級。下次一小時後出現':'命中！');
+ }catch(e){toast(e.message||'攻擊未儲存')}
+}
 const monsterRay=new T.Raycaster(),monsterPointer=new T.Vector2();
 function attackMonsterAt(e){
  if(!monsterMesh||!gameMeta.monster||Date.now()<gameMeta.monster.bornAt||gameMeta.monster.hits>=100)return false;
@@ -1095,6 +1112,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 

@@ -522,9 +522,10 @@ finishSection('toilet','translate',furnitureShift.toilet);
 bathFloorTiles(bathFloorEnd,OUTER_X,4.615,BALCONY_START_Z-.065);
 bathFloorTiles(SHAFT_OUTER_X,bathFloorEnd,5.55,BALCONY_START_Z-.065);
 finishSection('shower-floor');
-// Confirmed world-space floor points. Long glass runs along Z,
-// parallel to the exterior wall; only the fixed return runs along X.
-const showerPoints={P1:{x:5.873625,y:.10,z:5.485},P3:{x:6.109975,y:.10,z:4.625},C:{x:5.873625,y:.10,z:4.625},H:{x:5.873625,y:.10,z:4.840}};
+// Derive world-space glass anchors from the current shaft and bathroom walls.
+// This section is exact: apply scaleX once, never retain old absolute X values.
+const showerGlassX=scaleX(SHAFT_OUTER_X),showerReturnX=scaleX(BATH_EXTERIOR_X-.075);
+const showerPoints={P1:{x:showerGlassX,y:.10,z:SHAFT_BATH_FACE_Z},P3:{x:showerReturnX,y:.10,z:4.625},C:{x:showerGlassX,y:.10,z:4.625},H:{x:showerGlassX,y:.10,z:4.840}};
 const {P1:showerP1,P3:showerP3,C:showerC,H:showerH}=showerPoints;
 const showerGlass=new T.MeshPhysicalMaterial({color:'#d8e6e5',transparent:true,opacity:.24,roughness:.08,metalness:0,depthWrite:false,side:T.DoubleSide});
 const glassMetal='#151b1c',glassSeal='#969c9d',glassBase=showerH.y,glassMiddle=glassBase+1;
@@ -961,6 +962,7 @@ window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShif
     });
   },
   showNews,get currentRoom(){return current}};
+
 
 
 
