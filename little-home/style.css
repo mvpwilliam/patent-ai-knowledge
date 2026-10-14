@@ -145,11 +145,12 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 .scene-wallet-tools{position:absolute;top:18px;right:18px;z-index:12;display:flex;gap:7px;align-items:center}
 #world .scene-wallet-tools .wallet-pill{position:static;min-height:44px}
 .inventory-pill{min-height:44px;padding:9px 12px;border:1px solid #ffffffb0;border-radius:18px;background:#fbfcf4ed;color:#405f50;font-size:12px;box-shadow:0 3px 12px #1c302b18}
-#character-dialog,#family-dialog{padding:0;width:min(650px,94vw);max-height:82dvh;overflow:hidden;border-radius:22px}
+#character-dialog,#family-dialog{box-sizing:border-box;padding:0;width:min(650px,94vw);height:min(78vh,700px);height:min(78dvh,700px);max-height:calc(100dvh - 32px);overflow:hidden;border-radius:22px}
 #character-dialog[open],#family-dialog[open]{display:flex;flex-direction:column}
 #character-dialog .dialog-head,#family-dialog .dialog-head{flex:none;padding:14px 18px;margin:0;border-bottom:1px solid #e0e5dc}
-#character-dialog .game-dialog-body,#family-dialog .game-dialog-body{overflow:auto;min-height:0;padding:14px 18px}
-@media(max-width:700px){.scene-wallet-tools{top:16px;right:16px}#character-dialog,#family-dialog{width:92vw;max-height:80dvh}}
+#character-dialog .game-dialog-body,#family-dialog .game-dialog-body{flex:1 1 auto;overflow:auto;min-height:0;padding:14px 18px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#character-dialog .dialog-head button,#family-dialog .dialog-head button{flex:none;width:44px;height:44px;min-width:44px;touch-action:manipulation}
+@media(max-width:700px){.scene-wallet-tools{top:16px;right:16px}#character-dialog,#family-dialog{width:92vw;height:min(76vh,640px);height:min(76dvh,640px);max-height:calc(100dvh - 32px)}}
 
 .scene-wallet-tools{padding:4px;gap:0;border:1px solid #d8c592;border-radius:25px;background:linear-gradient(145deg,#fffdf5f5,#f5eddbf5);box-shadow:0 3px 12px #49351118}
 #world .scene-wallet-tools .wallet-pill{border:0;border-radius:0 20px 20px 0;padding:4px 10px;background:transparent;box-shadow:none}
@@ -186,3 +187,4 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 .scene-wallet-tools .gold-coin{width:28px;height:28px;object-fit:contain}
 
 #character-names .character-name{position:absolute;transform:translate(-50%,4px);padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;text-shadow:none;filter:none;color:#626762;font-family:"HomeRoundedLabel","PingFang TC",sans-serif;font-size:12px;font-weight:400;letter-spacing:0;line-height:1.4;white-space:nowrap;pointer-events:none}
+
