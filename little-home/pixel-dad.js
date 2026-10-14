@@ -81,6 +81,16 @@ if(d.hairStyle==='buns')for(const sign of [-1,1]){
  block('Bun '+sign,.19,.19,.19,hc,sign*.225*d.faceWidth,1.39,-.01);
  block('Bun tie '+sign,.20,.025,.20,'#c59286',sign*.225*d.faceWidth,1.32,-.01);
 }
+// A continuous rear scalp is shared by every style, not only front fringes.
+// Overlapping tiers cover the occiput down to a tapered nape; side panels
+// meet the crown while leaving the face and the front of the ears exposed.
+block('Hair scalp rear upper',.46*d.faceWidth,.22,.14,hc,0,1.30,-.222);
+block('Hair scalp rear middle',.45*d.faceWidth,.24,.13,hc,0,1.12,-.235);
+block('Hair scalp nape',.40*d.faceWidth,.15,.12,hc,0,.975,-.235);
+for(const sign of [-1,1]){
+ block('Hair scalp temple '+sign,.078*d.faceWidth,.27,.38,hc,sign*.216*d.faceWidth,1.245,-.03);
+ block('Hair scalp behind ear '+sign,.074*d.faceWidth,.20,.23,hc,sign*.213*d.faceWidth,1.075,-.15);
+}
 // Remap vertices and joint pivots together. Limb vertices are joint-local,
 // so simply stretching geometry would detach the elbows and knees.
 const bodyY=y=>y<=.43?y*.72/.43:.72+(y-.43)*(.40/.28);
@@ -115,5 +125,6 @@ for(const {obj,world,parent,arm,head} of snapshots){
   for(let i=0;i<2;i++){const label=i?'Right':'Left',hip=named[label+' hip'],knee=named[label+' knee'],shoulder=named[label+' shoulder'],elbow=named[label+' elbow'];hip.rotation.x=pose==='sit'?-Math.PI/2:legs[i].rotation.x;knee.rotation.x=pose==='sit'?Math.PI/2:Math.max(0,-legs[i].rotation.x)*.5;shoulder.rotation.x=pose==='sit'?-.45:arms[i].rotation.x;elbow.rotation.x=pose==='sit'?-1.08:pose==='work'?-.6:0;}
  }};g.userData.updatePose();return g;
 }
+
 
 
