@@ -131,3 +131,7 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #character-feedback{position:absolute;z-index:9;max-width:min(220px,calc(100% - 28px));padding:7px 12px;border:1px solid #ffffffbd;border-radius:13px;background:#fbfcf4f2;color:#3e5548;box-shadow:0 3px 14px #193b2920;font-size:12px;line-height:1.5;text-align:center;transform:translate(-50%,-100%);pointer-events:none}
 #character-feedback::after{content:"";position:absolute;left:50%;bottom:-4px;width:8px;height:8px;background:#fbfcf4;transform:translateX(-50%) rotate(45deg)}
 #character-feedback[hidden]{display:none}
+
+#character-names{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+.character-name{position:absolute;transform:translate(-50%,4px);padding:2px 6px;border-radius:7px;background:#fbfcf3c9;color:#385347;font-size:11px;font-weight:500;line-height:1.4;white-space:nowrap;text-shadow:0 1px 1px #fff;pointer-events:none}
+.character-name[hidden]{display:none}

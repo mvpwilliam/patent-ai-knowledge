@@ -294,6 +294,22 @@ let sceneryTimer;
 function hideScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=true}
 function showScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=false;sceneryTimer=setTimeout(hideScenery,7000)}
 sceneryOverlay.onclick=hideScenery;
+const characterNameLabels=new Map(),characterNamePoint=new T.Vector3();
+function updateCharacterNames(){
+ const layer=$('#character-names'),camera=window.homeScene?.camera,world=$('#world');if(!layer||!camera)return;
+ const people=[];if(character)people.push(['self',character,avatar.name]);
+ for(const [id,item] of characters){const name=profileCache[id]?.name;if(name)people.push(['player-'+id,item.mesh,name])}
+ if(houseNPC?.character)people.push(['npc',houseNPC.character,'小屋主']);
+ const active=new Set(people.map(([id])=>id));for(const [id,label] of characterNameLabels)if(!active.has(id)){label.remove();characterNameLabels.delete(id)}
+ for(const [id,mesh,name] of people){
+  let label=characterNameLabels.get(id);if(!label){label=document.createElement('span');label.className='character-name';layer.append(label);characterNameLabels.set(id,label)}
+  if(label.textContent!==name)label.textContent=name;
+  characterNamePoint.set(mesh.position.x,mesh.position.y-.03,mesh.position.z).project(camera);
+  label.hidden=!mesh.visible||characterNamePoint.z<=-1||characterNamePoint.z>=1||Math.abs(characterNamePoint.x)>.98||Math.abs(characterNamePoint.y)>.96;
+  if(!label.hidden){label.style.left=(characterNamePoint.x+1)*world.clientWidth/2+'px';label.style.top=(1-characterNamePoint.y)*world.clientHeight/2+'px'}
+ }
+}
+
 let feedbackUntil=0;
 const feedbackPoint=new T.Vector3(),feedbackBounds=new T.Box3();
 function showCharacterFeedback(text){
@@ -378,7 +394,7 @@ function animate(now){
   houseNPC?.update(dt,now);
   if(houseNPC)houseNPC.character.userData.updatePose?.(houseNPC.state==='act'?houseNPC.action?.pose:houseNPC.state==='walk'?'walk':'stand');
   if(houseNPC&&$('#npc-status'))$('#npc-status').textContent=`小屋日常 · ${houseNPC.action?.label||'在家休息'}`;
-  updateJoke();
+  updateJoke();updateCharacterNames();
 }
 window.homeGameUpdate=animate;
 
