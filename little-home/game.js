@@ -801,8 +801,8 @@ function renderInventory(){
  const list=$('#inventory-list');list.replaceChildren();
  for(const owned of player.inventory){const item=catalog.find(c=>c.id===owned.item);if(!item)continue;
  if(inventoryTab!=='全部'&&(inventoryTab==='已擺放'?!owned.room:item.type!==inventoryTab))continue;list.append(itemCard(item,owned))}
- if(!list.children.length)list.textContent='這裡還沒有道具，先做家事賺幣，再到商店看看。';
- document.querySelectorAll('[data-inventory-tab]').forEach(b=>b.classList.toggle('active',b.dataset.inventoryTab===inventoryTab));
+ if(!list.children.length)list.textContent=inventoryTab==='全部'?'背包還沒有道具。':inventoryTab==='已擺放'?'目前沒有已擺放的道具。':`目前沒有${inventoryTab}類道具。`;
+ document.querySelectorAll('[data-inventory-tab]').forEach(b=>{const active=b.dataset.inventoryTab===inventoryTab;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
 }
 async function buyItem(item){
  try{const id=crypto.randomUUID();await mutateGame(p=>{if(p.coins<item.price)throw new Error('遊戲幣不足');if(p.inventory.length>=40)throw new Error('道具欄已滿（40 件）');p.coins-=item.price;p.inventory.push({id,item:item.id,room:null,slot:null});record(p,`購買${item.name}`,-item.price)});toast(`${item.name}已放入道具欄`)}catch(e){toast(e.message||'購買未成功，沒有扣幣')}
@@ -961,11 +961,11 @@ function openHomePanel(page){
   $('#home-share').onclick=shareHome;
   $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;
   $('#wallet-open').onclick=()=>showPanel('#wallet-dialog');
-  $('#inventory-open').onclick=()=>{setSceneMenu(false);showPanel('#inventory-dialog')};
+  $('#inventory-open').onclick=()=>{setSceneMenu(false);renderInventory();showPanel('#inventory-dialog')};
   $('#shop-open').onclick=()=>{setSceneMenu(false);showPanel('#shop-dialog')};
 
   document.querySelectorAll('[data-close-dialog]').forEach(b=>b.onclick=()=>$(b.dataset.closeDialog).close());
-  document.querySelectorAll('[data-inventory-tab]').forEach(b=>b.onclick=()=>{inventoryTab=b.dataset.inventoryTab;renderInventory()});
+  $('#inventory-dialog').addEventListener('click',e=>{const button=e.target.closest('[data-inventory-tab]');if(!button||!e.currentTarget.contains(button))return;e.preventDefault();inventoryTab=button.dataset.inventoryTab;renderInventory()});
   $('#placement-room').onchange=previewPlacement;$('#placement-confirm').onclick=()=>confirmPlacement();$('#placement-return').onclick=()=>confirmPlacement(true);
   $('#placement-dialog').addEventListener('close',()=>{pendingPlacement=null;renderPlacements()});
   $('#mirror-close').onclick=()=>$('#mirror-dialog').close();

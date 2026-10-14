@@ -150,3 +150,10 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #character-dialog .dialog-head,#family-dialog .dialog-head{flex:none;padding:14px 18px;margin:0;border-bottom:1px solid #e0e5dc}
 #character-dialog .game-dialog-body,#family-dialog .game-dialog-body{overflow:auto;min-height:0;padding:14px 18px}
 @media(max-width:700px){.scene-wallet-tools{top:16px;right:16px}#character-dialog,#family-dialog{width:92vw;max-height:80dvh}}
+
+.scene-wallet-tools{padding:4px;gap:0;border:1px solid #d8c592;border-radius:25px;background:linear-gradient(145deg,#fffdf5f5,#f5eddbf5);box-shadow:0 3px 12px #49351118}
+#world .scene-wallet-tools .wallet-pill{border:0;border-radius:0 20px 20px 0;padding:4px 10px;background:transparent;box-shadow:none}
+#world .scene-wallet-tools .inventory-pill{background:transparent;box-shadow:none;border:0;border-right:1px solid #d8c59290;border-radius:20px 0 0 20px;padding:5px 10px;min-width:44px;font-size:23px}
+#inventory-dialog .inventory-tabs{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto}
+#inventory-dialog .inventory-tabs button{min-height:44px;touch-action:manipulation;cursor:pointer;pointer-events:auto}
+#inventory-dialog .inventory-tabs button[aria-pressed=true]{background:#405f50;color:#fff}
