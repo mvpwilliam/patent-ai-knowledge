@@ -1,8 +1,8 @@
 import * as T from './vendor/three.module.js';
-import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=127';
-import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero} from './layout.js?v=85';
+import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=128';
+import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero} from './layout.js?v=128';
 
-import {bedSlots,sameBed} from './bed-slots.js?v=107';
+import {bedSlots,sameBed} from './bed-slots.js?v=128';
 
 // A local ambient resident, never a Firebase player or an award recipient.
 export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
@@ -11,7 +11,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  character.position.set(...[pointXZ([1.2,4.2])[0],.07,4.2]);home.scene.add(character);
  const water=new T.Group();water.name='npc-shower-water';water.visible=false;home.scene.add(water);
  for(let i=0;i<10;i++){const drop=new T.Mesh(new T.SphereGeometry(.013,6,4),new T.MeshBasicMaterial({color:'#a7dbea',transparent:true,opacity:.7}));drop.scale.y=2;water.add(drop)}
- const lego=new T.Group();lego.name='npc-table-lego';lego.visible=false;lego.position.set(1.97,.825,5.94);home.scene.add(lego);
+ const lego=new T.Group();lego.name='npc-table-lego';lego.visible=false;lego.position.set(1.97+furnitureShift.dining,.825,5.94);home.scene.add(lego);
  const brickColors=['#cd443b','#e9be42','#4b78b3','#548653','#d17e40','#79afb5'];
  for(let i=0;i<6;i++){
   const brick=new T.Group();brick.position.set((i%2-.5)*.10,0,(Math.floor(i/2)-1)*.09);
@@ -20,11 +20,11 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
   for(const x of [-.019,.019])for(const z of [-.014,.014]){const stud=new T.Mesh(new T.CylinderGeometry(.008,.008,.008,8),material);stud.position.set(x,.032,z);brick.add(stud)}
   lego.add(brick);
  }
- const booster=new T.Mesh(new T.BoxGeometry(.36,.09,.34),new T.MeshStandardMaterial({color:'#d4cfad',roughness:1}));booster.name='npc-lego-seat-cushion';booster.position.set(1.50,.575,5.94);booster.visible=false;home.scene.add(booster);
+ const booster=new T.Mesh(new T.BoxGeometry(.36,.09,.34),new T.MeshStandardMaterial({color:'#d4cfad',roughness:1}));booster.name='npc-lego-seat-cushion';booster.position.set(1.50+furnitureShift.dining,.575,5.94);booster.visible=false;home.scene.add(booster);
  const bathX=5.35+furnitureShift.toilet;
  const actions=[
   {id:'tv',label:'坐沙發看電視',approach:furnitureXZ('sofa',[1.72,2.04]),target:furnitureXYZ('sofa',[2.54,.51,2.03]),pose:'sit',angle:-Math.PI/2},
-  {id:'lego',label:'在餐桌玩樂高',approach:[.88,5.94],target:[1.56,.62,5.94],pose:'sit',angle:Math.PI/2,duration:60000},
+  {id:'lego',label:'在餐桌玩樂高',approach:furnitureXZ('dining',[.88,5.94]),target:furnitureXYZ('dining',[1.56,.62,5.94]),pose:'sit',angle:Math.PI/2,duration:60000},
   ...bedSlots('childBed').map(bed=>({id:'sleep',label:'在次臥睡覺',approach:bed.exit,target:bed.target,pose:'lie',angle:bed.angle,bed})),
   {id:'curtain',label:'拉客廳窗簾',approach:pointXZ([1.55,.50]),angle:Math.PI,pose:'work'},
   {id:'toilet',label:'坐馬桶',approach:[bathX,4.96],target:[5.72+furnitureShift.toilet,.49,4.28],angle:Math.PI,pose:'sit'},

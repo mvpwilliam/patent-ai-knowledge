@@ -1,13 +1,13 @@
 import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
-import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=127';
-import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
+import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=128';
+import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=128';
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=npc-lego-1';
 import {openAvatarEditor} from './avatar-editor.js?v=tiger-eyewear-1';
-import {createHouseNPC} from './house-npc.js?v=127';
+import {createHouseNPC} from './house-npc.js?v=128';
 import {createGodzilla} from './godzilla.js?v=103';
-import {bedSlots,sameBed} from './bed-slots.js?v=122';
-import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=122';
+import {bedSlots,sameBed} from './bed-slots.js?v=128';
+import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=128';
 const PLAYER_SCALE=1;
 
 let avatarDesign=normalizeAvatarDesign({}),designPending=false;
@@ -208,11 +208,11 @@ function moveTo(point,kind='walk',bedSlot=null){
   if(activity)return toast('先完成目前的家事');
   if(!character)return;if((kind==='mainBed'||kind==='childBed')&&!bedSlot)return moveToBed(point,kind);
   movementRequest++;furnitureSupport=null;releaseBed();currentBed=bedSlot;if(character)character.userData.bedReservation=bedSlot;floorPose=false;poseLift=0;cancelHandAction();
-  if(kind.startsWith('diningChair')){const z=kind==='diningChair0'?5.94:6.63;if(onlinePlayers().some(([,p])=>p.presence.pose==='sit'&&Math.hypot(p.presence.x-1.41,p.presence.z-z)<.25))return toast('這張椅子有人坐，請選另一張')}
+  if(kind.startsWith('diningChair')){const z=kind==='diningChair0'?5.94:6.63;if(onlinePlayers().some(([,p])=>p.presence.pose==='sit'&&Math.hypot(p.presence.x-(1.41+furnitureShift.dining),p.presence.z-z)<.25))return toast('這張椅子有人坐，請選另一張')}
   if(pose==='sit')window.homeScene?.showNews(false);
   if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
   restExit=null;travel=null;pose='stand';
-  const stops={diningChair0:[.88,5.94],diningChair1:[.88,6.63],entryMirror:[entryZero+.45,9.58],bathMirror:[4.73+furnitureShift.basin,4.80],sofa:furnitureXZ('sofa',[2.00,2.04]),mainBed:furnitureXZ('mainBed',[4.25,1.68]),childBed:furnitureXZ('childBed',[4.27,6.90])};
+  const stops={diningChair0:furnitureXZ('dining',[.88,5.94]),diningChair1:furnitureXZ('dining',[.88,6.63]),entryMirror:[entryZero+.45,9.58],bathMirror:[4.73+furnitureShift.basin,4.80],sofa:furnitureXZ('sofa',[2.00,2.04]),mainBed:furnitureXZ('mainBed',[4.25,1.68]),childBed:furnitureXZ('childBed',[4.27,6.90])};
   const destination=stops[kind]||point;
   const path=findPath([character.position.x,character.position.z],destination);
   if(!path.length||Math.hypot(path.at(-1)[0]-destination[0],path.at(-1)[1]-destination[1])>.45)return toast('這裡目前走不到');
@@ -354,7 +354,7 @@ function animate(now){
       if(travel.bedSlot&&bedOccupied(travel.bedSlot)){releaseBed();travel=null;pose='stand';publishPresence(true);toast('躺位有人了，請再點一次床');return}
       if(!furnitureSupport)furnitureSupport=furnitureSupportSurfaces(scene,travel.kind);
       const isBed=!!travel.bedSlot,isSeat=travel.kind==='sofa'||travel.kind.startsWith('diningChair');travel.progress=Math.min(1,travel.progress+dt/(isBed?BED_SETTLE_SECONDS:isSeat?SEAT_SETTLE_SECONDS:.65));
-      const target=travel.bedSlot?.target|| (travel.kind.startsWith('diningChair')?[1.41,.37,travel.kind==='diningChair0'?5.94:6.63]:travel.kind==='sofa'?furnitureXYZ('sofa',[2.54,.51,2.03]):travel.kind==='mainBed'?furnitureXYZ('mainBed',[5.16,.78,1.64]):furnitureXYZ('childBed',[5.12,.78,7.00]));
+      const target=travel.bedSlot?.target|| (travel.kind.startsWith('diningChair')?furnitureXYZ('dining',[1.41,.37,travel.kind==='diningChair0'?5.94:6.63]):travel.kind==='sofa'?furnitureXYZ('sofa',[2.54,.51,2.03]):travel.kind==='mainBed'?furnitureXYZ('mainBed',[5.16,.78,1.64]):furnitureXYZ('childBed',[5.12,.78,7.00]));
       if(crossesWall([travel.from.x,travel.from.z],[target[0],target[2]])||crossesDynamicObstacle([travel.from.x,travel.from.z],[target[0],target[2]])){releaseBed();travel=null;pose='stand';publishPresence(true);toast('前方被擋住，請重新選擇');return}if(isBed)animateBedEntry(character,travel.from,target,travel.bedSlot.angle,travel.progress,travel.fromAngle);else if(isSeat)animateSeatEntry(character,travel.from,target,travel.kind.startsWith('diningChair')?Math.PI/2:-Math.PI/2,travel.progress,travel.fromAngle,travel.kind==='sofa');else character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
       if(travel.progress>=1){
         const kind=travel.kind;restExit=travel.exit;travel=null;
@@ -811,7 +811,7 @@ async function buyItem(item){
  try{const id=crypto.randomUUID();await mutateGame(p=>{if(p.coins<item.price)throw new Error('遊戲幣不足');if(p.inventory.length>=40)throw new Error('道具欄已滿（40 件）');p.coins-=item.price;p.inventory.push({id,item:item.id,room:null,slot:null});record(p,`購買${item.name}`,-item.price)});toast(`${item.name}已放入道具欄`)}catch(e){toast(e.message||'購買未成功，沒有扣幣')}
 }
 // Small tabletop items use reserved surface slots and never occupy walkways.
-const slots={living:[[scaleX(.24),.68,1.25],[scaleX(.24),.68,2.65]],dining:[[2.22,.83,5.95],[2.22,.83,6.55]],kitchen:[[scaleX(2.64),.98,9.48],[scaleX(2.91),.98,9.48]],main:[[scaleX(4.25),.10,.30],[scaleX(4.55),.10,.30]],child:[[scaleX(3.05),.10,7.94],[scaleX(3.40),.10,7.94]],entry:[[entryZero+.18,1.05,8.10],[entryZero+.90,1.05,8.10]],bath:[[scaleX(4.55),.84,4.02]],balcony:[[washerPosition.x-.22,1.02,washerPosition.z],[washerPosition.x+.22,1.02,washerPosition.z]]};
+const slots={living:[[scaleX(.24),.68,1.25],[scaleX(.24),.68,2.65]],dining:[furnitureXYZ('dining',[2.22,.83,5.95]),furnitureXYZ('dining',[2.22,.83,6.55])],kitchen:[[scaleX(2.64),.98,9.48],[scaleX(2.91),.98,9.48]],main:[[scaleX(4.25),.10,.30],[scaleX(4.55),.10,.30]],child:[[scaleX(3.05),.10,7.94],[scaleX(3.40),.10,7.94]],entry:[[entryZero+.18,1.05,8.10],[entryZero+.90,1.05,8.10]],bath:[[scaleX(4.55),.84,4.02]],balcony:[[washerPosition.x-.22,1.02,washerPosition.z],[washerPosition.x+.22,1.02,washerPosition.z]]};
 // Rooms without a free shelf get a small wall shelf above the reserved item.
 const shelfRooms=new Set(['main','child']);
 function occupied(meta,room,slot,exclude){return Object.values(meta.players||{}).some(p=>(p.inventory||[]).some(o=>o.id!==exclude&&o.room===room&&o.slot===slot))}

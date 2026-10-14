@@ -59,7 +59,7 @@ export function furnitureSupportSurfaces(scene,kind){
  section.traverse(mesh=>{
   if(!mesh.isMesh)return;const box=new T.Box3().setFromObject(mesh),size=box.getSize(new T.Vector3()),center=box.getCenter(new T.Vector3());
   const bed=kind==='mainBed'||kind==='childBed';
-  const accepted=bed?box.max.y>=.4&&box.max.y<=.85:kind==='sofa'?box.max.y>=.35&&box.max.y<=.65:Math.abs(center.x-1.41)<.03&&Math.abs(center.z-(kind==='diningChair0'?5.94:6.63))<.03&&Math.abs(center.y-.49)<.03&&size.y<.12;
+  const accepted=bed?box.max.y>=.4&&box.max.y<=.85:kind==='sofa'?box.max.y>=.35&&box.max.y<=.65:Math.abs(center.x-(1.41+section.position.x))<.03&&Math.abs(center.z-(kind==='diningChair0'?5.94:6.63))<.03&&Math.abs(center.y-.49)<.03&&size.y<.12;
   if(accepted)surfaces.push(box);
  });return surfaces;
 }

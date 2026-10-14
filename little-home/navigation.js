@@ -1,13 +1,13 @@
 // Walking envelopes share the revised model's metre coordinates.
-import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=85';
+import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=128';
 const radius=.19,cell=.08; // Restored full-size character walking envelope.
 const shift=(a,b,c,d,s)=>[a+s,b+s,c,d];
 const rect=(x0,x1,z0,z1)=>[scaleX(x0),scaleX(x1),z0,z1];
 export const wallObstacles=[
- rect(3.28,3.42,0,4.50), // living/master: only the door beyond the end is passable
+ rect(3.1940625,3.3340625,0,4.50), // living/master: only the door beyond the end is passable
  rect(4.45,6.78,3.58,3.72), // master/bath shared wall
  rect(4.385,4.515,3.75,4.50), // bath front jamb; doorway z 4.50–5.55
- rect(2.65,3.45,5.485,5.615), // child entry left jamb
+ rect(2.65,3.371875,5.485,5.615), // child entry left jamb
  rect(4.45,5.895,5.485,5.615), // child/bath shared wall
  rect(2.585,2.715,5.55,8.20), // dining/child wall
  rect(2.65,5.83,8.135,8.265), // child/kitchen wall
@@ -17,8 +17,8 @@ export const wallObstacles=[
 const obstacles=[...wallObstacles,
  shift(0,.49,.60,3.94,furnitureShift.tv),
  shift(2.20,3.14,.77,3.30,furnitureShift.sofa),
- [1.13,2.62,5.57,7.00], // unchanged dining table/chairs
- [1.23,2.65,6.96,7.64], // unchanged island countertop
+ shift(1.13,2.62,5.57,7.00,furnitureShift.dining), // unchanged dining table/chairs
+ shift(1.23,2.65,6.96,7.64,furnitureShift.dining), // unchanged island countertop
  [entryX(207),entryX(272),9.295,9.995],
  [entryX(273),entryX(378),9.495,9.995],
  [entryX(102),entryX(205),9.555,9.995],
@@ -27,7 +27,7 @@ const obstacles=[...wallObstacles,
  [entryZero+1.25,entryZero+1.295,7.375,8.275], // 90 cm end panel
  [kitchenStart,kitchenEnd,9.295,10.10],
  [scaleX(2.57),scaleX(2.72),5.50,8.21],
- [scaleX(3.27),scaleX(3.43),0,4.50],
+ [scaleX(3.1940625),scaleX(3.3340625),0,4.50],
  shift(4.42,5.04,3.76,4.46,furnitureShift.basin),
  shift(5.48,6.10,3.85,4.67,furnitureShift.toilet),
  [washerPosition.x-.32,washerPosition.x+.32,washerPosition.z-.35,washerPosition.z+.35],
@@ -46,10 +46,10 @@ export function walkable(x,z){
  const inBath=inX(4.45,6.27)&&z>=4.56&&z<=5.36;
  const inDining=inX(.23,2.43)&&z>=5.38&&z<=8.22;
  const inKitchen=inX(.23,5.70)&&z>=8.22&&z<=9.00;
- const inMaster=inX(3.50,6.38)&&z>=.28&&z<=3.54;
- const inMasterEntry=inX(3.50,4.40)&&z>=3.54&&z<=4.72;
+ const inMaster=inX(3.4140625,6.38)&&z>=.28&&z<=3.54;
+ const inMasterEntry=inX(3.4140625,4.40)&&z>=3.54&&z<=4.72;
  const inChild=inX(2.82,5.68)&&z>=5.69&&z<=8.10;
- const inChildEntry=inX(3.48,4.42)&&z>=5.35&&z<=5.69;
+ const inChildEntry=inX(3.401875,4.42)&&z>=5.35&&z<=5.69;
  const inBalcony=inX(6.02,7.59)&&z>=7.23&&z<=9.00;
  const inBalconyDoor=inX(5.68,6.08)&&z>=8.40&&z<=8.96;
  const inEntry=x>=entryZero+radius&&x<=scaleX(.7)&&z>=8.47&&z<=9.60;

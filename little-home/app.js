@@ -1,6 +1,6 @@
 import {createWallFader} from './camera-walls.js?v=111';
 import * as T from './vendor/three.module.js';
-import {X_SCALE,X_PIVOT,scaleX,entryZero,entryX,kitchenStart,kitchenEnd,sinkX,stoveX,furnitureShift,washerPosition} from './layout.js?v=85';
+import {X_SCALE,X_PIVOT,scaleX,entryZero,entryX,kitchenStart,kitchenEnd,sinkX,stoveX,furnitureShift,washerPosition} from './layout.js?v=128';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 const $=s=>document.querySelector(s), canvas=$('#scene'), host=$('#world');
 let renderer;try{renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'default'});}catch(e){$('#loading').hidden=true;$('#error').hidden=false;throw e}
@@ -270,11 +270,11 @@ const interiorWalls=[];
 function partition(x,z,w,d){const g=wall(x,z,w,d,ROOM_WALL_HEIGHT);g.userData.fullHeight=ROOM_WALL_HEIGHT;interiorWalls.push(g);return g}
 // CAD's thick purple lines set the walls; its door arcs set the openings.
 // In plan view model X runs downward and model Z runs from right to left.
-partition(3.35,2.25,.14,4.5); // uninterrupted living wall ends at the marked master entry
+partition(3.2640625,2.25,.14,4.5); // uninterrupted living wall ends at the marked master entry
 partition((4.45+BATH_EXTERIOR_X)/2,3.65,BATH_EXTERIOR_X-4.45,.14); // extend to the relocated exterior wall
 partition(4.45,4.125,.13,.75); // bathroom front wall, z 3.75–4.50
 partition(5.14,5.55,1.38,.13); // one shared bath/child wall, x 4.45–5.83
-partition(3.05,5.55,.8,.13); // short wall above the child door
+partition(3.0109375,5.55,.721875,.13); // short wall above the child door
 partition(2.65,6.875,.13,2.65); // child-room wall along the dining area
 partition(4.24,8.2,3.18,.13); // child-room wall along the kitchen
 const childWindowZ=(5.55+.065+8.2-.065)/2;
@@ -333,9 +333,9 @@ box(0,(h+.07+ROOM_WALL_HEIGHT)/2,0,width,ROOM_WALL_HEIGHT-h-.07,.14,C.wall,.008,
 doorFrames.push(g)}
 // The marked master entrance crosses the short passage beside the bathroom.
 // Its opening faces the passage, while the sofa-side wall remains continuous.
-doorway(3.90,4.5,1.10,false);
+doorway(3.85703125,4.5,1.1859375,false);
 doorway(4.45,5.025,1.05); // bathroom door, z 4.50–5.55
-doorway(3.95,5.55,1.0,false); // child door, x 3.45–4.45 beside the bath
+doorway(3.9109375,5.55,1.078125,false); // child door, x 3.45–4.45 beside the bath
 finishSection('partitions-and-doorframes');
 doorway(entryX(51),10.07,1.02,false,'#454c57');
 finishSection('front-door-frame','exact'); // kitchen-side wall, x -1.90 to -1.00
@@ -366,9 +366,9 @@ function walnutDoor(x,z,w,openAngle,closedAngle,vent=false){
   g.userData.door={openAngle,closedAngle,open:true,target:openAngle,autoNear:false};
   interiorDoors.push(g);doorFrames.push(g);
 }
-walnutDoor(3.38,4.5,1.04,.92,0);             // master bedroom
+walnutDoor(3.2940625,4.5,1.1259375,.92,0);             // master bedroom
 walnutDoor(4.45,5.52,.99,.25,Math.PI/2,true); // bathroom, with lower vents
-walnutDoor(3.47,5.55,.95,-.85,0);            // second bedroom
+walnutDoor(3.391875,5.55,1.028125,-.85,0);            // second bedroom
 finishSection('interior-door-leaves');
 // A dark leaf pivots inward toward the small entry square.
 const frontDoor=new T.Group();frontDoor.position.set(entryZero+.025,0,10.00);frontDoor.rotation.y=0;root.add(frontDoor);
@@ -491,7 +491,7 @@ box(-.38,.54,.37,.29,.19,.006,'#697877',0,peninsula);
 box(-.38,.65,.387,.25,.018,.025,C.metal,0,peninsula);
 box(.095,.55,.314,.43,.38,.024,'#303e3d',0,peninsula);
 for(const yy of [.22,.49,.71]){box(.5,yy,.31,.30,.21,.025,'#b5aa91',.009,peninsula);box(.5,yy+.065,.33,.20,.013,.017,C.dark,0,peninsula)}
-finishSection('dining-and-island','exact');
+finishSection('dining-and-island','translate',furnitureShift.dining);
 // Keep the second-bedroom boundary clear of the former tall wardrobe block.
 // Master bedroom: bed only, with the headboard against the exterior wall.
 // No rug underneath the master bed; leave the wood floor exposed.
@@ -858,8 +858,8 @@ function hitArea(kind,x,y,z,w,d){
 }
 hitArea('sofa',2.54+furnitureShift.sofa,.91,2.03,.92,2.50);
 hitArea('mainBed',5.42+furnitureShift.mainBed,.91,1.64,1.91,1.96);
-hitArea('diningChair0',1.41,.95,5.94,.49,.48);
-hitArea('diningChair1',1.41,.95,6.63,.49,.48);
+hitArea('diningChair0',1.41+furnitureShift.dining,.95,5.94,.49,.48);
+hitArea('diningChair1',1.41+furnitureShift.dining,.95,6.63,.49,.48);
 const mirrorHits=[['entryMirror',entryZero+.035,1.10,9.58,.08,2.16,.69],['bathMirror',4.73+furnitureShift.basin,1.27,3.76,.54,.70,.08]];
 for(const [kind,x,y,z,w,h,d] of mirrorHits){const mesh=new T.Mesh(new T.BoxGeometry(w,h,d),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide}));mesh.position.set(x,y,z);mesh.userData.kind=kind;root.add(mesh);interactionTargets.push(mesh)}
 hitArea('childBed',5.12+furnitureShift.childBed,.89,7.00,1.15,2.10);
@@ -931,7 +931,7 @@ window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShif
   setFridgeOpen(open){fridgeOpen=!!open},
   setShowerOpen(open){const state=showerDoor.userData.door;state.open=!!open;state.target=state.open?state.openAngle:state.closedAngle},
   updateDoorsAt(x,z,others=[]){
-    const centers=[[3.90,4.50],[4.45,5.025],[3.95,5.55]];
+    const centers=[[3.85703125,4.50],[4.45,5.025],[3.9109375,5.55]];
     interiorDoors.forEach((door,i)=>{
       const state=door.userData.door,near=[[x,z],...others].some(p=>Math.hypot(p[0]-scaleX(centers[i][0]),p[1]-centers[i][1])<.73);
       if(near){state.target=state.openAngle;state.open=true}
