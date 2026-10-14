@@ -81,7 +81,7 @@ function pointOnTour(distance){
   return [tour[0][0],tour[0][1],0];
 }
 const outfit=v=>({name:String(v.name||'小屋主').slice(0,12),skin:v.skin||'#e9b990',hair:v.hair==='bob'?'korean':v.hair||'korean',hairColor:v.hairColor||'#4d3834',shirt:v.shirt||'#7899a0'});
-const toast=s=>{const e=$('#toast');e.textContent=s;e.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>e.classList.remove('show'),2600)};
+const toast=s=>{if(character&&!document.querySelector('dialog[open]')&&!/儲存|同步|Google|登入|名字|造型|家庭/.test(s))return showCharacterFeedback(s);const e=$('#toast');e.textContent=s;e.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>e.classList.remove('show'),2600)};
 const boundedCode=s=>s.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,24);
 const claimKey=()=>`little-home-claims-${gameDay}`;
 
@@ -294,8 +294,23 @@ let sceneryTimer;
 function hideScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=true}
 function showScenery(){clearTimeout(sceneryTimer);sceneryOverlay.hidden=false;sceneryTimer=setTimeout(hideScenery,7000)}
 sceneryOverlay.onclick=hideScenery;
+let feedbackUntil=0;
+const feedbackPoint=new T.Vector3(),feedbackBounds=new T.Box3();
+function showCharacterFeedback(text){
+ if(!character)return;
+ const box=$('#character-feedback');box.textContent=text;feedbackUntil=performance.now()+2400;$('#toast').classList.remove('show');updateCharacterFeedback();
+}
+window.homeGameFeedback=showCharacterFeedback;
+function updateCharacterFeedback(){
+ const box=$('#character-feedback'),camera=window.homeScene?.camera,world=$('#world');
+ if(!character||!camera||performance.now()>feedbackUntil){box.hidden=true;return}
+ feedbackBounds.setFromObject(character);feedbackBounds.getCenter(feedbackPoint);feedbackPoint.y=feedbackBounds.max.y+.16;feedbackPoint.project(camera);
+ if(feedbackPoint.z<=-1||feedbackPoint.z>=1||Math.abs(feedbackPoint.x)>.96||Math.abs(feedbackPoint.y)>.96){box.hidden=true;return}
+ box.hidden=false;box.style.left=(feedbackPoint.x+1)*world.clientWidth/2+'px';box.style.top=(1-feedbackPoint.y)*world.clientHeight/2+'px';
+}
+
 function animate(now){
-  updateMarkers();updateMonsterLabel();
+  updateMarkers();updateMonsterLabel();updateCharacterFeedback();
   if(!character)return;
   const dt=Math.min(.06,(now-lastFrame)/1000||0);lastFrame=now;
   const b=character.userData.body;
@@ -373,7 +388,7 @@ function clock(){
   if(current!==gameDay){gameDay=current;claims={};if(mode==='preview')readLocalClaims();else subscribeClaims();renderTasks()}
   if(!document.hidden)publishPresence();syncCharacters();renderMonster();
   const left=GAME_DAY_MS-Date.now()%GAME_DAY_MS;
-  $('#game-clock').textContent=`下個遊戲日 ${String(Math.floor(left/60000)).padStart(2,'0')}:${String(Math.floor(left%60000/1000)).padStart(2,'0')}`;
+  $('#game-clock').textContent=`家事重置 ${String(Math.floor(left/60000)).padStart(2,'0')}:${String(Math.floor(left%60000/1000)).padStart(2,'0')}`;
 }
 function renderTasks(){
   $('#home-create').hidden=homeReady;
@@ -914,7 +929,7 @@ function setupGamePages(){
  const tabs=document.createElement('div');tabs.className='game-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','家事、角色與家庭');
  const body=document.createElement('div');body.className='game-dialog-body';
  const note=$('#game-mode');body.append(note,grid,account);
- const select=key=>{for(const [id,page] of Object.entries(pages))page.hidden=id!==key;note.hidden=key!=='tasks';body.scrollTop=0;head.querySelector('h2').hidden=key==='character';if(key==='character')renderAvatarPreview();head.querySelector('h2').textContent={tasks:'今日家事',character:'我的角色',family:'我的家庭'}[key];for(const button of tabs.children){const active=button.dataset.page===key;button.setAttribute('aria-selected',active);button.tabIndex=active?0:-1}};
+ const select=key=>{for(const [id,page] of Object.entries(pages))page.hidden=id!==key;note.hidden=true;body.scrollTop=0;head.querySelector('h2').hidden=key==='character';if(key==='character')renderAvatarPreview();head.querySelector('h2').textContent={tasks:'今日家事',character:'我的角色',family:'我的家庭'}[key];for(const button of tabs.children){const active=button.dataset.page===key;button.setAttribute('aria-selected',active);button.tabIndex=active?0:-1}};
  for(const [key,label] of [['tasks','今日家事'],['character','我的角色'],['family','我的家庭']]){
   pages[key].id='game-page-'+key;pages[key].setAttribute('role','tabpanel');
   const b=document.createElement('button');b.id='game-tab-'+key;b.dataset.page=key;b.textContent=label;b.setAttribute('role','tab');b.setAttribute('aria-controls',pages[key].id);pages[key].setAttribute('aria-labelledby',b.id);b.onclick=()=>select(key);

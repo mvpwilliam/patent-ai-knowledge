@@ -126,3 +126,8 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #avatar-current-preview{display:block;width:200px;max-width:100%;height:auto;margin:0 auto 16px;border-radius:14px;background:radial-gradient(ellipse at 50% 65%,#e0e7d8,#f0f3eb 70%)}
 #avatar-current-preview[hidden]{display:none}.character-overview{padding:14px 18px 18px;margin-top:14px}
 #game-dialog .dialog-head h2[hidden]{display:none}
+
+#game-mode{display:none!important}
+#character-feedback{position:absolute;z-index:9;max-width:min(220px,calc(100% - 28px));padding:7px 12px;border:1px solid #ffffffbd;border-radius:13px;background:#fbfcf4f2;color:#3e5548;box-shadow:0 3px 14px #193b2920;font-size:12px;line-height:1.5;text-align:center;transform:translate(-50%,-100%);pointer-events:none}
+#character-feedback::after{content:"";position:absolute;left:50%;bottom:-4px;width:8px;height:8px;background:#fbfcf4;transform:translateX(-50%) rotate(45deg)}
+#character-feedback[hidden]{display:none}
