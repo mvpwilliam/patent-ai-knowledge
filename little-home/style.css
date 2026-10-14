@@ -157,3 +157,7 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #inventory-dialog .inventory-tabs{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto}
 #inventory-dialog .inventory-tabs button{min-height:44px;touch-action:manipulation;cursor:pointer;pointer-events:auto}
 #inventory-dialog .inventory-tabs button[aria-pressed=true]{background:#405f50;color:#fff}
+
+@font-face{font-family:"Cubic11";src:url("https://cdn.jsdelivr.net/gh/ACh-K/Cubic-11@main/fonts/web/Cubic_11.woff2") format("woff2"),url("https://raw.githubusercontent.com/ACh-K/Cubic-11/main/fonts/web/Cubic_11.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+.character-name{font-family:"Cubic11","PingFang TC",sans-serif;font-size:12px;font-weight:400;letter-spacing:0}
+.scene-wallet-tools .gold-coin{width:28px;height:28px;object-fit:contain}

@@ -328,7 +328,7 @@ function updateCharacterFeedback(){
 function animate(now){
   updateMarkers();updateMonsterLabel();updateCharacterFeedback();
   if(!character)return;
-  const dt=Math.min(.06,(now-lastFrame)/1000||0);lastFrame=now;
+  const dt=Math.min(.06,(now-lastFrame)/1000||0);lastFrame=now;updateMonsterRoam(dt,now);
   const b=character.userData.body;
   const [leftArm,rightArm]=character.userData.arms,[leftLeg,rightLeg]=character.userData.legs;
   leftArm.position.set(-.20,.42,.015);rightArm.position.set(.20,.42,.015);
@@ -871,6 +871,23 @@ function animateOthers(dt,now){
  item.mesh.userData.updatePose?.(p.pose);
  }
 }
+function updateMonsterRoam(dt,now){
+ if(!monsterMesh||!gameMeta.monster||Date.now()<gameMeta.monster.bornAt)return;
+ const g=monsterMesh,origin=g.userData.roamOrigin;if(!origin)return;
+ // Stop during a close interaction so the approached target remains in reach.
+ if(travel?.kind==='interact'||handAction){for(const p of g.userData.roamLegs||[])p.mesh.position.y=p.y;return}
+ const phase=(Date.now()-gameMeta.monster.bornAt)/1000,tx=origin[0]+Math.sin(phase*.18)*.28,tz=origin[1]+Math.sin(phase*.13)*.22;
+ const dx=tx-g.position.x,dz=tz-g.position.z,distance=Math.hypot(dx,dz);if(distance<.001)return;
+ const step=Math.min(distance,Math.max(0,dt)*.12),x=g.position.x+dx/distance*step,z=g.position.z+dz/distance*step;
+ const boxes=g.userData.collisionBoxes.map(([a,b,c,d])=>[a+x,b+x,c+z,d+z]);
+ const people=[character,houseNPC?.character,...[...characters.values()].map(p=>p.mesh)].filter(Boolean);
+ if(boxes.some(([a,b,c,d])=>people.some(p=>p.position.x>=a-.19&&p.position.x<=b+.19&&p.position.z>=c-.19&&p.position.z<=d+.19)||crossesWall([a,c],[b,c])||crossesWall([b,c],[b,d])||crossesWall([b,d],[a,d])||crossesWall([a,d],[a,c])))return;
+ g.position.x=x;g.position.z=z;setDynamicObstacles(boxes);
+ for(const p of g.userData.roamLegs||[])p.mesh.position.y=p.y+Math.max(0,Math.sin(now*.004+p.side*Math.PI/2))*.015;
+ const blocked=job=>job?.phase==='run'&&job.path.slice(Math.max(0,job.index-1)).some((p,i,path)=>i&&crossesDynamicObstacle(path[i-1],p));
+ if(blocked(travel)||blocked(activity))refreshMonsterRoutes();
+}
+
 function renderMonster(){
  $('#monster-status').hidden=true;if(!scene)return;const m=gameMeta.monster;
  const height=(character?.userData.standingHeight||.95*PLAYER_SCALE)*1.2;
@@ -880,7 +897,7 @@ function renderMonster(){
  if(!monsterMesh||Math.abs(monsterMesh.userData.standingHeight-height)>.001){
   if(monsterMesh){scene.remove(monsterMesh);disposeMonster(monsterMesh)}
   const g=createGodzilla(height);g.position.x=scaleX(1.25);g.position.z=4.25;g.position.y+=.07;
-  scene.add(g);g.updateMatrixWorld(true);monsterMesh=g;
+  g.userData.roamOrigin=[g.position.x,g.position.z];g.userData.roamLegs=g.children.filter(p=>/^(powerful-thigh|shin|wide-foot|foot-claw)-/.test(p.name)).map(mesh=>({mesh,y:mesh.position.y,side:mesh.name.includes('--1')?-1:1}));scene.add(g);g.updateMatrixWorld(true);monsterMesh=g;
   setDynamicObstacles(g.userData.collisionBoxes.map(([a,b,c,d])=>[a+g.position.x,b+g.position.x,c+g.position.z,d+g.position.z]));refreshMonsterRoutes();
  }
  $('#monster-status').textContent=`生命 ${100-m.hits}/100`;updateMonsterLabel();
