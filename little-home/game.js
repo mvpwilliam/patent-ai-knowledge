@@ -920,8 +920,7 @@ function setupGamePages(){
   const b=document.createElement('button');b.id='game-tab-'+key;b.dataset.page=key;b.textContent=label;b.setAttribute('role','tab');b.setAttribute('aria-controls',pages[key].id);pages[key].setAttribute('aria-labelledby',b.id);b.onclick=()=>select(key);
   b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const order=['tasks','character','family'],next=order[(order.indexOf(key)+(e.key==='ArrowRight'?1:2))%3];select(next);$('#game-tab-'+next).focus()};tabs.append(b);
  }
- const foot=document.createElement('div');foot.className='game-dialog-foot';const close=document.createElement('button');close.textContent='回到小屋';close.onclick=()=>dialog.close();foot.append(close);
- dialog.append(tabs,body,foot);dialog.selectPage=select;select('tasks');
+ dialog.append(tabs,body);dialog.selectPage=select;select('tasks');
 }
 {
   $('#home-code').value=new URL(location.href).searchParams.get('home')||localStorage.getItem('little-home-code')||'';
