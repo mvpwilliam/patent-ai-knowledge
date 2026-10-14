@@ -7,15 +7,15 @@ function data(i){const a=spec.accessors[i],v=spec.bufferViews[a.bufferView],n={S
 const bounded=(v,a,b,d)=>Number.isFinite(Number(v))?Math.max(a,Math.min(b,Number(v))):d;
 const tigerTexture=typeof document!=='undefined'?await new T.TextureLoader().loadAsync(new URL('./assets/tiger-shirt.png',import.meta.url).href).catch(error=>{console.warn('Shirt decal unavailable',error);return null}):new T.Texture();
 if(tigerTexture)tigerTexture.colorSpace=T.SRGBColorSpace;
-export function normalizeAvatarDesign(d={}){d=d&&typeof d==='object'?d:{};return {version:1,faceWidth:bounded(d.faceWidth,.82,1.2,1),chin:bounded(d.chin,.6,1.6,1),eyeSize:bounded(d.eyeSize,.65,1.4,1),eyeGap:bounded(d.eyeGap,.75,1.25,1),browAngle:bounded(d.browAngle,-.5,.5,0),hairStyle:['korean','short','long','cap','braids','bob','bluntLong','ponytail','buns','centerPart','sidePart','crew','blunt','wavy','swept'].includes(d.hairStyle)?d.hairStyle:'korean',mouth:['smile','flat','open'].includes(d.mouth)?d.mouth:'smile',glasses:['none','round','literary','sunglasses'].includes(d.eyewear)?d.eyewear==='round':!!d.glasses,eyewear:['none','round','literary','sunglasses'].includes(d.eyewear)?d.eyewear:(d.glasses?'round':'none'),jeans:/^#[0-9a-f]{6}$/i.test(d.jeans||'')?d.jeans:'#354f6b'}};
+export function normalizeAvatarDesign(d={}){d=d&&typeof d==='object'?d:{};return {version:1,faceWidth:bounded(d.faceWidth,.82,1.2,1),chin:bounded(d.chin,.6,1.6,1),eyeSize:bounded(d.eyeSize,.65,1.4,1),eyeGap:bounded(d.eyeGap,.75,1.25,1),browAngle:bounded(d.browAngle,-.5,.5,0),hairStyle:['korean','short','long','cap','braids','bob','bluntLong','ponytail','buns','centerPart','sidePart','crew','blunt','wavy','swept','sonSpiky'].includes(d.hairStyle)?d.hairStyle:'korean',mouth:['smile','flat','open'].includes(d.mouth)?d.mouth:'smile',glasses:['none','round','literary','sunglasses'].includes(d.eyewear)?d.eyewear==='round':!!d.glasses,eyewear:['none','round','literary','sunglasses'].includes(d.eyewear)?d.eyewear:(d.glasses?'round':'none'),jeans:/^#[0-9a-f]{6}$/i.test(d.jeans||'')?d.jeans:'#354f6b'}};
 
 export const dadWhitePreset={hair:'korean',hairColor:'#242323',shirt:'#ffffff'};
 export function isPixelDad(v){return v.hair==='korean'&&v.hairColor.toLowerCase()==='#242323'&&v.shirt.toLowerCase()==='#ffffff'}
-export function createPixelDad(v,design={}){
+export function createPixelDad(v,design={},child=false){
  const d=normalizeAvatarDesign(design);
  const g=new T.Group(),body=new T.Group(),scale=.68;g.add(body);
  const materials=spec.materials.map((m,i)=>{const c=new T.Color().setRGB(...m.extras.previewColor.slice(0,3));if(i===0&&v.skin)c.set(v.skin);if(i===2||i===3){c.set(v.hairColor||'#242323');if(i===3)c.multiplyScalar(1.18)}if(i===10)c.set(d.jeans);if(i===11)c.set(v.shirt||'#ffffff');return new T.MeshStandardMaterial({color:c,roughness:1,metalness:0,side:T.DoubleSide})});
- const nodes=spec.nodes.map(n=>{const obj=new T.Group();obj.name=n.name;if(n.translation)obj.position.fromArray(n.translation);if(n.mesh!==undefined){for(const p of spec.meshes[n.mesh].primitives){if(d.eyewear!=='round'&&n.name.toLowerCase().includes('glasses'))continue;if(d.hairStyle!=='korean'&&n.name.startsWith('Parted fringe'))continue;if(['centerPart','sidePart','crew','blunt','wavy','swept'].includes(d.hairStyle)&&/Korean parted hair cap|Sideburn/.test(n.name))continue;const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(data(p.attributes.POSITION),3));geo.setAttribute('normal',new T.BufferAttribute(data(p.attributes.NORMAL),3));
+ const nodes=spec.nodes.map(n=>{const obj=new T.Group();obj.name=n.name;if(n.translation)obj.position.fromArray(n.translation);if(n.mesh!==undefined){for(const p of spec.meshes[n.mesh].primitives){if(d.eyewear!=='round'&&n.name.toLowerCase().includes('glasses'))continue;if(d.hairStyle!=='korean'&&n.name.startsWith('Parted fringe'))continue;if(['centerPart','sidePart','crew','blunt','wavy','swept','sonSpiky'].includes(d.hairStyle)&&/Korean parted hair cap|Sideburn/.test(n.name))continue;const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(data(p.attributes.POSITION),3));geo.setAttribute('normal',new T.BufferAttribute(data(p.attributes.NORMAL),3));
 const position=geo.getAttribute('position'),pixel=/Face pixel (\d+) (\d+)/.exec(n.name);
 for(let k=0;k<position.count;k++){let x=position.getX(k),y=position.getY(k),z=position.getZ(k);
  if(pixel){const xx=Number(pixel[1]),yy=Number(pixel[2]),sign=xx<16?-1:1,cx=sign*.0918,cy=1.061;
@@ -57,7 +57,7 @@ if(d.mouth!=='smile')block('Mouth '+d.mouth,d.mouth==='flat'?.12:.047,d.mouth===
 
 
 // Six selectable male hairstyles, assembled as simple low-poly blocks.
-if(['centerPart','sidePart','crew','blunt','wavy','swept'].includes(d.hairStyle)){
+if(['centerPart','sidePart','crew','blunt','wavy','swept','sonSpiky'].includes(d.hairStyle)){
  const fw=d.faceWidth;
  const hair=(name,w,h,depth,x,y,z)=>block('Hair '+d.hairStyle+' '+name,w*fw,h,depth,hc,x*fw,y,z);
  hair('crown',.45,.14,.34,0,1.35,-.06);
@@ -67,8 +67,8 @@ if(['centerPart','sidePart','crew','blunt','wavy','swept'].includes(d.hairStyle)
   for(let i=0;i<3;i++)hair('curtain '+sign+' '+i,.075,.18+i*.027,.105,sign*(.052+i*.069),1.29-i*.012,.209);
  }
  if(d.hairStyle==='sidePart')for(let i=0;i<6;i++)hair('side fringe '+i,.08,.105+i*.027,.11,.175-i*.066,1.31-i*.014,.205);
- if(d.hairStyle==='crew'){
-  for(let row=0;row<3;row++)for(let col=0;col<5;col++)hair('short tuft '+row+' '+col,.066,.07+((row+col)%3)*.04,.09,(col-2)*.087,1.46+((col+row)%2)*.025,(row-1)*.12);
+ if(['crew','sonSpiky'].includes(d.hairStyle)){
+  for(let row=0;row<(d.hairStyle==='sonSpiky'?4:3);row++)for(let col=0;col<5;col++)hair('short tuft '+row+' '+col,.066,(d.hairStyle==='sonSpiky'?.12:.07)+((row+col)%3)*.04,.09,(col-2)*.087,1.46+((col+row)%2)*.025,(row-(d.hairStyle==='sonSpiky'?1.5:1))*.105);
  }
  if(d.hairStyle==='blunt')for(let i=0;i<7;i++)hair('straight fringe '+i,.066,.16,.10,(i-3)*.063,1.27,.213);
  if(d.hairStyle==='wavy'){
@@ -80,6 +80,10 @@ if(['centerPart','sidePart','crew','blunt','wavy','swept'].includes(d.hairStyle)
  }
 }
 
+if(d.hairStyle==='sonSpiky')for(const tuft of model.children.filter(n=>n.name.startsWith('Hair sonSpiky short tuft'))){
+ tuft.geometry.dispose();tuft.geometry=new T.ConeGeometry(.044*d.faceWidth,.16,4);
+ tuft.position.y+=.035;tuft.rotation.y=Math.PI/4;
+}
 // All hair is assembled from editable cuboids, in the same coordinate system as the head.
 if(['bob','bluntLong','braids','ponytail','buns'].includes(d.hairStyle)){
  for(let i=0;i<7;i++)block('Blunt fringe '+i,.062,.10,.09,hc,(i-3)*.061*d.faceWidth,1.27,.218);
@@ -117,9 +121,10 @@ for(const sign of [-1,1]){
 }
 // Remap vertices and joint pivots together. Limb vertices are joint-local,
 // so simply stretching geometry would detach the elbows and knees.
-const bodyY=y=>y<=.43?y*.72/.43:.72+(y-.43)*(.40/.28);
-const armY=y=>bodyY(.66)+(y-.66)*1.072;
-const headY=y=>1.10+(y-.70)*.46;
+const hipHeight=child?.60:.72,torsoHeight=child?.35:.40,bodyWidth=child?.75:.82;
+const bodyY=y=>y<=.43?y*hipHeight/.43:hipHeight+(y-.43)*(torsoHeight/.28);
+const armY=y=>bodyY(.66)+(y-.66)*(child?.90:1.072);
+const headY=y=>(child?.94:1.10)+(y-.70)*(child?.50:.46);
 const snapshots=[];
 function capture(obj,parentPosition=new T.Vector3(),arm=false){
  const world=parentPosition.clone().add(obj.position);
@@ -130,7 +135,7 @@ function capture(obj,parentPosition=new T.Vector3(),arm=false){
 }
 capture(model);
 for(const {obj,world,parent,arm,head} of snapshots){
- const map=(v,h=false)=>new T.Vector3(v.x*(h?.64:.82),(h?headY:arm?armY:bodyY)(v.y),v.z*(h?.64:.82));
+ const map=(v,h=false)=>new T.Vector3(v.x*(h?.64:bodyWidth),(h?headY:arm?armY:bodyY)(v.y),v.z*(h?.64:bodyWidth));
  // Meshes inherit the parent's semantic label.
  if(obj.isMesh){const owner=snapshots.find(x=>x.obj===obj.parent),h=owner?.head||head;
   const a=obj.geometry.attributes.position,newOrigin=map(world,h);
@@ -139,13 +144,13 @@ for(const {obj,world,parent,arm,head} of snapshots){
  }
  const parentSnapshot=snapshots.find(x=>x.obj===obj.parent);
  const parentHead=!!parentSnapshot?.head;
- const parentOrigin=parentSnapshot?new T.Vector3(parent.x*(parentHead?.64:.82),(parentHead?headY:parentSnapshot.arm?armY:bodyY)(parent.y),parent.z*(parentHead?.64:.82)):new T.Vector3();
+ const parentOrigin=parentSnapshot?new T.Vector3(parent.x*(parentHead?.64:bodyWidth),(parentHead?headY:parentSnapshot.arm?armY:bodyY)(parent.y),parent.z*(parentHead?.64:bodyWidth)):new T.Vector3();
  obj.position.copy(map(world,head||(obj.isMesh&&parentHead)).sub(parentOrigin));
 }
  const arms=[new T.Group(),new T.Group()],legs=[new T.Group(),new T.Group()];for(const n of [...arms,...legs])body.add(n);
  const named=Object.fromEntries(nodes.map(n=>[n.name,n]));
  g.userData={body,arms,legs,step:Math.random()*8,pixelDad:true,updatePose(pose='stand'){
-  model.position.y=pose==='sit'?-.72*scale:0;
+  model.position.y=pose==='sit'?-hipHeight*scale:0;
   for(let i=0;i<2;i++){const label=i?'Right':'Left',hip=named[label+' hip'],knee=named[label+' knee'],shoulder=named[label+' shoulder'],elbow=named[label+' elbow'];hip.rotation.x=pose==='sit'?-Math.PI/2:legs[i].rotation.x;knee.rotation.x=pose==='sit'?Math.PI/2:Math.max(0,-legs[i].rotation.x)*.5;shoulder.rotation.x=pose==='sit'?-.45:arms[i].rotation.x;elbow.rotation.x=pose==='sit'?-1.08:pose==='work'?-.6:0;}
  }};g.userData.updatePose();return g;
 }
@@ -155,3 +160,19 @@ for(const {obj,world,parent,arm,head} of snapshots){
 
 
 
+
+
+// Dedicated nine-year-old NPC: child proportions, not a scaled adult body.
+// Normalize the complete standing silhouette (including hair) to 70% of
+// the canonical adult; the game's shared PLAYER_SCALE is applied afterward.
+export function createPixelChild(v={}){
+ const outfit={...v,skin:v.skin||'#e9b990',hair:'korean',hairColor:'#202020',shirt:'#ffffff'};
+ const kid=createPixelDad(outfit,{hairStyle:'sonSpiky',faceWidth:.92,chin:.8,eyeSize:.95,eyeGap:.98,mouth:'smile',eyewear:'none',jeans:'#354f6b'},true);
+ const adult=createPixelDad(outfit,{hairStyle:'korean'});
+ kid.updateMatrixWorld(true);adult.updateMatrixWorld(true);
+ const adultHeight=new T.Box3().setFromObject(adult).getSize(new T.Vector3()).y;
+ const childHeight=new T.Box3().setFromObject(kid).getSize(new T.Vector3()).y;
+ kid.scale.multiplyScalar(.70*adultHeight/childHeight);
+ adult.traverse(n=>{n.geometry?.dispose();n.material?.dispose()});
+ kid.userData.isChild=true;kid.userData.heightRatio=.70;return kid;
+}

@@ -2,9 +2,9 @@ import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=103';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
-import {createPixelDad,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=tiger-eyewear-1';
+import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=child-npc-1';
 import {openAvatarEditor} from './avatar-editor.js?v=tiger-eyewear-1';
-import {createHouseNPC} from './house-npc.js?v=107';
+import {createHouseNPC} from './house-npc.js?v=child-npc-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed} from './bed-slots.js?v=107';
 import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS} from './character-motion.js?v=120';
@@ -91,7 +91,7 @@ function bodyPart(parent,geometry,color,x,y,z){
   mesh.position.set(x,y,z);mesh.castShadow=true;parent.add(mesh);return mesh;
 }
 function makeCharacter(v,design={}){
- const mesh=createPixelDad(v,normalizeAvatarDesign({...design,hairStyle:design.hairStyle||v.hair}));
+ const mesh=design.bodyType==='child'?createPixelChild(v):createPixelDad(v,normalizeAvatarDesign({...design,hairStyle:design.hairStyle||v.hair}));
  mesh.scale.multiplyScalar(PLAYER_SCALE);mesh.updateMatrixWorld(true);
  const bounds=new T.Box3().setFromObject(mesh);mesh.userData.standingHeight=bounds.max.y-bounds.min.y;return mesh;
 }
@@ -994,6 +994,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 

@@ -6,7 +6,7 @@ import {bedSlots,sameBed} from './bed-slots.js?v=107';
 
 // A local ambient resident, never a Firebase player or an award recipient.
 export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
- const character=makeCharacter({name:'小屋主',skin:'#e9b990',hair:'korean',hairColor:'#4d3834',shirt:'#7899a0'});
+ const character=makeCharacter({name:'小屋主',skin:'#e9b990',hair:'korean',hairColor:'#202020',shirt:'#ffffff'},{bodyType:'child'});
  character.name='house-owner-npc';character.userData.isNPC=true;
  character.position.set(...[pointXZ([1.2,4.2])[0],.07,4.2]);home.scene.add(character);
  const water=new T.Group();water.name='npc-shower-water';water.visible=false;home.scene.add(water);
@@ -82,4 +82,5 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  }
  return {character,update,actions,get state(){return state},get action(){return action},startAction(id,now=performance.now()){if(state!=='wait')return false;return choose(now,id)}};
 }
+
 
