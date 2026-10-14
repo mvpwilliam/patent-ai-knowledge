@@ -6,8 +6,8 @@ import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} fr
 import {openAvatarEditor} from './avatar-editor.js?v=tiger-eyewear-1';
 import {createHouseNPC} from './house-npc.js?v=npc-lego-1';
 import {createGodzilla} from './godzilla.js?v=103';
-import {bedSlots,sameBed} from './bed-slots.js?v=107';
-import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=121';
+import {bedSlots,sameBed} from './bed-slots.js?v=122';
+import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=122';
 const PLAYER_SCALE=.9;
 
 let avatarDesign=normalizeAvatarDesign({}),designPending=false;
@@ -212,7 +212,7 @@ function moveTo(point,kind='walk',bedSlot=null){
   if(pose==='sit')window.homeScene?.showNews(false);
   if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
   restExit=null;travel=null;pose='stand';
-  const stops={diningChair0:[.88,5.94],diningChair1:[.88,6.63],entryMirror:[entryZero+.45,9.58],bathMirror:[4.73+furnitureShift.basin,4.80],sofa:furnitureXZ('sofa',[1.72,2.04]),mainBed:furnitureXZ('mainBed',[4.05,1.68]),childBed:furnitureXZ('childBed',[3.98,6.90])};
+  const stops={diningChair0:[.88,5.94],diningChair1:[.88,6.63],entryMirror:[entryZero+.45,9.58],bathMirror:[4.73+furnitureShift.basin,4.80],sofa:furnitureXZ('sofa',[2.00,2.04]),mainBed:furnitureXZ('mainBed',[4.25,1.68]),childBed:furnitureXZ('childBed',[4.27,6.90])};
   const destination=stops[kind]||point;
   const path=findPath([character.position.x,character.position.z],destination);
   if(!path.length||Math.hypot(path.at(-1)[0]-destination[0],path.at(-1)[1]-destination[1])>.45)return toast('這裡目前走不到');
@@ -879,15 +879,17 @@ function updateMonsterRoam(dt,now){
  const g=monsterMesh,origin=g.userData.roamOrigin;if(!origin)return;
  const idle=()=>animateMonsterStride(g,0,dt);
  if(travel?.kind==='interact'||handAction){idle();return}
- const phase=(Date.now()-gameMeta.monster.bornAt)/1000,tx=origin[0]+Math.sin(phase*.18)*.28,tz=origin[1]+Math.sin(phase*.13)*.22;
- const dx=tx-g.position.x,dz=tz-g.position.z,distance=Math.hypot(dx,dz);if(distance<.001){idle();return}
- const step=Math.min(distance,Math.max(0,dt)*.12),x=g.position.x+dx/distance*step,z=g.position.z+dz/distance*step;
- const desired=Math.atan2(dx,dz),delta=Math.atan2(Math.sin(desired-g.rotation.y),Math.cos(desired-g.rotation.y));
+ const phase=(Date.now()-gameMeta.monster.bornAt)/1000,tx=origin[0]+Math.sin(phase*.18)*.12,tz=origin[1]+Math.sin(phase*.13)*.10;
+ const tvPhase=phase%24,attacking=tvPhase>=18;
+ const dx=tx-g.position.x,dz=tz-g.position.z,distance=Math.hypot(dx,dz);if(distance<.001&&!attacking){idle();return}
+ const step=attacking?0:Math.min(distance,Math.max(0,dt)*.12),x=g.position.x+(distance?dx/distance*step:0),z=g.position.z+(distance?dz/distance*step:0);
+ const desired=attacking?Math.atan2(.22+furnitureShift.tv-g.position.x,2.1-g.position.z):Math.atan2(dx,dz),delta=Math.atan2(Math.sin(desired-g.rotation.y),Math.cos(desired-g.rotation.y));
  const yaw=g.rotation.y+Math.sign(delta)*Math.min(Math.abs(delta),dt*.55);
  const boxes=monsterBoxesAt(g,x,z,yaw);
  const people=[character,houseNPC?.character,...[...characters.values()].map(p=>p.mesh)].filter(Boolean);
  if(boxes.some(([a,b,c,d])=>people.some(p=>p.position.x>=a-.19&&p.position.x<=b+.19&&p.position.z>=c-.19&&p.position.z<=d+.19)||crossesWall([a,c],[b,c])||crossesWall([b,c],[b,d])||crossesWall([b,d],[a,d])||crossesWall([a,d],[a,c]))){idle();return}
- g.position.x=x;g.position.z=z;g.rotation.y=yaw;setDynamicObstacles(boxes);animateMonsterStride(g,step,dt);
+ g.position.x=x;g.position.z=z;g.rotation.y=yaw;setDynamicObstacles(boxes);animateMonsterStride(g,step,dt,yaw-g.userData.lastYaw||0);g.userData.lastYaw=yaw;
+ if(attacking&&Math.abs(delta)<.18){const t=Math.max(0,(tvPhase-21)/3),w=Math.sin(Math.PI*Math.min(1,t*2));const arm=g.userData.gait?.arms[1];if(arm){arm.rotation.x=-.25-w*1.25;arm.rotation.z=-.10-Math.sin(t*Math.PI*2)*.20}g.userData.gait.chest.rotation.x=.06*Math.sin(t*Math.PI)}else if(g.userData.gait){g.userData.gait.arms.forEach(a=>a.rotation.z=0);g.userData.gait.chest.rotation.x=0}
  const blocked=job=>job?.phase==='run'&&job.path.slice(Math.max(0,job.index-1)).some((p,i,path)=>i&&crossesDynamicObstacle(path[i-1],p));
  if(blocked(travel)||blocked(activity))refreshMonsterRoutes();
 }
@@ -900,7 +902,7 @@ function renderMonster(){
  }
  if(!monsterMesh||Math.abs(monsterMesh.userData.standingHeight-height)>.001){
   if(monsterMesh){scene.remove(monsterMesh);disposeMonster(monsterMesh)}
-  const g=createGodzilla(height);g.position.x=scaleX(1.25);g.position.z=4.25;g.position.y+=.07;
+  const g=createGodzilla(height);g.position.x=scaleX(.90);g.position.z=.90;g.position.y+=.07;
   g.userData.roamOrigin=[g.position.x,g.position.z];rigMonster(g);scene.add(g);g.updateMatrixWorld(true);monsterMesh=g;
   setDynamicObstacles(monsterBoxesAt(g,g.position.x,g.position.z));refreshMonsterRoutes();
  }

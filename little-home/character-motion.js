@@ -23,11 +23,12 @@ export function rigMonster(g){
  for(const arm of arms){g.remove(arm);arm.position.sub(chest.position);chest.add(arm)}
  g.userData.gait={legs,arms,tail,chest,phase:0,weight:0};
 }
-export function animateMonsterStride(g,distance,dt){
+export function animateMonsterStride(g,distance,dt,turn=0){
  const rig=g.userData.gait;if(!rig)return;
- rig.weight+=(Number(distance>0)-rig.weight)*Math.min(1,dt*5);
+ const effort=distance+Math.abs(turn)*.16;
+ rig.weight+=(Number(effort>0)-rig.weight)*Math.min(1,dt*5);
  // Two planted steps per small stride; phase advances only with actual displacement.
- rig.phase+=distance/.16*Math.PI*2;
+ rig.phase+=effort/.16*Math.PI*2;
  const {phase,weight}=rig;
  for(const {node,side,baseY} of rig.legs){
   const s=Math.sin(phase+(side<0?0:Math.PI));node.position.y=baseY;node.rotation.x=s*.16*weight;
