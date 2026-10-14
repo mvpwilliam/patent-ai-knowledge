@@ -225,3 +225,12 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #world .scene-menu-options svg{display:block;width:24px;height:24px;pointer-events:none}
 #world .scene-menu-options button:hover{background:#d8e4d4}
 #world .scene-menu-options button:focus-visible{outline:2px solid #648572;outline-offset:2px}
+
+/* Compact vertical XP HUD, below the wallet. */
+#world .scene-xp{position:absolute;z-index:11;top:86px;right:18px;width:42px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:6px;padding:9px 4px;background:#fffdf3e8;color:#405f50;border:1px solid #ffffffb3;border-radius:17px;box-shadow:0 3px 12px #1c302b14;pointer-events:none;font-variant-numeric:tabular-nums}
+.scene-xp strong{font-size:11px;line-height:1.3}
+.scene-xp small{font-size:10px;line-height:1.2}
+.scene-xp-track{position:relative;width:9px;height:84px;overflow:hidden;border-radius:8px;background:#dce4d7}
+#scene-xp-fill{position:absolute;bottom:0;left:0;width:100%;height:0;background:linear-gradient(to top,#537653,#aac580);border-radius:8px;transition:height .4s ease}
+@media(max-width:700px){#world .scene-xp{top:82px;right:16px}}
+@media(prefers-reduced-motion:reduce){#scene-xp-fill{transition:none}}

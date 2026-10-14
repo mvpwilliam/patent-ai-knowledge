@@ -831,6 +831,12 @@ function applyMeta(meta){
 }
 function renderEconomy(){
  const info=levelInfo(player.xp);$('#coin-count').textContent=player.coins.toLocaleString();
+ const xpPercent=Math.round(Math.max(0,Math.min(1,info.progress))*100);
+ $('#scene-xp-level').textContent='Lv.'+info.level;
+ $('#scene-xp-fill').style.height=xpPercent+'%';
+ $('#scene-xp-percent').textContent=info.level===20?'MAX':xpPercent+'%';
+ $('#scene-xp-meter').setAttribute('aria-valuenow',String(xpPercent));
+ $('#scene-xp-meter').setAttribute('aria-valuetext',info.level===20?'20 級，已滿級':`目前 ${info.level} 級，升級進度 ${xpPercent}%`);
  $('#player-level').textContent=`Lv.${info.level} · ${info.title}`;$('#xp-meter').value=info.progress;
  $('#xp-label').textContent=info.level===20?(player.legendaryFreeClaimed?'已滿級 · 家事繼續賺幣':'已滿級 · 下方可免費領取一套傳說套裝'):`${player.xp} / ${MAX_XP} EXP`;
  $('#daily-progress').textContent=`今日家事 ${dayTasks().filter(t=>taskDone(t)).length}／${dayTasks().length}`;
