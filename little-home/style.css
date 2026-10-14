@@ -185,4 +185,4 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 
 .scene-wallet-tools .gold-coin{width:28px;height:28px;object-fit:contain}
 
-#character-names .character-name{position:absolute;transform:translate(-50%,4px);padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;text-shadow:none;filter:none;color:#000;font-family:"HomeRoundedLabel","PingFang TC",sans-serif;font-size:12px;font-weight:400;letter-spacing:0;line-height:1.4;white-space:nowrap;pointer-events:none}
+#character-names .character-name{position:absolute;transform:translate(-50%,4px);padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;text-shadow:none;filter:none;color:#626762;font-family:"HomeRoundedLabel","PingFang TC",sans-serif;font-size:12px;font-weight:400;letter-spacing:0;line-height:1.4;white-space:nowrap;pointer-events:none}
