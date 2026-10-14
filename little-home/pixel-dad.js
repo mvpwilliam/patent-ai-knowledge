@@ -5,7 +5,9 @@ const bytes=new Uint8Array(await new Response(new Blob([packed]).stream().pipeTh
 function data(i){const a=spec.accessors[i],v=spec.bufferViews[a.bufferView],n={SCALAR:1,VEC2:2,VEC3:3,VEC4:4}[a.type],Type=a.componentType===5125?Uint32Array:Float32Array;return new Type(bytes.buffer,offset+v.byteOffset,a.count*n).slice()}
 
 const bounded=(v,a,b,d)=>Number.isFinite(Number(v))?Math.max(a,Math.min(b,Number(v))):d;
-export function normalizeAvatarDesign(d={}){d=d&&typeof d==='object'?d:{};return {version:1,faceWidth:bounded(d.faceWidth,.82,1.2,1),chin:bounded(d.chin,.6,1.6,1),eyeSize:bounded(d.eyeSize,.65,1.4,1),eyeGap:bounded(d.eyeGap,.75,1.25,1),browAngle:bounded(d.browAngle,-.5,.5,0),hairStyle:['korean','short','long','cap','braids','bob','bluntLong','ponytail','buns','centerPart','sidePart','crew','blunt','wavy','swept'].includes(d.hairStyle)?d.hairStyle:'korean',mouth:['smile','flat','open'].includes(d.mouth)?d.mouth:'smile',glasses:!!d.glasses,jeans:/^#[0-9a-f]{6}$/i.test(d.jeans||'')?d.jeans:'#354f6b'}};
+const tigerTexture=typeof document!=='undefined'?await new T.TextureLoader().loadAsync(new URL('./assets/tiger-shirt.png',import.meta.url).href).catch(error=>{console.warn('Shirt decal unavailable',error);return null}):new T.Texture();
+if(tigerTexture)tigerTexture.colorSpace=T.SRGBColorSpace;
+export function normalizeAvatarDesign(d={}){d=d&&typeof d==='object'?d:{};return {version:1,faceWidth:bounded(d.faceWidth,.82,1.2,1),chin:bounded(d.chin,.6,1.6,1),eyeSize:bounded(d.eyeSize,.65,1.4,1),eyeGap:bounded(d.eyeGap,.75,1.25,1),browAngle:bounded(d.browAngle,-.5,.5,0),hairStyle:['korean','short','long','cap','braids','bob','bluntLong','ponytail','buns','centerPart','sidePart','crew','blunt','wavy','swept'].includes(d.hairStyle)?d.hairStyle:'korean',mouth:['smile','flat','open'].includes(d.mouth)?d.mouth:'smile',glasses:['none','round','literary','sunglasses'].includes(d.eyewear)?d.eyewear==='round':!!d.glasses,eyewear:['none','round','literary','sunglasses'].includes(d.eyewear)?d.eyewear:(d.glasses?'round':'none'),jeans:/^#[0-9a-f]{6}$/i.test(d.jeans||'')?d.jeans:'#354f6b'}};
 
 export const dadWhitePreset={hair:'korean',hairColor:'#242323',shirt:'#ffffff'};
 export function isPixelDad(v){return v.hair==='korean'&&v.hairColor.toLowerCase()==='#242323'&&v.shirt.toLowerCase()==='#ffffff'}
@@ -13,7 +15,7 @@ export function createPixelDad(v,design={}){
  const d=normalizeAvatarDesign(design);
  const g=new T.Group(),body=new T.Group(),scale=.68;g.add(body);
  const materials=spec.materials.map((m,i)=>{const c=new T.Color().setRGB(...m.extras.previewColor.slice(0,3));if(i===0&&v.skin)c.set(v.skin);if(i===2||i===3){c.set(v.hairColor||'#242323');if(i===3)c.multiplyScalar(1.18)}if(i===10)c.set(d.jeans);if(i===11)c.set(v.shirt||'#ffffff');return new T.MeshStandardMaterial({color:c,roughness:1,metalness:0,side:T.DoubleSide})});
- const nodes=spec.nodes.map(n=>{const obj=new T.Group();obj.name=n.name;if(n.translation)obj.position.fromArray(n.translation);if(n.mesh!==undefined){for(const p of spec.meshes[n.mesh].primitives){if(!d.glasses&&n.name.toLowerCase().includes('glasses'))continue;if(d.hairStyle!=='korean'&&n.name.startsWith('Parted fringe'))continue;if(['centerPart','sidePart','crew','blunt','wavy','swept'].includes(d.hairStyle)&&/Korean parted hair cap|Sideburn/.test(n.name))continue;const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(data(p.attributes.POSITION),3));geo.setAttribute('normal',new T.BufferAttribute(data(p.attributes.NORMAL),3));
+ const nodes=spec.nodes.map(n=>{const obj=new T.Group();obj.name=n.name;if(n.translation)obj.position.fromArray(n.translation);if(n.mesh!==undefined){for(const p of spec.meshes[n.mesh].primitives){if(d.eyewear!=='round'&&n.name.toLowerCase().includes('glasses'))continue;if(d.hairStyle!=='korean'&&n.name.startsWith('Parted fringe'))continue;if(['centerPart','sidePart','crew','blunt','wavy','swept'].includes(d.hairStyle)&&/Korean parted hair cap|Sideburn/.test(n.name))continue;const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(data(p.attributes.POSITION),3));geo.setAttribute('normal',new T.BufferAttribute(data(p.attributes.NORMAL),3));
 const position=geo.getAttribute('position'),pixel=/Face pixel (\d+) (\d+)/.exec(n.name);
 for(let k=0;k<position.count;k++){let x=position.getX(k),y=position.getY(k),z=position.getZ(k);
  if(pixel){const xx=Number(pixel[1]),yy=Number(pixel[2]),sign=xx<16?-1:1,cx=sign*.0918,cy=1.061;
@@ -30,6 +32,24 @@ geo.setIndex(new T.BufferAttribute(data(p.indices),1));const mesh=new T.Mesh(geo
  spec.nodes.forEach((n,i)=>{for(const child of n.children||[])nodes[i].add(nodes[child])});const model=nodes[0];model.scale.setScalar(scale);body.add(model);
 function block(name,w,h,depth,color,x,y,z){const mesh=new T.Mesh(new T.BoxGeometry(w,h,depth),new T.MeshStandardMaterial({color,roughness:1}));mesh.name=name;mesh.position.set(x,y,z);mesh.castShadow=true;model.add(mesh);return mesh}
 const hc=v.hairColor||'#242323';
+// The chest decal remains fixed to the torso through all poses and shirt colors.
+const tiger=new T.Mesh(new T.PlaneGeometry(.205,.185),new T.MeshBasicMaterial({map:tigerTexture,transparent:true,alphaTest:.06,depthWrite:false,side:T.FrontSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1}));
+tiger.name='Tiger shirt print';tiger.position.set(0,.59,.122);tiger.visible=!!tigerTexture;model.add(tiger);
+if(['literary','sunglasses'].includes(d.eyewear)){
+ const dark=d.eyewear==='sunglasses',color=dark?'#191d24':'#584336';
+ const frame=(name,w,h,depth,x,y,z)=>block('Glasses '+name,w*d.faceWidth,h,depth,color,x*d.faceWidth,y,z);
+ const cx=.095*d.eyeGap;
+ for(const sign of [-1,1]){
+  const x=sign*cx,w=.145,h=dark?.081:.087,cy=1.061;
+  frame('upper rim '+sign,w,.013,.012,x,cy+h/2,.281);
+  frame('lower rim '+sign,w,.010,.012,x,cy-h/2,.281);
+  for(const edge of [-1,1])frame('outer rim '+sign+' '+edge,.010,h,.012,x+edge*w/2,cy,.281);
+  frame('temple '+sign,.010,.013,.22,sign*(cx+w/2),cy+.025,.177);
+  if(dark){const lens=block('Glasses tinted lens '+sign,(w-.014)*d.faceWidth,h-.012,.008,'#222c38',x*d.faceWidth,cy,.279);lens.material.roughness=.24;}
+ }
+ frame('bridge',Math.max(.025,2*cx-.145),.012,.013,0,1.067,.286);
+}
+
 if(d.hairStyle==='long')for(const sign of [-1,1])block('Long hair '+sign,.095*d.faceWidth,.38,.30,hc,sign*.211*d.faceWidth,1.12,-.065);
 if(d.hairStyle==='short')for(let i=0;i<7;i++){const tuft=new T.Mesh(new T.ConeGeometry(.033,.055,4),new T.MeshStandardMaterial({color:hc,roughness:1}));tuft.position.set((i-3)*.054*d.faceWidth,1.385,.04);model.add(tuft)}
 if(d.hairStyle==='cap'){block('Cap crown',.49*d.faceWidth,.12,.44,'#4a6176',0,1.365,0);block('Cap brim',.42*d.faceWidth,.025,.16,'#4a6176',0,1.31,.24)}
@@ -129,6 +149,7 @@ for(const {obj,world,parent,arm,head} of snapshots){
   for(let i=0;i<2;i++){const label=i?'Right':'Left',hip=named[label+' hip'],knee=named[label+' knee'],shoulder=named[label+' shoulder'],elbow=named[label+' elbow'];hip.rotation.x=pose==='sit'?-Math.PI/2:legs[i].rotation.x;knee.rotation.x=pose==='sit'?Math.PI/2:Math.max(0,-legs[i].rotation.x)*.5;shoulder.rotation.x=pose==='sit'?-.45:arms[i].rotation.x;elbow.rotation.x=pose==='sit'?-1.08:pose==='work'?-.6:0;}
  }};g.userData.updatePose();return g;
 }
+
 
 
 
