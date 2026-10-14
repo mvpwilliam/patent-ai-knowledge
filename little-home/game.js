@@ -3,7 +3,7 @@ import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=103';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
 import {createPixelDad,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=block-style-2';
-import {openAvatarEditor} from './avatar-editor.js?v=block-style-2';
+import {openAvatarEditor} from './avatar-editor.js?v=104';
 import {createHouseNPC} from './house-npc.js?v=103';
 import {createGodzilla} from './godzilla.js?v=103';
 const PLAYER_SCALE=.9;
@@ -140,6 +140,21 @@ function refreshMonsterRoutes(){
  }
 }
 window.homeGameFocus=()=>character?{position:character.position.clone(),angle:character.rotation.y}:null;
+function approachTarget(point,onArrival=null,label='走到旁邊',maxRadius=.9){
+ if(activity){toast('先完成目前的家事');return false}if(!character)return false;
+ const from=restExit||[character.position.x,character.position.z],candidates=[];
+ for(const r of [0,.3,.5,.7,.9])for(let i=0;i<(r?12:1);i++){
+  if(r>maxRadius)continue;const angle=i*Math.PI/6,p=[point[0]+Math.sin(angle)*r,point[1]+Math.cos(angle)*r];
+  if(walkable(...p))candidates.push({point:p,score:Math.hypot(p[0]-from[0],p[1]-from[1])+r*.25});
+ }
+ candidates.sort((a,b)=>a.score-b.score);let path=null;
+ for(const c of candidates){const p=findPath(from,c.point);if(p.length&&Math.hypot(p.at(-1)[0]-c.point[0],p.at(-1)[1]-c.point[1])<.16){path=p;break}}
+ if(!path){toast('目前走不到目標旁邊');return false}
+ if(pose==='sit')window.homeScene?.showNews(false);leaveRest();restExit=null;pose='walk';
+ travel={kind:'interact',phase:'run',path,index:0,exit:path.at(-1),target:point,onArrival};
+ document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));toast(`${avatar.name}${label}`);return true;
+}
+window.homeGameApproach=approachTarget;
 function moveTo(point,kind='walk'){
   if(activity)return toast('先完成目前的家事');
   if(!character)return;
@@ -243,7 +258,12 @@ function animate(now){
     if(travel.phase==='run'){
       const [x,z]=travel.path[travel.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
       if(d<.04){walkStep(character,x,z);travel.index++;if(travel.index>=travel.path.length){
-        if(travel.kind==='walk'){travel=null;pose='stand'}
+        if(travel.kind==='walk'||travel.kind==='interact'){
+         const done=travel;travel=null;pose='stand';
+         if(done.target)character.rotation.y=Math.atan2(done.target[0]-character.position.x,done.target[1]-character.position.z);
+         document.querySelectorAll('[data-pose]').forEach(btn=>btn.classList.toggle('active',btn.dataset.pose==='stand'));
+         if(done.onArrival)Promise.resolve(done.onArrival()).catch(()=>toast('互動暫時失敗，請再試一次'));
+        }
         else if(travel.kind.includes('Mirror')){const kind=travel.kind;travel=null;pose='stand';character.rotation.y=kind==='entryMirror'?-Math.PI/2:Math.PI;openMirror()}else{travel.phase='settle';travel.from=character.position.clone();travel.progress=0}
       }}else{const move=Math.min(d,dt*1.6);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
       step+=dt*17;b.position.y=Math.abs(Math.sin(step))*.035;b.rotation.set(0,0,Math.sin(step)*.035);
@@ -783,7 +803,17 @@ function attackMonsterAt(e){
   return materials.some(m=>m&&m.visible!==false&&(!m.transparent||m.opacity>=.9));
  });
  if(blocker)return false;
- if(!syncBusy)void attackMonster();
+ if(!syncBusy){
+  const bornAt=gameMeta.monster.bornAt;
+  approachTarget([monsterMesh.position.x,monsterMesh.position.z],()=>{
+   if(!monsterMesh||gameMeta.monster?.bornAt!==bornAt||Date.now()<bornAt)return toast('哥吉拉已經離開了');
+   const r=monsterMesh.userData.collisionBoxes?.[0];
+   const bounds=r?{min:{x:r[0]+monsterMesh.position.x,z:r[2]+monsterMesh.position.z},max:{x:r[1]+monsterMesh.position.x,z:r[3]+monsterMesh.position.z}}:new T.Box3().setFromObject(monsterMesh);
+   const gap=Math.hypot(Math.max(bounds.min.x-character.position.x,0,character.position.x-bounds.max.x),Math.max(bounds.min.z-character.position.z,0,character.position.z-bounds.max.z));
+   if(gap>.55)return toast('再靠近哥吉拉一點才能攻擊');
+   return attackMonster();
+  },'走去攻擊哥吉拉',.7);
+ }
  return true;
 }
 window.homeGameAttackAt=attackMonsterAt;
@@ -819,7 +849,6 @@ function setupGamePages(){
   $('#shop-dialog').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.currentTarget.close()});
   $('#avatar-save').onclick=saveAvatar;
   const editButton=document.createElement('button');editButton.textContent='選範本與捏造型';editButton.className='game-primary';editButton.onclick=editAvatar;$('#avatar-save').before(editButton);
-  const dadPresetButton=document.createElement('button');dadPresetButton.id='avatar-pixel-dad';dadPresetButton.textContent='爸爸像素造型 · 白T牛仔褲';dadPresetButton.onclick=()=>{setAvatarDesign({...avatarDesign,glasses:true,hairStyle:'korean'},true);for(const [field,value]of Object.entries(dadWhitePreset))$('#avatar-'+(field==='hairColor'?'hair-color':field)).value=value;saveAvatar()};$('#avatar-save').after(dadPresetButton);
   document.querySelectorAll('[data-pose]').forEach(b=>b.onclick=()=>setPose(b.dataset.pose));
   $('#home-create').onclick=()=>subscribeHome(true);
   $('#home-join').onclick=()=>subscribeHome(false);

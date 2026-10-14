@@ -89,5 +89,14 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #shop-dialog .item-icon{font-size:26px}
 #shop-dialog .item-card button{min-height:40px}
 #shop-dialog .game-dialog-foot{padding:10px 16px}
+.avatar-color-row{display:flex;gap:18px;align-items:flex-start;margin:10px 0 14px}
+#game-dialog .avatar-color-row label{margin:0}
+#game-dialog input[type=color]{width:44px;height:44px;min-width:44px;max-width:44px;padding:3px;border-radius:9px;cursor:pointer}
+#game-dialog input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+#game-dialog input[type=color]::-webkit-color-swatch{border:0;border-radius:5px}
+#game-dialog input[type=color]::-moz-color-swatch{border:0;border-radius:5px}
+.scene-poses{position:absolute;left:16px;bottom:18px;z-index:7;display:flex;flex-wrap:nowrap;gap:4px;margin:0;padding:4px;border-radius:15px;background:#fbfcf4ef;border:1px solid white;box-shadow:0 4px 18px #253d3520}
+.scene-poses button{min-width:44px;min-height:44px;padding:8px;font-size:12px;border-radius:11px;touch-action:manipulation}
+#world .scene-bottom{bottom:78px;pointer-events:none}
 @media(max-width:700px){#game-dialog{width:92vw;height:70dvh;max-height:calc(100dvh - 32px)}#game-dialog .dialog-head{padding:14px 16px 10px}#game-dialog .dialog-head h2{font-size:19px}.game-dialog-body{padding:4px 16px 14px}.game-tabs{padding:0 14px 10px}.joke-bubble p{font-size:11px}.game-tools button{font-weight:500;letter-spacing:.035em}.game-dialog-foot{padding:10px 14px}}
 

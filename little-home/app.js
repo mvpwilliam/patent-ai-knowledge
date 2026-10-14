@@ -875,6 +875,11 @@ function moveAt(e){
   const hit=moveRay.intersectObjects(interactionTargets,false)[0];
   const point=new T.Vector3();
   if(hit){window.homeGameMoveTo?.([hit.point.x,hit.point.z],hit.object.userData.kind);return}
+  const objectHit=moveRay.intersectObject(root,true).find(h=>{
+    for(let n=h.object;n;n=n.parent)if(!n.visible)return false;
+    const m=Array.isArray(h.object.material)?h.object.material:[h.object.material];return m.some(v=>v&&v.visible!==false&&(!v.transparent||v.opacity>.05));
+  });
+  if(objectHit){if(objectHit.point.y<.14)window.homeGameMoveTo?.([objectHit.point.x,objectHit.point.z],'walk');else window.homeGameApproach?.([objectHit.point.x,objectHit.point.z]);return}
   if(moveRay.ray.intersectPlane(groundPlane,point))window.homeGameMoveTo?.([point.x,point.z],'walk');
 }
 const doorRay=new T.Raycaster(),doorPointer=new T.Vector2();
@@ -884,15 +889,20 @@ function toggleDoorAt(e){
   doorPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
   doorRay.setFromCamera(doorPointer,camera);
   const hits=doorRay.intersectObjects([...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf,bathWindowHit,...slidingWindows,curtains,masterBlinds,childBlinds],true);
-  if(!hits.length)return;
+  if(!hits.length)return false;
   let door=hits[0].object;
   while(door&&!door.userData.door&&!door.userData.slider&&!door.userData.windowTarget&&!door.userData.covering)door=door.parent;
-  if(!door)return;
+  if(!door)return false;
+  const point=hits[0].point.clone();
+  const state=(door.userData.windowTarget||door).userData.door,desiredOpen=state?!state.open:null;
+  window.homeGameApproach?.([point.x,point.z],()=>performDoorAction(door,point,desiredOpen),'走去互動');return true;
+}
+function performDoorAction(door,point,desiredOpen=null){
   if(door.userData.covering){if(door.userData.covering==='sheer')toggleSheer();else if(door.userData.covering==='child-blinds')toggleChildBlinds();else toggleBlinds();if(current==='living'||current==='main'||current==='child')selectRoom(current);return}
-  if(door.userData.slider){const state=door.userData.slider;const z=door.worldToLocal(hits[0].point.clone()).z;if(z>state.split)return;const i=Math.abs(z-state.origins[0])<=Math.abs(z-state.origins[1])?0:1;state.opens[i]=!state.opens[i];toast(state.opens[i]?'橫拉窗打開了':'橫拉窗關上了');return}
-  if(door===bathWindow||door.userData.windowTarget===bathWindow){toggleBathWindow();if(current==='bath')selectRoom('bath');return}
-  if(door===showerDoor){toggleShowerDoor();if(current==='bath')selectRoom('bath');return}
-  const state=door.userData.door;state.open=!state.open;
+  if(door.userData.slider){const state=door.userData.slider;const z=door.worldToLocal(point.clone()).z;if(z>state.split)return;const i=Math.abs(z-state.origins[0])<=Math.abs(z-state.origins[1])?0:1;state.opens[i]=!state.opens[i];toast(state.opens[i]?'橫拉窗打開了':'橫拉窗關上了');return}
+  if(door===bathWindow||door.userData.windowTarget===bathWindow){if(desiredOpen===null||bathWindow.userData.door.open!==desiredOpen)toggleBathWindow();if(current==='bath')selectRoom('bath');return}
+  if(door===showerDoor){if(desiredOpen===null||showerDoor.userData.door.open!==desiredOpen)toggleShowerDoor();if(current==='bath')selectRoom('bath');return}
+  const state=door.userData.door;state.open=desiredOpen??!state.open;
   state.target=state.open?state.openAngle:state.closedAngle;
   toast(state.open?'門打開了':'門關上了');
 }
@@ -906,11 +916,11 @@ function release(e){
     }else{
       const now=performance.now();
       if(lastTap&&now-lastTap.time<340&&Math.hypot(e.clientX-lastTap.x,e.clientY-lastTap.y)<26){
-        clearTimeout(singleTapTimer);lastTap=null;e.preventDefault();moveAt(e);
+        clearTimeout(singleTapTimer);lastTap=null;e.preventDefault();if(!toggleDoorAt(e))moveAt(e);
       }else{
         lastTap={time:now,x:e.clientX,y:e.clientY};
         const tap={clientX:e.clientX,clientY:e.clientY};
-        clearTimeout(singleTapTimer);singleTapTimer=setTimeout(()=>{if(lastTap?.time===now){toggleDoorAt(tap);lastTap=null}},350);
+        clearTimeout(singleTapTimer);singleTapTimer=setTimeout(()=>{if(lastTap?.time===now){if(!toggleDoorAt(tap))moveAt(tap);lastTap=null}},350);
       }
     }
   }
