@@ -166,13 +166,19 @@ for(const {obj,world,parent,arm,head} of snapshots){
 // Normalize the complete standing silhouette (including hair) to 70% of
 // the canonical adult; the game's shared PLAYER_SCALE is applied afterward.
 export function createPixelChild(v={}){
- const outfit={...v,skin:v.skin||'#e9b990',hair:'korean',hairColor:'#202020',shirt:'#ffffff'};
- const kid=createPixelDad(outfit,{hairStyle:'sonSpiky',faceWidth:.92,chin:.8,eyeSize:.95,eyeGap:.98,mouth:'smile',eyewear:'none',jeans:'#354f6b'},true);
+ const outfit={...v,skin:v.skin||'#e9b990',hair:'korean',hairColor:'#202020',shirt:v.shirt||'#1b1b1b'};
+ const kid=createPixelDad(outfit,{hairStyle:'sonSpiky',faceWidth:.92,chin:.8,eyeSize:.95,eyeGap:.98,mouth:'smile',eyewear:'none',jeans:'#596347'},true);
  const adult=createPixelDad(outfit,{hairStyle:'korean'});
  kid.updateMatrixWorld(true);adult.updateMatrixWorld(true);
  const adultHeight=new T.Box3().setFromObject(adult).getSize(new T.Vector3()).y;
  const childHeight=new T.Box3().setFromObject(kid).getSize(new T.Vector3()).y;
  kid.scale.multiplyScalar(.70*adultHeight/childHeight);
  adult.traverse(n=>{n.geometry?.dispose();n.material?.dispose()});
+ const bathMaterials=[];
+ kid.traverse(n=>{if(n.isMesh&&/White T shirt|white short sleeve|trouser/i.test(n.name||n.parent?.name||'')){
+  n.material=n.material.clone();bathMaterials.push([n.material,n.material.color.clone()]);
+ }});
+ kid.userData.setBathOutfit=active=>{for(const [material,original]of bathMaterials){if(active)material.color.set(outfit.skin);else material.color.copy(original)}kid.userData.bathOutfit=!!active;};
  kid.userData.isChild=true;kid.userData.heightRatio=.70;return kid;
 }
+

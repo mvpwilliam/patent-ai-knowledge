@@ -2,9 +2,9 @@ import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=103';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
-import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=child-npc-1';
+import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=npc-lego-1';
 import {openAvatarEditor} from './avatar-editor.js?v=tiger-eyewear-1';
-import {createHouseNPC} from './house-npc.js?v=child-npc-1';
+import {createHouseNPC} from './house-npc.js?v=npc-lego-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed} from './bed-slots.js?v=107';
 import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=121';
@@ -395,7 +395,7 @@ function animate(now){
   window.homeScene?.updateDoorsAt(character.position.x,character.position.z,houseNPC?[[houseNPC.character.position.x,houseNPC.character.position.z]]:[]);
   animateOthers(dt,now);
   houseNPC?.update(dt,now);
-  if(houseNPC)houseNPC.character.userData.updatePose?.(houseNPC.state==='act'?houseNPC.action?.pose:houseNPC.state==='walk'?'walk':'stand');
+  if(houseNPC){houseNPC.character.userData.updatePose?.(houseNPC.state==='act'?houseNPC.action?.pose:houseNPC.state==='walk'?'walk':'stand');houseNPC.character.userData.updateNPCDetail?.(now);}
   if(houseNPC&&$('#npc-status'))$('#npc-status').textContent=`小屋日常 · ${houseNPC.action?.label||'在家休息'}`;
   updateJoke();updateCharacterNames();
 }
@@ -967,7 +967,7 @@ function openHomePanel(page){
 {
   $('#home-code').value=new URL(location.href).searchParams.get('home')||localStorage.getItem('little-home-code')||'';
   readPlayer();gameMeta.players[playerId()]=player;fillAvatar();setCharacter(avatar);readLocalClaims();renderTasks();clock();setInterval(clock,1000);
-  if(scene)houseNPC=createHouseNPC(window.homeScene,makeCharacter,()=>[character,...characters.values()]);
+  if(scene)houseNPC=createHouseNPC(window.homeScene,makeCharacter,()=>[character,...[...characters.values()].map(p=>p.mesh)]);
   resolveMonsterOverlap(houseNPC?.character);
 
   setupSceneMenu();
@@ -996,6 +996,8 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
+
 
 
 
