@@ -2,8 +2,9 @@ import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=128';
 import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=128';
-import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=npc-lego-1';
-import {openAvatarEditor} from './avatar-editor.js?v=tiger-eyewear-1';
+import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=legendary-1';
+import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=legendary-1';
+import {openAvatarEditor} from './avatar-editor.js?v=legendary-1';
 import {createHouseNPC} from './house-npc.js?v=child-seat-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed} from './bed-slots.js?v=128';
@@ -114,14 +115,14 @@ function makeCharacter(v,design={}){
  const mesh=design.bodyType==='child'?createPixelChild(v):createPixelDad(v,normalizeAvatarDesign({...design,hairStyle:design.hairStyle||v.hair}));
  // Furniture coordinates are metres; normalize the asset's arbitrary units.
  mesh.updateMatrixWorld(true);
- const sourceHeight=new T.Box3().setFromObject(mesh).getSize(new T.Vector3()).y;
+ const sourceHeight=design.bodyType==='child'?new T.Box3().setFromObject(mesh).getSize(new T.Vector3()).y:mesh.userData.baseStandingHeight||new T.Box3().setFromObject(mesh).getSize(new T.Vector3()).y;
  mesh.scale.multiplyScalar((design.bodyType==='child'?1.20:1.80)*PLAYER_SCALE/sourceHeight);mesh.updateMatrixWorld(true);
  const bounds=new T.Box3().setFromObject(mesh);mesh.userData.standingHeight=bounds.max.y-bounds.min.y;return mesh;
 }
 function setCharacter(v){
  if(new URLSearchParams(location.search).get('avatar')==='dad-white'){v=outfit({...v,...dadWhitePreset});avatarDesign=normalizeAvatarDesign({...avatarDesign,glasses:true,eyewear:'round',hairStyle:'korean'});avatar=v;localStorage.setItem('little-home-avatar',JSON.stringify(v));fillAvatar();}
  if(!scene)return;const previous=character?.position.clone(),angle=character?.rotation.y;
- if(character)scene.remove(character);character=makeCharacter(v,avatarDesign);scene.add(character);
+ if(character)scene.remove(character);character=makeCharacter(v,{...avatarDesign,legendaryOutfit:equippedLegendary(player)});scene.add(character);
  if(previous){character.position.copy(previous);character.rotation.y=angle;resolveMonsterOverlap(character);return}
  const start=[...(user?.uid||localActorId)].reduce((sum,c)=>sum+c.charCodeAt(0),0)%tour.length;
  character.position.set(tour[start][0],.07,tour[start][1]);route=(start+1)%tour.length;
@@ -524,14 +525,14 @@ function disposeAvatarPreview(){
  if(!avatarPreviewActor)return;
  const materials=new Set();avatarPreviewActor.traverse(n=>{n.geometry?.dispose();if(n.material)for(const m of Array.isArray(n.material)?n.material:[n.material])materials.add(m)});for(const m of materials)m.dispose();avatarPreviewActor=null;
 }
-function renderAvatarPreview(){
+function renderAvatarPreview(previewOutfit=equippedLegendary(player)){
  const canvas=$('#avatar-current-preview');if(!canvas)return;
  try{
   if(!avatarPreviewRenderer){avatarPreviewRenderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true});avatarPreviewRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));avatarPreviewRenderer.setSize(240,260,false);avatarPreviewRenderer.setClearColor(0x000000,0)}
   disposeAvatarPreview();
   const portraitScene=new T.Scene();portraitScene.add(new T.HemisphereLight('#ffffff','#72816f',2.5));
   const light=new T.DirectionalLight('#fff7e9',2);light.position.set(-2,4,4);portraitScene.add(light);
-  avatarPreviewActor=createPixelDad(outfit(avatar),normalizeAvatarDesign(avatarDesign));avatarPreviewActor.userData.updatePose?.('stand');avatarPreviewActor.rotation.y=.2;portraitScene.add(avatarPreviewActor);
+  avatarPreviewActor=createPixelDad(outfit(avatar),normalizeAvatarDesign({...avatarDesign,legendaryOutfit:previewOutfit}));avatarPreviewActor.userData.updatePose?.('stand');avatarPreviewActor.rotation.y=.2;portraitScene.add(avatarPreviewActor);
   const bounds=new T.Box3().setFromObject(avatarPreviewActor),center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3());
   const camera=new T.PerspectiveCamera(32,240/260,.01,20),distance=Math.max(size.y,size.x/camera.aspect)/(2*Math.tan(camera.fov*Math.PI/360))*1.2;
   camera.position.set(center.x,center.y,center.z+distance);camera.lookAt(center);avatarPreviewRenderer.render(portraitScene,camera);canvas.hidden=false;
@@ -576,7 +577,7 @@ async function ensureAppearance(){
 async function editAvatar(){
  const parent=$('#character-dialog'),returnToCharacter=parent.open;if(returnToCharacter)parent.close();
  try{
-  const result=await openAvatarEditor(avatar,avatarDesign,false);if(!result)return;
+  const result=await openAvatarEditor(avatar,{...avatarDesign,legendaryOutfit:equippedLegendary(player)},false);if(!result)return;
   avatar=outfit(result.profile);setAvatarDesign(result.design,true);fillAvatar();await saveAvatar();
  }finally{if(returnToCharacter){renderAvatarPreview();parent.showModal();$('#avatar-edit').focus()}}
 }
@@ -770,13 +771,13 @@ const catalog=[
  {id:'fan',name:'桌上風扇',icon:'🌬️',price:180,type:'電器'},
  {id:'toaster',name:'小烤麵包機',icon:'🍞',price:250,type:'電器',rooms:['kitchen','dining']}
 ];
-const newPlayer=()=>({coins:0,xp:0,inventory:[],completed:{},bonuses:{},ledger:[]});
+const newPlayer=()=>({coins:0,xp:0,inventory:[],completed:{},bonuses:{},ledger:[],legendaryOwned:[],legendaryFreeClaimed:false,legendaryEquipped:''});
 const localActorId=localStorage.getItem('little-home-player-id')||crypto.randomUUID();localStorage.setItem('little-home-player-id',localActorId);
 let gameMeta={id:GAME_META_ID,players:{}},player=newPlayer(),profileCache={},presenceBusy=false,lastPresence=0,lastPresenceSignature='',lastHumanInput=Date.now(),syncBusy=false;
 let inventoryTab='全部',pendingPlacement=null,placementObjects=new Map(),monsterMesh=null;
 const playerId=()=>user?.uid||localActorId;
 const playerKey=()=>`little-home-player-${homeId||'preview'}-${playerId()}`;
-const normalizePlayer=p=>({...newPlayer(),...p,inventory:Array.isArray(p?.inventory)?p.inventory:[],completed:p?.completed||{},bonuses:p?.bonuses||{},ledger:p?.ledger||[]});
+const normalizePlayer=p=>({...newPlayer(),...p,inventory:Array.isArray(p?.inventory)?p.inventory:[],legendaryOwned:Array.isArray(p?.legendaryOwned)?[...new Set(p.legendaryOwned.filter(id=>outfitById(id)))]:[],completed:p?.completed||{},bonuses:p?.bonuses||{},ledger:p?.ledger||[]});
 function readPlayer(){player=normalizePlayer(safeRead(playerKey(),newPlayer()))}
 function levelInfo(xp){const level=Math.min(20,1+Math.floor(Math.min(MAX_XP,xp)*19/MAX_XP));const titles=['家事新手','居家小幫手','整理達人','家務高手','家庭神隊友'];return {level,title:titles[Math.floor(level/5)],progress:level===20?1:(xp-(level-1)*MAX_XP/19)/(MAX_XP/19)}}
 function dayTasks(){
@@ -814,19 +815,45 @@ async function mutateGame(change){
  }finally{syncBusy=false;renderEconomy()}
 }
 function applyMeta(meta){
+ const oldCostume=equippedLegendary(player);
  const oldItems=JSON.stringify(Object.values(gameMeta.players||{}).map(p=>p.inventory));
  gameMeta=meta||{id:GAME_META_ID,players:{}};gameMeta.players||={};player=normalizePlayer(gameMeta.players[playerId()]);
- localStorage.setItem(playerKey(),JSON.stringify(player));if(player.avatarDesign&&!designPending&&JSON.stringify(normalizeAvatarDesign(player.avatarDesign))!==JSON.stringify(avatarDesign)){setAvatarDesign(player.avatarDesign);if(character)setCharacter(avatar)}renderEconomy();if(oldItems!==JSON.stringify(Object.values(gameMeta.players).map(p=>p.inventory)))renderPlacements();syncCharacters();renderMonster();
+ localStorage.setItem(playerKey(),JSON.stringify(player));if(player.avatarDesign&&!designPending&&JSON.stringify(normalizeAvatarDesign(player.avatarDesign))!==JSON.stringify(avatarDesign)){setAvatarDesign(player.avatarDesign);if(character)setCharacter(avatar)}if(character&&oldCostume!==equippedLegendary(player))setCharacter(avatar);renderEconomy();if(oldItems!==JSON.stringify(Object.values(gameMeta.players).map(p=>p.inventory)))renderPlacements();syncCharacters();renderMonster();
 }
 function renderEconomy(){
  const info=levelInfo(player.xp);$('#coin-count').textContent=player.coins.toLocaleString();
  $('#player-level').textContent=`Lv.${info.level} · ${info.title}`;$('#xp-meter').value=info.progress;
- $('#xp-label').textContent=info.level===20?'已滿級 · 家事繼續賺幣':`${player.xp} / ${MAX_XP} EXP`;
+ $('#xp-label').textContent=info.level===20?(player.legendaryFreeClaimed?'已滿級 · 家事繼續賺幣':'已滿級 · 下方可免費領取一套傳說套裝'):`${player.xp} / ${MAX_XP} EXP`;
  $('#daily-progress').textContent=`今日家事 ${dayTasks().filter(t=>taskDone(t)).length}／${dayTasks().length}`;
  $('#wallet-list').replaceChildren();for(const row of player.ledger){const li=document.createElement('p');li.textContent=`${row.text}　${row.amount>=0?'+':''}${row.amount} 幣`;$('#wallet-list').append(li)}
  if(!player.ledger.length)$('#wallet-list').textContent='完成家事後，收入會記在這裡。';
- renderInventory();renderShop();
+ renderInventory();renderShop();renderLegendaryWardrobe();
 }
+function equippedLegendary(p){return p?.xp>=MAX_XP&&Array.isArray(p.legendaryOwned)&&p.legendaryOwned.includes(p.legendaryEquipped)&&outfitById(p.legendaryEquipped)?p.legendaryEquipped:''}
+function renderLegendaryWardrobe(){
+ const list=$('#legendary-list');if(!list)return;list.replaceChildren();const unlocked=player.xp>=MAX_XP,current=equippedLegendary(player);
+ $('#legendary-note').textContent=unlocked?(player.legendaryFreeClaimed?'首套已領取 · 其餘每套 1,200 遊戲幣':'恭喜滿級！任選一套免費領取，之後每套 1,200 遊戲幣'):'20 級解鎖 · 首套免費，現在可先預覽';
+ for(const item of legendaryOutfits){
+  const owned=player.legendaryOwned.includes(item.id),card=document.createElement('article');card.className='legendary-card';card.style.setProperty('--costume-color',item.color);
+  const icon=document.createElement('span');icon.className='legendary-icon';icon.textContent=item.icon;icon.setAttribute('aria-hidden','true');
+  const name=document.createElement('strong');name.textContent=item.name;const note=document.createElement('small');note.textContent=item.note;
+  const preview=document.createElement('button');preview.textContent='預覽';preview.onclick=()=>{renderAvatarPreview(item.id);$('#legendary-preview-label').textContent=`預覽：${item.name}（尚未換裝）`;$('#avatar-current-preview').scrollIntoView({block:'nearest',behavior:'smooth'})};
+  const button=document.createElement('button');button.className='legendary-action';button.textContent=current===item.id?'已穿上':owned?'穿上':!unlocked?'20 級解鎖':!player.legendaryFreeClaimed?'免費領取':'1,200 幣解鎖';
+  button.disabled=syncBusy||current===item.id||!unlocked||(!owned&&player.legendaryFreeClaimed&&player.coins<item.price);button.onclick=()=>wearLegendary(item.id);
+  card.append(icon,name,note,preview,button);list.append(card);
+ }
+ $('#legendary-remove').disabled=syncBusy||!current;
+}
+async function wearLegendary(id){
+ if(activity||travel)return toast('請先完成目前的動作，再換裝');
+ try{await mutateGame(p=>{
+  if(p.xp<MAX_XP)throw new Error('升到 20 級後即可解鎖');
+  if(id===''){p.legendaryEquipped='';return}
+  if(p.legendaryOwned.includes(id)){p.legendaryEquipped=id;return}
+  const result=unlockLegendary(p,id,MAX_XP);record(p,`${result.free?'滿級免費領取':'套裝解鎖'}：${result.item.name}`,-result.cost);
+ });renderAvatarPreview();$('#legendary-preview-label').textContent='';toast(id?`已換上${outfitById(id).name}`:'已換回日常服裝')}catch(e){toast(e.message||'套裝未儲存，請再試一次')}
+}
+$('#legendary-remove').onclick=()=>wearLegendary('');
 function showPanel(id){$(id).showModal()}
 function itemCard(item,owned=null){
  const card=document.createElement('article');card.className='item-card';
@@ -891,7 +918,7 @@ function onlinePlayers(){return Object.entries(gameMeta.players||{}).filter(([id
 function syncCharacters(){
  if(!scene)return;const online=onlinePlayers(),visible=online.slice(0,5),ids=new Set(visible.map(([id])=>id));
  for(const [id,item] of characters)if(!ids.has(id)){scene.remove(item.mesh);characters.delete(id)}
- for(const [id,p] of visible){const profile=profileCache[id];if(!profile)continue;let item=characters.get(id);const remoteDesign=normalizeAvatarDesign(gameMeta.players[id]?.avatarDesign||{hairStyle:profile.hair});const signature=JSON.stringify([profile,remoteDesign]);
+ for(const [id,p] of visible){const profile=profileCache[id];if(!profile)continue;let item=characters.get(id);const remoteDesign=normalizeAvatarDesign({...p.avatarDesign,hairStyle:p.avatarDesign?.hairStyle||profile.hair,legendaryOutfit:equippedLegendary(p)});const signature=JSON.stringify([profile,remoteDesign]);
  if(!item||item.signature!==signature){if(item)scene.remove(item.mesh);const mesh=makeCharacter(outfit(profile),remoteDesign);scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach)&&!crossesDynamicObstacle([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;item.mesh.userData.bedReservation=p.bedReservation;resolveMonsterOverlap(item.mesh);
  }
  const list=$('#member-list');list.replaceChildren();for(const [id,v] of Object.entries(profileCache)){const row=document.createElement('p');const active=id===playerId()||online.some(([uid])=>uid===id);row.textContent=`${v.name} · ${active?'上線':'離線'}${active&&id!==playerId()&&!ids.has(id)?'（成員列）':''}`;list.append(row)}
@@ -1034,6 +1061,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
