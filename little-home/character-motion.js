@@ -51,6 +51,32 @@ export function monsterBoxesAt(g,x,z,yaw=g.rotation.y){
 }
 export const BED_SETTLE_SECONDS=2.8;
 export const SEAT_SETTLE_SECONDS=1.9;
+export function furnitureSupportSurfaces(scene,kind){
+ const section=scene.getObjectByName(kind==='mainBed'?'main-bed':kind==='childBed'?'child-bed':kind==='sofa'?'sofa':'dining-and-island');
+ if(!section)return [];
+ section.updateWorldMatrix(true,true);const surfaces=[];
+ section.traverse(mesh=>{
+  if(!mesh.isMesh)return;const box=new T.Box3().setFromObject(mesh),size=box.getSize(new T.Vector3()),center=box.getCenter(new T.Vector3());
+  const bed=kind==='mainBed'||kind==='childBed';
+  const accepted=bed?box.max.y>=.4&&box.max.y<=.85:kind==='sofa'?box.max.y>=.35&&box.max.y<=.65:Math.abs(center.x-1.41)<.03&&Math.abs(center.z-(kind==='diningChair0'?5.94:6.63))<.03&&Math.abs(center.y-.49)<.03&&size.y<.12;
+  if(accepted)surfaces.push(box);
+ });return surfaces;
+}
+const supportVertex=new T.Vector3();
+export function keepAboveFurniture(character,surfaces){
+ if(!surfaces?.length)return 0;
+ character.updateWorldMatrix(true,true);let lift=0;
+ // Check the actual posed mesh vertices over each cushion/mattress, not the
+ // character's overall AABB: dangling feet outside the seat may stay below it.
+ character.traverse(mesh=>{
+  const positions=mesh.isMesh&&mesh.geometry.attributes.position;if(!positions)return;
+  for(let i=0;i<positions.count;i++){
+   supportVertex.fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);
+   for(const box of surfaces)if(supportVertex.x>box.min.x+.008&&supportVertex.x<box.max.x-.008&&supportVertex.z>box.min.z+.008&&supportVertex.z<box.max.z-.008){lift=Math.max(lift,box.max.y+.012-supportVertex.y)}
+  }
+ });
+ if(lift>0){character.position.y+=lift;character.updateWorldMatrix(true,true)}return lift;
+}
 export function animateSeatEntry(character,from,target,angle,progress,fromAngle,sofa=false){
  const align=smooth(progress/.28),lower=smooth((progress-.28)/.57),relax=smooth((progress-.80)/.20);
  const body=character.userData.body,end=new T.Vector3(...target);

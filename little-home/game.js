@@ -7,7 +7,7 @@ import {openAvatarEditor} from './avatar-editor.js?v=tiger-eyewear-1';
 import {createHouseNPC} from './house-npc.js?v=child-npc-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed} from './bed-slots.js?v=107';
-import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS} from './character-motion.js?v=120';
+import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=121';
 const PLAYER_SCALE=.9;
 
 let avatarDesign=normalizeAvatarDesign({}),designPending=false;
@@ -106,9 +106,9 @@ function setCharacter(v){
 }
 function leaveRest(){
  if(restExit){character.position.set(restExit[0],.07,restExit[1]);restExit=null}
- character.position.y=.07;
+ character.position.y=.07;furnitureSupport=null;
 }
-let currentBed=null,movementRequest=0,floorPose=false,poseLift=0;
+let currentBed=null,movementRequest=0,floorPose=false,poseLift=0,furnitureSupport=null;
 function releaseBed(){currentBed=null;if(character)character.userData.bedReservation=null}
 function setPose(next){
  if(activity)return toast('先完成目前的家事');if(!character)return;
@@ -207,7 +207,7 @@ window.homeGameApproach=approachTarget;
 function moveTo(point,kind='walk',bedSlot=null){
   if(activity)return toast('先完成目前的家事');
   if(!character)return;if((kind==='mainBed'||kind==='childBed')&&!bedSlot)return moveToBed(point,kind);
-  movementRequest++;releaseBed();currentBed=bedSlot;if(character)character.userData.bedReservation=bedSlot;floorPose=false;poseLift=0;cancelHandAction();
+  movementRequest++;furnitureSupport=null;releaseBed();currentBed=bedSlot;if(character)character.userData.bedReservation=bedSlot;floorPose=false;poseLift=0;cancelHandAction();
   if(kind.startsWith('diningChair')){const z=kind==='diningChair0'?5.94:6.63;if(onlinePlayers().some(([,p])=>p.presence.pose==='sit'&&Math.hypot(p.presence.x-1.41,p.presence.z-z)<.25))return toast('這張椅子有人坐，請選另一張')}
   if(pose==='sit')window.homeScene?.showNews(false);
   if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
@@ -352,6 +352,7 @@ function animate(now){
       leftLeg.rotation.x=-Math.sin(step)*.4;rightLeg.rotation.x=Math.sin(step)*.4;
     }else{
       if(travel.bedSlot&&bedOccupied(travel.bedSlot)){releaseBed();travel=null;pose='stand';publishPresence(true);toast('躺位有人了，請再點一次床');return}
+      if(!furnitureSupport)furnitureSupport=furnitureSupportSurfaces(scene,travel.kind);
       const isBed=!!travel.bedSlot,isSeat=travel.kind==='sofa'||travel.kind.startsWith('diningChair');travel.progress=Math.min(1,travel.progress+dt/(isBed?BED_SETTLE_SECONDS:isSeat?SEAT_SETTLE_SECONDS:.65));
       const target=travel.bedSlot?.target|| (travel.kind.startsWith('diningChair')?[1.41,.37,travel.kind==='diningChair0'?5.94:6.63]:travel.kind==='sofa'?furnitureXYZ('sofa',[2.54,.51,2.03]):travel.kind==='mainBed'?furnitureXYZ('mainBed',[5.16,.78,1.64]):furnitureXYZ('childBed',[5.12,.78,7.00]));
       if(crossesWall([travel.from.x,travel.from.z],[target[0],target[2]])||crossesDynamicObstacle([travel.from.x,travel.from.z],[target[0],target[2]])){releaseBed();travel=null;pose='stand';publishPresence(true);toast('前方被擋住，請重新選擇');return}if(isBed)animateBedEntry(character,travel.from,target,travel.bedSlot.angle,travel.progress,travel.fromAngle);else if(isSeat)animateSeatEntry(character,travel.from,target,travel.kind.startsWith('diningChair')?Math.PI/2:-Math.PI/2,travel.progress,travel.fromAngle,travel.kind==='sofa');else character.position.lerpVectors(travel.from,new T.Vector3(...target),travel.progress);
@@ -388,6 +389,7 @@ function animate(now){
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
   updateHandAction(now,rightArm);
   if(!(travel?.phase==='settle'&&(travel.bedSlot||travel.kind==='sofa'||travel.kind.startsWith('diningChair')))){character.userData.updatePose?.(activity?.phase==='work'?'work':travel?'walk':pose);for(const side of ['Left','Right']){const shoulder=character.getObjectByName(side+' shoulder');if(shoulder)shoulder.rotation.z=0}}
+  if(furnitureSupport&&(travel?.phase==='settle'||restExit)&&!activity)keepAboveFurniture(character,furnitureSupport);
   const nearBalconyDoor=[character,houseNPC?.character].filter(Boolean).some(p=>Math.abs(p.position.x-scaleX(5.83))<1.12&&Math.abs(p.position.z-8.68)<.82);
   window.homeScene?.setBalconyDoor(nearBalconyDoor);
   window.homeScene?.updateDoorsAt(character.position.x,character.position.z,houseNPC?[[houseNPC.character.position.x,houseNPC.character.position.z]]:[]);
