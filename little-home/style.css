@@ -104,3 +104,10 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 /* Scene feedback stays above the action and never intercepts taps. */
 #monster-status{position:absolute;z-index:6;margin:0;transform:translate(-50%,-100%);white-space:nowrap;padding:5px 9px;border-radius:10px;background:#203b32e8;color:#fff;font-size:11px;line-height:1.4;border:1px solid #dcebdd8a;box-shadow:0 2px 8px #18332630;pointer-events:none}
 #toast{top:calc(env(safe-area-inset-top,0px) + 18px);bottom:auto;max-width:calc(100vw - 32px);text-align:center}
+
+.wallet-pill{display:flex;align-items:center;gap:7px;border:1px solid #d8c592;background:linear-gradient(145deg,#fffdf5f5,#f5eddbf5);color:#69542f;box-shadow:0 3px 12px #49351112,inset 0 1px 0 #fff;font-variant-numeric:tabular-nums}
+.gold-coin{display:block;flex:none;filter:drop-shadow(0 1px 1px #75572125)}
+.character-overview{margin:18px 0 8px;padding:20px;border:1px solid #dce3d8;border-radius:18px;background:#f0f3eb}
+#avatar-display-name{display:block;margin-top:7px;font-size:23px;font-weight:600;letter-spacing:.06em}
+.character-overview p{font-size:12px;line-height:1.8;color:#6d7e70;margin:12px 0 18px}
+#avatar-edit{width:100%;min-height:44px}

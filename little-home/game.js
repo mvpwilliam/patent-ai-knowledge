@@ -3,7 +3,7 @@ import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=103';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
 import {createPixelDad,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=block-style-2';
-import {openAvatarEditor} from './avatar-editor.js?v=104';
+import {openAvatarEditor} from './avatar-editor.js?v=106';
 import {createHouseNPC} from './house-npc.js?v=103';
 import {createGodzilla} from './godzilla.js?v=103';
 const PLAYER_SCALE=.9;
@@ -414,8 +414,7 @@ async function claimTask(t,day=today()){
  try{await mutateGame(p=>{if(day!==today())throw new Error('新的一天開始了，請重新選家事');rewardPlayer(p,t,day)});renderTasks();const info=levelInfo(player.xp),r=taskReward(t);toast(`完成！＋${r.coins} 幣${previousXP<MAX_XP?'、＋20 EXP':''}${info.level>previousLevel?' · 升到 Lv.'+info.level:''}`)}catch(e){toast(e.code==='permission-denied'?'任務未記錄，請確認家庭寫入權限':e.message||'儲存失敗，請再試一次')}
 }
 function fillAvatar(){
-  $('#avatar-name').value=avatar.name;$('#avatar-skin').value=avatar.skin;
-  $('#avatar-hair').value=avatar.hair;$('#avatar-hair-color').value=avatar.hairColor;$('#avatar-shirt').value=avatar.shirt;
+  $('#avatar-display-name').textContent=avatar.name;
 }
 const appearanceKey=()=>`little-home-appearance-${user?.uid||localActorId}`;
 const nameKey=()=>`little-home-name-confirmed-${user?.uid||localActorId}`;
@@ -453,13 +452,16 @@ async function ensureAppearance(){
  try{return await appearancePending}finally{appearancePending=null}
 }
 async function editAvatar(){
- const result=await openAvatarEditor(avatar,avatarDesign,false);if(!result)return;
- avatar=outfit(result.profile);setAvatarDesign(result.design,true);fillAvatar();await saveAvatar();
+ const parent=$('#game-dialog'),returnToCharacter=parent.open;if(returnToCharacter)parent.close();
+ try{
+  const result=await openAvatarEditor(avatar,avatarDesign,false);if(!result)return;
+  avatar=outfit(result.profile);setAvatarDesign(result.design,true);fillAvatar();await saveAvatar();
+ }finally{if(returnToCharacter){parent.selectPage?.('character');parent.showModal();$('#avatar-edit').focus()}}
 }
 async function saveAvatar(){
-  const name=$('#avatar-name').value.trim();if(!name||name.length>12){toast('請輸入 1～12 個字的名字');$('#avatar-name').focus();return}
+  const name=String(avatar.name||'').trim();if(!name||name.length>12){toast('請輸入 1～12 個字的名字');return}
   const appearanceURL=new URL(location.href);appearanceURL.searchParams.delete('avatar');history.replaceState(null,'',appearanceURL);
-  avatar=outfit({name,skin:$('#avatar-skin').value,hair:$('#avatar-hair').value,hairColor:$('#avatar-hair-color').value,shirt:$('#avatar-shirt').value});
+  avatar=outfit({...avatar,name});
   localStorage.setItem('little-home-avatar',JSON.stringify(avatar));setCharacter(avatar);
   localStorage.setItem(appearanceKey(),'1');
   localStorage.setItem(nameKey(),'1');
@@ -873,8 +875,7 @@ function setupGamePages(){
   $('#game-close').onclick=()=>$('#game-dialog').close();
   $('#game-dialog').onclick=e=>{if(e.target!==$('#game-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()};
   $('#shop-dialog').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.currentTarget.close()});
-  $('#avatar-save').onclick=saveAvatar;
-  const editButton=document.createElement('button');editButton.textContent='選範本與捏造型';editButton.className='game-primary';editButton.onclick=editAvatar;$('#avatar-save').before(editButton);
+  $('#avatar-edit').onclick=editAvatar;
   document.querySelectorAll('[data-pose]').forEach(b=>b.onclick=()=>setPose(b.dataset.pose));
   $('#home-create').onclick=()=>subscribeHome(true);
   $('#home-join').onclick=()=>subscribeHome(false);
