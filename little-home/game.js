@@ -2,8 +2,8 @@ import * as T from './vendor/three.module.js';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=103';
 import {scaleX,sinkX,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=85';
-import {createPixelDad,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=arm-pony-1';
-import {openAvatarEditor} from './avatar-editor.js?v=arm-pony-1';
+import {createPixelDad,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=hair-seal-1';
+import {openAvatarEditor} from './avatar-editor.js?v=hair-seal-1';
 import {createHouseNPC} from './house-npc.js?v=107';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed} from './bed-slots.js?v=107';
@@ -985,6 +985,7 @@ function setupGamePages(){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
