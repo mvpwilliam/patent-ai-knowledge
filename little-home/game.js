@@ -3,9 +3,9 @@ import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=entry-expand-1';
 import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=entry-expand-1';
-import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=legendary-detail-2';
-import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=legendary-detail-2';
-import {openAvatarEditor} from './avatar-editor.js?v=legendary-detail-2';
+import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=legendary-four-1';
+import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=legendary-four-1';
+import {openAvatarEditor} from './avatar-editor.js?v=legendary-four-1';
 import {createHouseNPC} from './house-npc.js?v=entry-expand-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed} from './bed-slots.js?v=entry-expand-1';

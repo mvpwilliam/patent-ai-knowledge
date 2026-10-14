@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-export const legendaryOutfits=[
+const allOutfits=[
  {id:'goldTiger',name:'金虎王者',icon:'♛',color:'#d4aa51',base:'#191b22',trim:'#d4aa51',glow:'#49330d',note:'金色王冠・短披風・虎紋肩甲',price:1200},
  {id:'neon',name:'霓虹未來',icon:'◇',color:'#58cfe5',base:'#182332',trim:'#55d9ea',glow:'#229cb6',note:'青紫光條・科技眼罩・戰靴',price:1200},
  {id:'space',name:'星際探險',icon:'✦',color:'#6d99e6',base:'#e3e8ed',trim:'#5b8de5',glow:'#143974',note:'太空頭盔・生命背包・裝甲',price:1200},
@@ -7,7 +7,9 @@ export const legendaryOutfits=[
  {id:'angel',name:'雲端天使',icon:'☼',color:'#c7a667',base:'#f2eee2',trim:'#d4b66f',glow:'#756128',note:'方形光環・幾何羽翼・金飾',price:1200},
  {id:'mage',name:'銀河魔法師',icon:'✧',color:'#9b7bdb',base:'#272342',trim:'#aa80df',glow:'#583196',note:'巫師帽・星紋長衣・浮空星',price:1200}
 ];
-export const outfitById=id=>legendaryOutfits.find(o=>o.id===id);
+// Retired designs remain readable for existing saved ownership; new choices exclude them.
+export const legendaryOutfits=allOutfits.filter(o=>!['space','ninja'].includes(o.id));
+export const outfitById=id=>allOutfits.find(o=>o.id===id);
 function wovenTexture(o){
  const size=32,pixels=new Uint8Array(size*size*4),base=new T.Color(o.base),trim=new T.Color(o.trim),out=new T.Color();
  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
@@ -44,7 +46,7 @@ function batchDetails(parts){
  }
 }
 export function unlockLegendary(p,id,maxXP){
- const item=outfitById(id);if(!item)throw new Error('找不到這套造型');
+ const item=legendaryOutfits.find(o=>o.id===id);if(!item)throw new Error('找不到這套造型');
  if(p.xp<maxXP)throw new Error('升到 20 級後即可解鎖');
  p.legendaryOwned=Array.isArray(p.legendaryOwned)?p.legendaryOwned:[];
  if(p.legendaryOwned.includes(id))throw new Error('已經擁有這套造型');
