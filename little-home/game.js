@@ -200,7 +200,7 @@ function approachTarget(point,onArrival=null,label='走到旁邊',maxRadius=.9){
  if(!path){toast('目前走不到目標旁邊');return false}
  movementRequest++;releaseBed();floorPose=false;poseLift=0;cancelHandAction();if(pose==='sit')window.homeScene?.showNews(false);leaveRest();restExit=null;pose='walk';
  travel={kind:'interact',phase:'run',path,index:0,exit:path.at(-1),target:point,onArrival};
- document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));toast(`${avatar.name}${label}`);return true;
+ document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));return true;
 }
 window.homeGameApproach=approachTarget;
 function moveTo(point,kind='walk',bedSlot=null){
@@ -217,8 +217,8 @@ function moveTo(point,kind='walk',bedSlot=null){
   if(!path.length||Math.hypot(path.at(-1)[0]-destination[0],path.at(-1)[1]-destination[1])>.45)return toast('這裡目前走不到');
   pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));
   travel={kind,phase:'run',path,index:0,exit:destination,bedSlot};publishPresence(true);
-  const action=kind.includes('Mirror')?'走去照鏡子':kind.startsWith('diningChair')?'走去餐椅':kind==='walk'?'走過去了':kind==='sofa'?'走去沙發':'走去睡覺';
-  toast(`${avatar.name}${action}`);
+
+
 }
 window.homeGameMoveTo=moveTo;
 let mirrorRenderer=null,mirrorPortrait=null;
@@ -463,7 +463,7 @@ function startTask(t){
   pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));
   activity={task:t,phase:'run',path,index:0,day:today()};
   if($('#game-dialog').open)$('#game-dialog').close();
-  toast(`${avatar.name} 跑去${t.label}`);renderTasks();
+  renderTasks();
 }
 async function finishTask(job){
   activity=null;pose='stand';
