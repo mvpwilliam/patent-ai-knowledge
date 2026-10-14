@@ -1,4 +1,5 @@
 import * as T from './vendor/three.module.js';
+import {installPoseRadial} from './pose-radial.js?v=radial-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=home-fixes-1';
 import {installToyDefense} from './toy-defense.js?v=toy3-1';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
@@ -89,7 +90,7 @@ let gameDay=today(),claims={};
 const isClaimed=t=>taskDone(t);
 let mode='preview',auth=null,db=null,api=null,user=null,homeId='',homeReady=false,joining=false,unsubscribeTasks=null,unsubscribeClaims=null,unsubscribeProfiles=null;
 let character=null,characters=new Map(),pose='stand',step=0,lastFrame=0,route=1,poseStarted=0,activity=null,travel=null,restExit=null;
-let houseNPC=null,authBusy=false,connectedUid=null;
+let houseNPC=null,authBusy=false,connectedUid=null,poseRadial=null;
 const stops=[[1.35,4.25],[1.2,3.7],[1.15,1.25],[.7,2.6],[.72,4.8],[.68,6.1],[.70,7.8],[.65,8.65]].map(pointXZ);
 const tour=stops.flatMap((point,i)=>findPath(point,stops[(i+1)%stops.length]).slice(i?1:0));
 const tourLengths=tour.map((point,i)=>Math.hypot(point[0]-tour[(i+1)%tour.length][0],point[1]-tour[(i+1)%tour.length][1]));
@@ -439,7 +440,7 @@ function animate(now){
   houseNPC?.update(dt,now);
   if(houseNPC){houseNPC.character.userData.updatePose?.(houseNPC.state==='act'?houseNPC.action?.pose:houseNPC.state==='walk'?'walk':'stand');houseNPC.character.userData.updateNPCDetail?.(now);}
   if(houseNPC&&$('#npc-status'))$('#npc-status').textContent=`小屋日常 · ${houseNPC.action?.label||'在家休息'}`;
-  updateJoke();updateCharacterNames();
+  updateJoke();updateCharacterNames();poseRadial?.update();
 }
 window.homeGameUpdate=animate;
 
@@ -1093,7 +1094,7 @@ function openHomePanel(page){
   $('#game-dialog').onclick=e=>{if(e.target!==$('#game-dialog'))return;const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()};
   $('#shop-dialog').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.currentTarget.close()});
   $('#avatar-edit').onclick=editAvatar;
-  document.querySelectorAll('[data-pose]').forEach(b=>b.onclick=()=>setPose(b.dataset.pose));
+  poseRadial=installPoseRadial({getCharacter:()=>character,getOthers:()=>[houseNPC?.character,monsterMesh,...[...characters.values()].map(p=>p.mesh)],getPose:()=>pose,setPose});
   $('#home-create').onclick=()=>subscribeHome(true);
   $('#home-join').onclick=()=>subscribeHome(false);
   $('#home-share').onclick=shareHome;
@@ -1112,6 +1113,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 

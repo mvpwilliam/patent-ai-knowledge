@@ -917,7 +917,7 @@ canvas.addEventListener('pointermove',e=>{const prior=pointers.get(e.pointerId);
 function release(e){
   const p=pointers.get(e.pointerId);
   if(e.type==='pointerup'&&pointers.size===1&&p&&!p.moved&&Math.hypot(e.clientX-p.startX,e.clientY-p.startY)<8){
-    if(window.homeGameAttackAt?.(e)){
+    if(window.homeGameCharacterAt?.(e)||window.homeGameAttackAt?.(e)){
       clearTimeout(singleTapTimer);lastTap=null;e.preventDefault();
     }else{
       const now=performance.now();
@@ -962,6 +962,7 @@ window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShif
     });
   },
   showNews,get currentRoom(){return current}};
+
 
 
 
