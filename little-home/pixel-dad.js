@@ -74,8 +74,9 @@ if(d.hairStyle==='braids')for(const sign of [-1,1]){
  block('Braid tie '+sign,.105,.035,.11,'#c59286',sign*.257*d.faceWidth,.44,-.07);
 }
 if(d.hairStyle==='ponytail'){
- block('Ponytail tie',.17,.08,.09,'#c59286',0,1.36,-.25);
- for(let i=0;i<5;i++)block('Ponytail '+i,.19-i*.015,.14,.13,hc,0,1.36-i*.11,-.30-i*.012);
+ block('Ponytail raised root',.18,.18,.22,hc,0,1.465,-.225);
+ block('Ponytail tie',.18,.065,.10,'#c59286',0,1.535,-.30);
+ for(let i=0;i<6;i++)block('Ponytail '+i,.19-i*.015,.14,.15,hc,0,1.56-i*.11,-.365-i*.025);
 }
 if(d.hairStyle==='buns')for(const sign of [-1,1]){
  block('Bun '+sign,.19,.19,.19,hc,sign*.225*d.faceWidth,1.39,-.01);
@@ -94,7 +95,7 @@ for(const sign of [-1,1]){
 // Remap vertices and joint pivots together. Limb vertices are joint-local,
 // so simply stretching geometry would detach the elbows and knees.
 const bodyY=y=>y<=.43?y*.72/.43:.72+(y-.43)*(.40/.28);
-const armY=y=>bodyY(.66)+(y-.66)*1.34;
+const armY=y=>bodyY(.66)+(y-.66)*1.072;
 const headY=y=>1.10+(y-.70)*.46;
 const snapshots=[];
 function capture(obj,parentPosition=new T.Vector3(),arm=false){
@@ -125,6 +126,7 @@ for(const {obj,world,parent,arm,head} of snapshots){
   for(let i=0;i<2;i++){const label=i?'Right':'Left',hip=named[label+' hip'],knee=named[label+' knee'],shoulder=named[label+' shoulder'],elbow=named[label+' elbow'];hip.rotation.x=pose==='sit'?-Math.PI/2:legs[i].rotation.x;knee.rotation.x=pose==='sit'?Math.PI/2:Math.max(0,-legs[i].rotation.x)*.5;shoulder.rotation.x=pose==='sit'?-.45:arms[i].rotation.x;elbow.rotation.x=pose==='sit'?-1.08:pose==='work'?-.6:0;}
  }};g.userData.updatePose();return g;
 }
+
 
 
 
