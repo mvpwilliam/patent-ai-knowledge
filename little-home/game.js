@@ -197,7 +197,7 @@ function refreshMonsterRoutes(){
   if(path.length){travel.path=path;travel.index=0}else{travel=null;pose='stand';toast('哥吉拉擋住了去路，請選其他位置')}
  }
  if(activity?.phase==='run'){
-  const path=planChorePath([character.position.x,character.position.z],placement(activity.task).stop,activity.surface);
+  const path=planChorePath([character.position.x,character.position.z],placement(activity.task).stop,activity.surface,activity.task);
   if(path.length){activity.path=path;activity.index=0}else{activity=null;pose='stand';renderTasks();toast('哥吉拉擋住了家事位置，請先擊退牠')}
  }
 }
@@ -525,27 +525,55 @@ function choreSurface(task){
  case 'counter':return rect(null,kitchenStart+.30,9.645,.55,.70,.925);
  case 'stove':return rect(null,stoveX,9.60,.65,.44,.968);
  case 'dishes':return rect(null,sinkX,9.61,.55,.55,.925);
- case 'basin':return rect('basin',4.73,4.10,.62,.64,.82);
+ case 'basin':return {...rect('basin',4.73,4.10,.62,.64,.82),approachSide:'front'};
  default:return null;
  }
 }
 
-function planChorePath(from,preferred,surface){
+function inChoreWorkArea(task,p){
+ if(!task)return true;
+ const room=placement(task).room;
+ const inside=(x0,x1,z0,z1)=>p[0]>=x0&&p[0]<=x1&&p[1]>=z0&&p[1]<=z1;
+ switch(room){
+ case 'living':return inside(scaleX(.075),scaleX(3.1940625),.20,4.50);
+ // The dining area's north edge is open; table-front work is part of that area.
+ case 'dining':return inside(scaleX(.075),scaleX(2.585),5.25,8.20);
+ case 'kitchen':return inside(kitchenStart,scaleX(5.765),8.26,9.295);
+ case 'main':return inside(scaleX(3.3340625),scaleX(6.67),.20,3.58);
+ case 'child':return inside(scaleX(2.715),scaleX(5.765),5.615,8.135);
+ case 'bath':return inside(scaleX(4.515),scaleX(6.67),3.72,5.485);
+ case 'balcony':return inside(scaleX(5.895),scaleX(7.75),6.15,9.12);
+ case 'entry':return inside(entryZero,entryZero+2.55,7.925,9.995);
+ default:return true;
+ }
+}
+function planChorePath(from,preferred,surface,task=null){
  const gap=p=>surface?Math.hypot(Math.max(surface.x0-p[0],0,p[0]-surface.x1),Math.max(surface.z0-p[1],0,p[1]-surface.z1)):Math.hypot(p[0]-preferred[0],p[1]-preferred[1]);
- if(walkable(...from)&&(surface?gap(from)>=.19&&gap(from)<=.56:gap(from)<=.10))return [[...from]];
+ const workPoint=p=>{
+  if(!walkable(...p)||!inChoreWorkArea(task,p))return false;
+  if(!surface)return true;
+  if(gap(p)<.19||gap(p)>.56)return false;
+  if(surface.approachSide==='front'){
+   if(p[1]<surface.z1+.19||p[0]<surface.x0||p[0]>surface.x1)return false;
+   const contact=[Math.max(surface.x0,Math.min(surface.x1,p[0])),surface.z1];
+   if(crossesWall(p,contact))return false;
+  }
+  return true;
+ };
+ if(workPoint(from)&&(surface||gap(from)<=.10))return [[...from]];
  const candidates=surface?[from,...contactStops(surface),preferred]:[preferred];
  candidates.sort((a,b)=>Math.hypot(a[0]-from[0],a[1]-from[1])-Math.hypot(b[0]-from[0],b[1]-from[1]));
  for(const point of candidates){
-  if(!walkable(...point)||(surface&&(gap(point)<.19||gap(point)>.56)))continue;
+  if(!workPoint(point))continue;
   const path=findPath(from,point);if(!path.length)continue;
   const end=path.at(-1);
-  if(Math.hypot(end[0]-point[0],end[1]-point[1])>.12||!canTraverse(from,path[0])||!walkable(...end)||(surface&&(gap(end)<.19||gap(end)>.56)))continue;
+  if(Math.hypot(end[0]-point[0],end[1]-point[1])>.12||!canTraverse(from,path[0])||!workPoint(end))continue;
   return path;
  }
  return [];
 }
 function rerouteChore(job){
- const path=planChorePath([character.position.x,character.position.z],placement(job.task).stop,job.surface);
+ const path=planChorePath([character.position.x,character.position.z],placement(job.task).stop,job.surface,job.task);
  if(!path.length){activity=null;pose='stand';renderTasks();toast('家事位置暫時被擋住，請稍後再試');return false}
  job.path=path;job.index=0;return true;
 }
@@ -565,7 +593,7 @@ function startTask(t){
   leaveRest();
   restExit=null;character.position.y=.07;
   pose='stand';
-  const surface=choreSurface(t),path=planChorePath([character.position.x,character.position.z],placement(t).stop,surface);
+  const surface=choreSurface(t),path=planChorePath([character.position.x,character.position.z],placement(t).stop,surface,t);
   if(!path.length)return toast('目前找不到通往家事位置的路');
   pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));
   activity={task:t,phase:'run',path,index:0,day:today(),surface};
