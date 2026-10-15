@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.js';
 
 export function radialPosition(x,y,width,height,actorHalfWidth=20){
- const halfWidth=70,halfHeight=100,gap=12,edge=8;
+ const halfWidth=62,halfHeight=88,gap=10,edge=8;
  const right=x+actorHalfWidth+gap+halfWidth;
  const side=right+halfWidth<=width-edge?'right':'left';
  const desired=side==='right'?right:x-actorHalfWidth-gap-halfWidth;
@@ -65,4 +65,5 @@ export function installPoseRadial({getCharacter,getOthers,getPose,setPose}){
  new MutationObserver(()=>{if(blocked())close()}).observe(world,{attributes:true,attributeFilter:['class']});
  return {update,close};
 }
+
 

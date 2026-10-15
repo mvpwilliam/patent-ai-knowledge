@@ -1,6 +1,6 @@
 import {applyChoreContact,resetChoreContact,contactStops} from './chore-contact.js?v=contact-1';
 import * as T from './vendor/three.module.js';
-import {installPoseRadial} from './pose-radial.js?v=side-fast-1';
+import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=home-fixes-1';
 import {installToyDefense} from './toy-defense.js?v=toy3-1';
@@ -11,9 +11,9 @@ import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furn
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=editor-visor-1';
 import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=editor-visor-1';
 import {openAvatarEditor} from './avatar-editor.js?v=npc-ball-1';
-import {createHouseNPC} from './house-npc.js?v=npc-ball-1';
+import {createHouseNPC} from './house-npc.js?v=home-detail-2';
 import {createGodzilla} from './godzilla.js?v=103';
-import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=pillow-header-1';
+import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=home-detail-2';
 import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=walkways-20-1';
 const PLAYER_SCALE=1;
 
@@ -63,8 +63,8 @@ Object.assign(chores,{
  tidytable:{room:'dining',marker:furnitureXYZ('dining',[2.22,.91,6.64]),stop:furnitureXZ('dining',[.85,6.63])},
  counter:{room:'kitchen',marker:[kitchenStart+.24,1.05,9.61],stop:[kitchenStart+.24,8.85]},
  stove:{room:'kitchen',marker:[stoveX,1.12,9.60],stop:[stoveX,8.85]},
- mainbed:{room:'main',marker:furnitureXYZ('mainBed',[5.44,.78,1.64]),stop:furnitureXZ('mainBed',[4.25,1.68])},
- childbed:{room:'child',marker:furnitureXYZ('childBed',[5.12,.76,7.00]),stop:furnitureXZ('childBed',[4.27,6.90])},
+ mainbed:{room:'main',marker:furnitureXYZ('mainBed',[5.64,.78,1.64]),stop:furnitureXZ('mainBed',[4.25,1.68])},
+ childbed:{room:'child',marker:furnitureXYZ('childBed',[5.12,.76,7.16]),stop:furnitureXZ('childBed',[4.27,6.90])},
  toys:{room:'child',marker:[scaleX(3.35),.25,7.65],stop:pointXZ([3.35,7.65])},
  toilet:{room:'bath',marker:furnitureXYZ('toilet',[5.76,.83,4.33]),stop:furnitureXZ('toilet',[5.35,4.96])},
  basin:{room:'bath',marker:furnitureXYZ('basin',[4.73,.96,4.10]),stop:furnitureXZ('basin',[4.73,4.85])},
@@ -332,7 +332,7 @@ function updateCharacterNames(){
  const layer=$('#character-names'),camera=window.homeScene?.camera,world=$('#world');if(!layer||!camera)return;
  const people=[];if(character)people.push(['self',character,avatar.name,levelInfo(player.xp).title]);
  for(const [id,item] of characters){const name=profileCache[id]?.name;if(name)people.push(['player-'+id,item.mesh,name,levelInfo(gameMeta.players[id]?.xp).title])}
- if(houseNPC?.character)people.push(['npc',houseNPC.character,'小屋主','小屋主人']);
+ if(houseNPC?.character)people.push(['npc',houseNPC.character,'小屋主','']);
  const active=new Set(people.map(([id])=>id));for(const [id,label] of characterNameLabels)if(!active.has(id)){label.remove();characterNameLabels.delete(id)}
  for(const [id,label] of characterTitleLabels)if(!active.has(id)){label.remove();characterTitleLabels.delete(id)}
  for(const [id,mesh,name,title] of people){
@@ -341,6 +341,7 @@ function updateCharacterNames(){
   characterNamePoint.set(mesh.position.x,mesh.position.y-.03,mesh.position.z).project(camera);
   label.hidden=!mesh.visible||characterNamePoint.z<=-1||characterNamePoint.z>=1||Math.abs(characterNamePoint.x)>.98||Math.abs(characterNamePoint.y)>.96;
   if(!label.hidden){label.style.left=(characterNamePoint.x+1)*world.clientWidth/2+'px';label.style.top=(1-characterNamePoint.y)*world.clientHeight/2+'px'}
+  if(!title){characterTitleLabels.get(id)?.remove();characterTitleLabels.delete(id);continue}
   let titleLabel=characterTitleLabels.get(id);if(!titleLabel){titleLabel=document.createElement('span');titleLabel.className='character-name character-title';layer.append(titleLabel);characterTitleLabels.set(id,titleLabel)}
   if(titleLabel.textContent!==title)titleLabel.textContent=title;
   // Refresh bounds only four times a second; project each frame without scanning meshes.
@@ -519,8 +520,8 @@ function choreSurface(task){
  switch(task.id){
  case 'table':case 'tidytable':return rect('dining',2.22,6.30,.75,1.35,.82);
  case 'sofa':return rect('sofa',2.54,2.03,.68,2.06,.575);
- case 'mainbed':case 'fold':return rect('mainBed',5.44,1.64,1.90,1.95,.63);
- case 'childbed':return rect('childBed',5.12,7,1.1,1.94,.61);
+ case 'mainbed':case 'fold':return rect('mainBed',5.64,1.64,1.90,1.95,.63);
+ case 'childbed':return rect('childBed',5.12,7.16,1.1,1.94,.61);
  case 'counter':return rect(null,kitchenStart+.30,9.645,.55,.70,.925);
  case 'stove':return rect(null,stoveX,9.60,.65,.44,.968);
  case 'dishes':return rect(null,sinkX,9.61,.55,.55,.925);
@@ -1169,6 +1170,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 

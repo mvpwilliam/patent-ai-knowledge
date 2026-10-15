@@ -95,21 +95,21 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #game-dialog input[type=color]::-webkit-color-swatch-wrapper{padding:0}
 #game-dialog input[type=color]::-webkit-color-swatch{border:0;border-radius:5px}
 #game-dialog input[type=color]::-moz-color-swatch{border:0;border-radius:5px}
-.pose-radial{position:absolute;width:140px;height:200px;transform:translate(-50%,-50%);z-index:12;pointer-events:none;animation:radial-appear .16s ease-out}
-.pose-radial::before{content:"";position:absolute;inset:20px 5px 20px 0;border:1px solid #ffffff8c;border-radius:22% 75% 75% 22%;background:#fffdf452;pointer-events:none}
+.pose-radial{position:absolute;width:124px;height:176px;transform:translate(-50%,-50%);z-index:12;pointer-events:none;animation:radial-appear .16s ease-out}
+.pose-radial::before{content:none}
 .pose-radial[data-side=left]::before{transform:scaleX(-1)}
 .pose-radial[hidden],.td-active .pose-radial{display:none!important}
 .pose-radial button{position:absolute;width:56px;height:56px;border-radius:50%;padding:6px;background:#fffdf4f2;border:1px solid #fff;color:#405f50;box-shadow:0 4px 14px #253d3524;pointer-events:auto;touch-action:manipulation;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-family:"HomeRoundedLabel","PingFang TC",sans-serif;font-size:12px}
 .pose-radial button svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
-.pose-radial [data-pose=stand]{left:42px;top:0}
-.pose-radial [data-pose=sit]{left:80px;top:72px}
-.pose-radial [data-pose=lie]{left:42px;top:144px}
-.pose-radial[data-side=left] [data-pose=stand],.pose-radial[data-side=left] [data-pose=lie]{left:42px}
+.pose-radial [data-pose=stand]{left:34px;top:0}
+.pose-radial [data-pose=sit]{left:64px;top:60px}
+.pose-radial [data-pose=lie]{left:34px;top:120px}
+.pose-radial[data-side=left] [data-pose=stand],.pose-radial[data-side=left] [data-pose=lie]{left:34px}
 .pose-radial[data-side=left] [data-pose=sit]{left:4px}
-.pose-radial[data-side=left] .radial-close{left:96px}
+.pose-radial[data-side=left] .radial-close{left:80px}
 .pose-radial button.active{background:#405f50;color:#fff;border-color:#b9cbb7}
 .pose-radial button:hover{box-shadow:0 4px 20px #253d3540}
-.pose-radial .radial-close{left:0;top:78px;width:44px;height:44px;font-family:inherit;font-size:23px;background:#fffdf4d9;box-shadow:none}
+.pose-radial .radial-close{left:0;top:66px;width:44px;height:44px;font-family:inherit;font-size:23px;background:#fffdf4d9;box-shadow:none}
 @keyframes radial-appear{from{opacity:0;transform:translate(-50%,-50%) scale(.85)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 @media(prefers-reduced-motion:reduce){.pose-radial{animation:none}}
 #world .scene-bottom{bottom:78px;pointer-events:none}
@@ -269,6 +269,7 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #world .scene-menu-options button:hover{background:#dce6d7;transform:translateY(-2px)}
 #world .scene-menu-options button:active{transform:scale(.95)}
 @media(prefers-reduced-motion:reduce){#world .scene-menu-options button{transition:none}}
+
 
 
 

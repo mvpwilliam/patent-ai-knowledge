@@ -503,6 +503,7 @@ box(5.44,.29,1.64,1.85,.35,1.94,C.wood,.045);
 box(5.44,.52,1.64,1.90,.22,1.95,C.white,.08);
 for(const z of [1.04,1.64,2.24]){const pillow=box(6.04,.70,z,.45,.17,.48,C.white,.07);pillow.rotation.z=-.04}
 finishSection('main-bed','translate',furnitureShift.mainBed);
+root.getObjectByName('main-bed').position.x+=.20;
 // Bathroom tiled floor, basin, mirror, toilet and open shower area.
 const bathFloorStart=4.445,bathFloorEnd=BATH_EXTERIOR_X-.075;
 const bathFloorNear=3.65,bathFloorFar=5.55,bathFloorMiddle=(bathFloorNear+bathFloorFar)/2,bathFloorDepth=bathFloorFar-bathFloorNear;
@@ -644,6 +645,7 @@ box(5.12,.25,7.00,1.1,.35,1.95,C.wood,.06);
 box(5.12,.51,7.00,1.1,.20,1.94,C.white,.055);
 for(const x of [4.85,5.39])box(x,.70,7.76,.42,.18,.37,C.white,.07);
 finishSection('child-bed','translate',furnitureShift.childBed);
+root.getObjectByName('child-bed').position.z+=.16;
 // Kitchen and appliances. The refrigerator-side built-in is a separate tall
 // unit: overhead doors, open display shelf, appliance counter and microwave.
 // Appliance cabinet is rebuilt below at its specified 105 × 50 cm size.
@@ -866,12 +868,12 @@ function hitArea(kind,x,y,z,w,d){
   mesh.position.set(x,y,z);mesh.userData.kind=kind;root.add(mesh);interactionTargets.push(mesh);
 }
 hitArea('sofa',2.54+furnitureShift.sofa,.91,2.03,.92,2.50);
-hitArea('mainBed',5.42+furnitureShift.mainBed,.91,1.64,1.91,1.96);
+hitArea('mainBed',5.62+furnitureShift.mainBed,.91,1.64,1.91,1.96);
 hitArea('diningChair0',1.41+furnitureShift.dining,.95,5.94,.49,.48);
 hitArea('diningChair1',1.41+furnitureShift.dining,.95,6.63,.49,.48);
 const mirrorHits=[['entryMirror',entryZero+.035,1.10,9.58,.08,2.16,.69],['bathMirror',4.73+furnitureShift.basin,1.27,3.76,.54,.70,.08]];
 for(const [kind,x,y,z,w,h,d] of mirrorHits){const mesh=new T.Mesh(new T.BoxGeometry(w,h,d),new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide}));mesh.position.set(x,y,z);mesh.userData.kind=kind;root.add(mesh);interactionTargets.push(mesh)}
-hitArea('childBed',5.12+furnitureShift.childBed,.89,7.00,1.15,2.10);
+hitArea('childBed',5.12+furnitureShift.childBed,.89,7.16,1.15,2.10);
 function moveAt(e){
   const rect=canvas.getBoundingClientRect();
   movePointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
@@ -946,7 +948,7 @@ if(document.hidden){cancelAnimationFrame(renderHandle);renderHandle=0}
 else if(!renderHandle){lastRender=-Infinity;renderHandle=requestAnimationFrame(animate)}
 });renderHandle=requestAnimationFrame(animate);
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,getFollowOrbit:()=>({yaw:followYaw,pitch:followPitch,distance:followDistance}),interactionTargets,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
+window.homeScene={showerTarget:[scaleX(showerHeadX),.10,showerHeadZ-.20],layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,getFollowOrbit:()=>({yaw:followYaw,pitch:followPitch,distance:followDistance}),interactionTargets,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
   setBalconyDoor(near){const state=balconyDoorLeaf.userData.door;if(near){state.open=true;state.target=state.openAngle}else if(state.autoNear){state.open=false;state.target=state.closedAngle}state.autoNear=near},
   setFridgeOpen(open){fridgeOpen=!!open},
   setShowerOpen(open){const state=showerDoor.userData.door;state.open=!!open;state.target=state.open?state.openAngle:state.closedAngle},
@@ -960,6 +962,7 @@ window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShif
     });
   },
   showNews,get currentRoom(){return current}};
+
 
 
 

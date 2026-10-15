@@ -2,7 +2,7 @@ import * as T from './vendor/three.module.js';
 import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=entry-expand-1';
 import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero,entryX} from './layout.js?v=entry-expand-1';
 
-import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=pillow-header-1';
+import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=home-detail-2';
 import {furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=walkways-20-1';
 
 // A local ambient resident, never a Firebase player or an award recipient.
@@ -23,6 +23,8 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  }
  const booster=new T.Mesh(new T.BoxGeometry(.36,.09,.34),new T.MeshStandardMaterial({color:'#d4cfad',roughness:1}));booster.name='npc-lego-seat-cushion';booster.position.set(1.50+furnitureShift.dining,.575,5.94);booster.visible=false;home.scene.add(booster);
  const bathX=5.35+furnitureShift.toilet;
+ const showerTarget=home.showerTarget||[6.96,.10,5.865];
+ const showerVia=[showerTarget[0],.10,5.15];
  // One lightweight ball, reused for every two-minute play session.
  const playBall=new T.Group();playBall.name='npc-play-ball';playBall.visible=false;home.scene.add(playBall);
  const ballGeometry=new T.SphereGeometry(.115,16,10);
@@ -39,7 +41,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
   {id:'toilet',label:'坐馬桶',approach:[bathX,4.96],target:[5.72+furnitureShift.toilet,.49,4.28],angle:Math.PI,pose:'sit'},
   {id:'hands',label:'洗手',approach:[4.73+furnitureShift.basin,4.78],angle:Math.PI,pose:'work'},
   {id:'fridge',label:'開冰箱',approach:[entryX(239),8.98],angle:0,pose:'work'},
-  {id:'shower',label:'在淋浴間洗澡',approach:[5.68,5.18],target:[6.24,.10,5.17],angle:Math.PI/2,pose:'work'},
+  {id:'shower',label:'在淋浴間洗澡',approach:[5.68,5.18],target:showerTarget,angle:0,pose:'work'},
   ...[['客廳',1.2,3.7],['餐廳',.7,6.2],['廚房',4.0,8.7],['主臥',3.80,3.2],['次臥',3.25,6.65],['浴室',5.1,5.0],['玄關',.7,8.55],['陽台',6.5,7.6]].map(([label,x,z],i)=>({id:'room'+i,label:'在'+label+'待一下',approach:pointXZ([x,z]),pose:'stand',angle:0}))
  ];
  let state='wait',action=null,path=[],index=0,until=0,settle=0,from=null,exit=null,lastId='',step=0,previousShowerOpen=false,ownsFridge=false,ownsTV=false;
@@ -51,6 +53,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
   const t=a.target||[a.approach[0],.07,a.approach[1]];return Math.hypot(v.x-t[0],v.z-t[2])<.62;
  });
  function finish(){
+  if(action?.id==='shower')home.setShowerOpen?.(true);
   character.userData.setBathOutfit?.(false);
   if(ownsTV){home.showNews?.(false);ownsTV=false}
   lego.visible=false;booster.visible=false;
@@ -96,11 +99,17 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
   if(state==='settle'||state==='return'){
    const target=state==='return'?exit:new T.Vector3(...action.target);
    if(crossesWall([from.x,from.z],[target.x,target.z])||crossesDynamicObstacle([from.x,from.z],[target.x,target.z])){if(ownsTV){home.showNews?.(false);ownsTV=false}character.userData.setBathOutfit?.(false);lego.visible=false;booster.visible=false;state='wait';until=now+3000;exit=null;return}
-   settle=Math.min(1,settle+dt/.9);character.position.lerpVectors(from,target,settle);character.rotation.y=action.angle;
-   if(settle===1){if(state==='return'){if(action.id==='shower'&&!previousShowerOpen)home.setShowerOpen?.(false);exit=null;state='wait';until=now+2000;action=null}else{state='act';if(action.duration)until=now+action.duration}}return;
+   settle=Math.min(1,settle+dt/(action.id==='shower'?1.8:.9));
+   if(action.id==='shower'){
+    const via=new T.Vector3(...showerVia);
+    if(settle<.5)character.position.lerpVectors(from,via,settle*2);
+    else character.position.lerpVectors(via,target,(settle-.5)*2);
+   }else character.position.lerpVectors(from,target,settle);
+   character.rotation.y=action.angle;
+   if(settle===1){if(state==='return'){if(action.id==='shower')home.setShowerOpen?.(previousShowerOpen);exit=null;state='wait';until=now+2000;action=null}else{state='act';if(action.id==='shower')home.setShowerOpen?.(false);if(action.duration)until=now+action.duration}}return;
   }
   character.rotation.y=action.angle;
-  if(action.id==='shower'&&home.camera)character.rotation.y=Math.atan2(character.position.x-home.camera.position.x,character.position.z-home.camera.position.z);
+  if(action.id==='shower')home.setShowerOpen?.(false);
   if(action.pose==='sit'){for(const leg of legs)leg.rotation.x=-.85;b.rotation.x=action.id==='tv'?-.23:0}
   if(action.pose==='lie')b.rotation.x=-Math.PI/2;
   if(action.pose==='work'){left.rotation.x=right.rotation.x=-.75+Math.sin(now*.006)*.15}
@@ -134,6 +143,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  };
  return {character,update,actions,get state(){return state},get action(){return action},startAction(id,now=performance.now()){if(state!=='wait')return false;return choose(now,id)}};
 }
+
 
 
 
