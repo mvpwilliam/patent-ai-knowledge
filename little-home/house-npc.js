@@ -29,7 +29,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  const ballMesh=new T.Mesh(ballGeometry,new T.MeshStandardMaterial({color:'#df9856',roughness:.8}));ballMesh.castShadow=true;playBall.add(ballMesh);
  const stripeMaterial=new T.MeshStandardMaterial({color:'#fff0cd',roughness:.8});
  for(const angle of [0,Math.PI/2]){const stripe=new T.Mesh(new T.TorusGeometry(.115,.007,4,20),stripeMaterial);stripe.rotation.y=angle;playBall.add(stripe)}
- let ballStarted=0;
+ let ballStarted=0,wasNight=false;
  const actions=[
   {id:'ball',label:'在客廳玩球',approach:pointXZ([1.2,3.7]),pose:'stand',angle:0,duration:120000},
   {id:'tv',label:'坐沙發看電視',approach:furnitureXZ('sofa',[1.72,2.04]),target:furnitureXYZ('sofa',[2.48,.59,2.03]),pose:'sit',angle:-Math.PI/2},
@@ -51,6 +51,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
   const t=a.target||[a.approach[0],.07,a.approach[1]];return Math.hypot(v.x-t[0],v.z-t[2])<.62;
  });
  function finish(){
+  character.userData.setEyesClosed?.(false);character.userData.bedReservation=null;
   if(action?.id==='shower')home.setShowerOpen?.(true);
   character.userData.setBathOutfit?.(false);
   if(ownsTV){home.showNews?.(false);ownsTV=false}
@@ -72,6 +73,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  function start(now){
   if(occupied(action)){finish();return}
   exit=character.position.clone();from=exit.clone();settle=0;
+  if(action.bed)character.userData.bedReservation={kind:action.bed.kind,index:action.bed.index};
   if(action.id==='shower'){previousShowerOpen=!!home.showerDoor?.userData.door.open;home.setShowerOpen?.(true);character.userData.setBathOutfit?.(true)}
   if(action.id==='fridge'){home.setFridgeOpen?.(true);ownsFridge=true}
   if(action.id==='tv'){home.showNews?.(true);ownsTV=true}
@@ -83,7 +85,18 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  function update(dt,now){
   const b=character.userData.body,[left,right]=character.userData.arms,legs=character.userData.legs;
   b.position.y=0;b.rotation.set(0,0,0);for(const arm of [left,right])arm.rotation.set(0,0,0);for(const leg of legs)leg.rotation.x=0;
-  if(state==='wait'){if(now>=until)choose(now);return}
+  const isNight=!!home.isNight;
+  if(isNight!==wasNight){
+   wasNight=isNight;
+   if(!isNight&&action?.id==='sleep'&&state!=='return')finish();
+   else if(isNight&&action?.id!=='sleep'){
+    if(state==='walk'){state='wait';action=null;path=[];until=now}
+    else if(state==='act'||state==='settle')finish();
+    else if(state==='wait')until=now;
+   }
+  }
+  character.userData.setEyesClosed?.(state==='act'&&action?.id==='sleep');
+  if(state==='wait'){if(now>=until)choose(now,isNight?'sleep':undefined);return}
   if(state==='walk'){
    if(now>until){state='wait';until=now+3000;return}
    const p=path[index],dx=p[0]-character.position.x,dz=p[1]-character.position.z,d=Math.hypot(dx,dz);
@@ -117,7 +130,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
    playBall.rotation.set(phase*Math.PI*2,0,phase*Math.PI);
    right.rotation.x=-.45-bounce*.35;b.position.y=-.025*(1-bounce);
   }
-  if(now>=until||occupied(action))finish();
+  if(!(isNight&&action.id==='sleep')&&(now>=until||occupied(action)))finish();
  }
  character.userData.updateNPCDetail=now=>{
   // Run after the articulated pose is applied, so actual clothing vertices

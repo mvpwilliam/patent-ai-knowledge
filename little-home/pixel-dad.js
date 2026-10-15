@@ -154,6 +154,22 @@ for(const {obj,world,parent,arm,head} of snapshots){
   model.position.y=pose==='sit'?-hipHeight*scale:0;
   for(let i=0;i<2;i++){const label=i?'Right':'Left',hip=named[label+' hip'],knee=named[label+' knee'],shoulder=named[label+' shoulder'],elbow=named[label+' elbow'];hip.rotation.x=pose==='sit'?-Math.PI/2:legs[i].rotation.x;knee.rotation.x=pose==='sit'?Math.PI/2:Math.max(0,-legs[i].rotation.x)*.5;shoulder.rotation.x=pose==='sit'?-.45:arms[i].rotation.x;elbow.rotation.x=pose==='sit'?-1.08:pose==='work'?-.6:0;}
  }};g.userData.updatePose();g.updateMatrixWorld(true);g.userData.baseStandingHeight=new T.Box3().setFromObject(g).getSize(new T.Vector3()).y;
+
+ // Eye pixels are separate from the skin; replace them with two quiet eyelid lines.
+ const eyeNodes=nodes.filter(n=>/Face pixel \d+ (10|11|12)$/.test(n.name));
+ const closedEyes=new T.Group();closedEyes.name='Closed eyelids';closedEyes.visible=false;
+ for(const side of [-1,1]){
+  const bounds=new T.Box3();
+  for(const node of eyeNodes){const column=Number(/Face pixel (\d+)/.exec(node.name)[1]);if((column<16?-1:1)===side)bounds.union(new T.Box3().setFromObject(node))}
+  if(bounds.isEmpty())continue;
+  bounds.applyMatrix4(named.Head.matrixWorld.clone().invert());
+  const size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3());
+  const lid=new T.Mesh(new T.BoxGeometry(size.x,Math.max(.003,size.y*.16),.004),new T.MeshStandardMaterial({color:'#4b332c',roughness:1}));
+  lid.position.set(center.x,center.y,bounds.max.z+.003);closedEyes.add(lid);
+ }
+ named.Head.add(closedEyes);
+ g.userData.setEyesClosed=closed=>{for(const node of eyeNodes)node.visible=!closed;closedEyes.visible=!!closed;g.userData.eyesClosed=!!closed};
+
  // Fit the visor after body/face remapping, in the Head joint's local coordinates.
  const fit={faceWidth:d.faceWidth};
  if(d.legendaryOutfit==='neon'){

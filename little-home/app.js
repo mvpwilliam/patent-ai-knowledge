@@ -865,6 +865,26 @@ function updateCoverings(){
   for(const slat of childBlindSlats)slat.position.y=slat.userData.loweredY+(slat.userData.raisedY-slat.userData.loweredY)*childBlindProgress;
   for(const cord of childBlindCords){cord.scale.y=1-.84*childBlindProgress;cord.position.y=2.19-.75*cord.scale.y}
 }
+
+// A window-sized photograph stays behind the glazing, never across the room.
+const livingViewMaterial=new T.MeshBasicMaterial({side:T.FrontSide,toneMapped:false});
+const livingWindowView=new T.Mesh(new T.PlaneGeometry(2.015*X_SCALE,1.50),livingViewMaterial);
+livingWindowView.name='living-window-view';livingWindowView.position.set(scaleX(2.025),1.425,-.055);livingWindowView.visible=false;scene.add(livingWindowView);
+const windowViewTextures={},windowViewLoading=new Set();
+function updateLivingWindowView(){
+ const slider=slidingWindows.find(w=>w.name==='living-upper-sliding-window')?.userData.slider;
+ const revealed=!curtainClosed&&coverProgress>.85&&slider?.opens.some(Boolean)&&slider.progress.some(p=>p>.10);
+ const mode=night?'night':'day';
+ if(revealed&&!windowViewTextures[mode]&&!windowViewLoading.has(mode)){
+  windowViewLoading.add(mode);
+  new T.TextureLoader().load('./assets/living-view-'+mode+'.webp',texture=>{
+   texture.colorSpace=T.SRGBColorSpace;windowViewTextures[mode]=texture;windowViewLoading.delete(mode);
+  },undefined,()=>{windowViewLoading.delete(mode)});
+ }
+ const texture=windowViewTextures[mode];livingWindowView.visible=!!(revealed&&texture);
+ if(texture&&livingViewMaterial.map!==texture){livingViewMaterial.map=texture;livingViewMaterial.needsUpdate=true}
+}
+
 function toggleBathWindow(){const state=bathWindow.userData.door;state.open=!state.open;state.target=state.open?state.openAngle:state.closedAngle;toast(state.open?'浴室窗戶打開了':'浴室窗戶關上了')}
 function toggleShowerDoor(){const state=showerDoor.userData.door;state.open=!state.open;state.target=state.open?state.openAngle:state.closedAngle;toast(state.open?'淋浴門向內推開了':'淋浴門關上了')}
 document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>selectRoom(b.dataset.room));$('#night').onclick=()=>{night=!night;document.body.classList.toggle('night',night);$('#night').innerHTML=night?'☾ <span>夜晚</span>':'☀ <span>日光</span>';$('#night').setAttribute('aria-pressed',night);hemi.intensity=night?.65:1.35;sun.intensity=night?.35:2.1;fill.intensity=night?.55:.65;sun.color.set(night?'#adc4ed':'#fff6eb');renderer.toneMappingExposure=night?.9:.95;toast(night?'晚安，溫柔的小世界':'早安，今天也是好日子')};$('#reset').onclick=resetFollowView;
@@ -979,12 +999,12 @@ renderHandle=requestAnimationFrame(animate);
 if(now-lastRender<renderInterval-.5)return;
 const elapsed=now-lastRender;lastRender=now-((Number.isFinite(elapsed)&&elapsed>=renderInterval?elapsed%renderInterval:0));
 if(window.homeBattleFrame?.(now))return;
-window.homeGameUpdate?.(now);updateShowerWater(now);if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=followDistance;phi=followPitch;const angle=followYaw;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?(followMode?1.2:1.37):1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}fridgeLeaves.forEach((leaf,i)=>{leaf.rotation.y+=((fridgeOpen?(i===0?1:-1)*Math.PI/3:0)-leaf.rotation.y)*.12});updateCoverings();root.updateMatrixWorld(true);wallFader.update(camera,window.homeGameFocus?.()?.position,followMode,performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}document.addEventListener('visibilitychange',()=>{
+window.homeGameUpdate?.(now);updateShowerWater(now);if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=followDistance;phi=followPitch;const angle=followYaw;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?(followMode?1.2:1.37):1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}fridgeLeaves.forEach((leaf,i)=>{leaf.rotation.y+=((fridgeOpen?(i===0?1:-1)*Math.PI/3:0)-leaf.rotation.y)*.12});updateCoverings();updateLivingWindowView();root.updateMatrixWorld(true);wallFader.update(camera,window.homeGameFocus?.()?.position,followMode,performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}document.addEventListener('visibilitychange',()=>{
 if(document.hidden){cancelAnimationFrame(renderHandle);renderHandle=0}
 else if(!renderHandle){lastRender=-Infinity;renderHandle=requestAnimationFrame(animate)}
 });renderHandle=requestAnimationFrame(animate);
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={setShowerWater,get showerWaterOn(){return showerWaterOn},showerHeadHit,showerSpray,showerTarget:[scaleX(showerHeadX),.10,showerHeadZ-.20],layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,getFollowOrbit:()=>({yaw:followYaw,pitch:followPitch,distance:followDistance}),interactionTargets,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
+window.homeScene={get isNight(){return night},livingWindowView,setShowerWater,get showerWaterOn(){return showerWaterOn},showerHeadHit,showerSpray,showerTarget:[scaleX(showerHeadX),.10,showerHeadZ-.20],layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,getFollowOrbit:()=>({yaw:followYaw,pitch:followPitch,distance:followDistance}),interactionTargets,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
   setBalconyDoor(near){const state=balconyDoorLeaf.userData.door;if(near){state.open=true;state.target=state.openAngle}else if(state.autoNear){state.open=false;state.target=state.closedAngle}state.autoNear=near},
   setFridgeOpen(open){fridgeOpen=!!open},
   setShowerOpen(open){const state=showerDoor.userData.door;state.open=!!open;state.target=state.open?state.openAngle:state.closedAngle},
