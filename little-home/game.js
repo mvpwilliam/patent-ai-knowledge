@@ -1004,6 +1004,8 @@ async function buyItem(item){
 const slots={living:[[scaleX(.24),.68,1.25],[scaleX(.24),.68,2.65]],dining:[furnitureXYZ('dining',[2.22,.83,5.95]),furnitureXYZ('dining',[2.22,.83,6.55])],kitchen:[[scaleX(2.64),.98,9.48],[scaleX(2.91),.98,9.48]],main:[[scaleX(4.25),.10,.30],[scaleX(4.55),.10,.30]],child:[[scaleX(3.05),.10,7.94],[scaleX(3.40),.10,7.94]],entry:[[entryZero+.18,1.05,8.10],[entryZero+.90,1.05,8.10]],bath:[[scaleX(4.55),.84,4.02]],balcony:[[washerPosition.x-.22,1.02,washerPosition.z],[washerPosition.x+.22,1.02,washerPosition.z]]};
 // Rooms without a free shelf get a small wall shelf above the reserved item.
 const shelfRooms=new Set(['main','child']);
+// Decoration models face local +Z; turn their fronts toward each display's open side.
+const displayFacing={living:Math.PI/2,dining:-Math.PI/2,kitchen:Math.PI,main:0,child:Math.PI,entry:0,bath:0,balcony:0};
 function occupied(meta,room,slot,exclude){return Object.values(meta.players||{}).some(p=>(p.inventory||[]).some(o=>o.id!==exclude&&o.room===room&&o.slot===slot))}
 function choosePlacement(owned,item){
  pendingPlacement={id:owned.id,item:item.id,room:null,slot:null};const select=$('#placement-room');select.replaceChildren();
@@ -1037,7 +1039,7 @@ function renderPlacements(){
  if(!scene)return;for(const object of placementObjects.values()){scene.remove(object);object.traverse(n=>{n.geometry?.dispose();if(n.material)n.material.dispose()})}placementObjects.clear();
  const owned=Object.values(gameMeta.players||{}).flatMap(p=>p.inventory||[]).filter(o=>o.room&&slots[o.room]?.[o.slot]);
  if(pendingPlacement?.slot>=0)owned.push({...pendingPlacement,id:'preview',item:pendingPlacement.item});
- for(const o of owned){const g=makeDecoration(o.item),p=slots[o.room][o.slot];g.position.set(...p);if(shelfRooms.has(o.room)){g.position.y=1.25;bodyPart(g,new T.BoxGeometry(.23,.025,.19),'#c2ad8b',0,-.012,0)}if(o.id==='preview')g.traverse(n=>{if(n.material){n.material.transparent=true;n.material.opacity=.45}});scene.add(g);placementObjects.set(o.id,g)}
+ for(const o of owned){const g=makeDecoration(o.item),p=slots[o.room][o.slot];g.position.set(...p);g.rotation.y=displayFacing[o.room]??0;if(shelfRooms.has(o.room)){g.position.y=1.25;bodyPart(g,new T.BoxGeometry(.23,.025,.19),'#c2ad8b',0,-.012,0)}if(o.id==='preview')g.traverse(n=>{if(n.material){n.material.transparent=true;n.material.opacity=.45}});scene.add(g);placementObjects.set(o.id,g)}
 }
 function onlinePlayers(){return Object.entries(gameMeta.players||{}).filter(([id,p])=>id!==playerId()&&p.presence?.online&&Date.now()-p.presence.at<45000).sort((a,b)=>(b[1].presence.pose==='work')-(a[1].presence.pose==='work')||b[1].presence.at-a[1].presence.at)}
 function syncCharacters(){
