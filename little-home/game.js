@@ -7,9 +7,9 @@ import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=entry-expand-1';
 import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=entry-expand-1';
-import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=legendary-four-1';
-import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=legendary-four-1';
-import {openAvatarEditor} from './avatar-editor.js?v=sharp-mobile-1';
+import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=editor-visor-1';
+import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=editor-visor-1';
+import {openAvatarEditor} from './avatar-editor.js?v=editor-visor-1';
 import {createHouseNPC} from './house-npc.js?v=pillow-header-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=pillow-header-1';
@@ -1142,6 +1142,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 

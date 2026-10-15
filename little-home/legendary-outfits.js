@@ -59,7 +59,7 @@ export function unlockLegendary(p,id,maxXP){
 
 // Modular cuboids are parented to the existing joints, so the costume shares
 // walking, seating and bed poses without a second skeleton.
-export function attachLegendaryOutfit(model,named,id){
+export function attachLegendaryOutfit(model,named,id,fit={}){
  const o=outfitById(id);if(!o)return;
  const mats=new Map(),accents=[],cloth=wovenTexture(o),animated=[];
  const material=(color,glow=false)=>{const key=color+glow;if(!mats.has(key))mats.set(key,new T.MeshStandardMaterial({color,roughness:.65,metalness:glow?.35:.15,emissive:glow?color:'#000000',emissiveIntensity:glow?.55:0}));return mats.get(key)};
@@ -119,12 +119,15 @@ export function attachLegendaryOutfit(model,named,id){
   chain(named['Right hip'],'waist chain',Array.from({length:6},(_,i)=>[.018+i*.013,-.02-Math.sin(i*Math.PI/5)*.075,.132]));
   for(const s of [-1,1])for(let i=0;i<3;i++)cube(model,'cape tiger stripe',[.035,.013,.008],[s*(.055+i*.02),.97-i*.045,-.19]);
  }else if(id==='neon'){
-  cube(head,'square visor',[.295,.075,.022],[0,.447,.143],o.trim,true);
-  cube(head,'visor lenses',[.245,.035,.024],[0,.447,.156],'#322158',true);
+  const visor=new T.Group();visor.name='Legendary eye visor';head.add(visor);
+  visor.position.set(0,fit.eyeY??.48622,fit.eyeFront??.198);
+  visor.scale.x=fit.faceWidth||1;
+  cube(visor,'square visor',[.315,.075,.022],[0,0,0],o.trim,true);
+  cube(visor,'visor lenses',[.265,.035,.024],[0,0,.013],'#322158',true);
   for(const s of [-1,1]){cube(model,'neon chest strip',[.022,.19,.025],[s*.08,.94,.119],s<0?'#52daea':'#be69e5',true);cube(named[(s<0?'Left':'Right')+' hip'],'neon leg strip',[.023,.22,.025],[s*.041,-.15,.094],s<0?'#52daea':'#be69e5',true)}
   for(const s of [-1,1]){
    const side=s<0?'Left':'Right',color=s<0?'#52daea':'#bd69ec';
-   cube(head,'visor temple',[.028,.042,.16],[s*.145,.447,.055],color,true);
+   cube(visor,'visor temple',[.028,.042,.16],[s*.155,0,-.088],color,true);
    for(let i=0;i<3;i++)cube(named[side+' shoulder'],'circuit shoulder node',[.023,.016,.024],[s*.036,-.023-i*.026,.13],color,true);
    cube(named[side+' knee'],'boot power cell',[.035,.070,.021],[s*.04,-.23,.117],color,true);
    cube(model,'tech hip pouch',[.064,.09,.07],[s*.16,.76,0],o.base);
@@ -190,4 +193,5 @@ export function attachLegendaryOutfit(model,named,id){
  batchDetails(accents);
  return {id,texture:cloth,detailCount:accents.length,update(time){if(star){star.position.y=1.04+Math.sin(time*.0018)*.025;star.rotation.y=time*.0005}for(const m of animated)m.emissiveIntensity=.42+Math.sin(time*.0015)*.10}};
 }
+
 
