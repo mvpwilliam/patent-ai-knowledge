@@ -31,8 +31,8 @@ const obstacles=[...wallObstacles,
  shift(4.42,5.04,3.76,4.46,furnitureShift.basin),
  shift(5.48,6.10,3.85,4.67,furnitureShift.toilet),
  [washerPosition.x-.32,washerPosition.x+.32,washerPosition.z-.35,washerPosition.z+.35],
- shift(4.45,6.43,.50,2.96,furnitureShift.mainBed),
- shift(4.47,5.76,5.91,8.12,furnitureShift.childBed)
+ shift(4.65,6.63,.50,2.96,furnitureShift.mainBed),
+ shift(4.47,5.76,6.07,8.28,furnitureShift.childBed)
 ];
 let dynamicObstacles=[],movementObstacles=obstacles;
 export function setDynamicObstacles(rectangles=[]){

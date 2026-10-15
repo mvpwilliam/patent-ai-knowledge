@@ -55,7 +55,7 @@ export function applyChoreContact(actor,surface,t){
 }
 export function contactStops(s){
  const result=[];
- for(const gap of [.26,.34])for(const f of [.2,.5,.8]){
+ for(const gap of [.26,.34,.42,.50])for(const f of [.2,.5,.8]){
   const x=s.x0+(s.x1-s.x0)*f,z=s.z0+(s.z1-s.z0)*f;
   result.push([s.x0-gap,z],[s.x1+gap,z],[x,s.z0-gap],[x,s.z1+gap]);
  }

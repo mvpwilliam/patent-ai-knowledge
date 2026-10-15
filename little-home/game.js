@@ -1,4 +1,4 @@
-import {applyChoreContact,resetChoreContact,contactStops} from './chore-contact.js?v=contact-1';
+import {applyChoreContact,resetChoreContact,contactStops} from './chore-contact.js?v=chore-route-fix-1';
 import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
@@ -6,12 +6,12 @@ import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=home-fixe
 import {installToyDefense} from './toy-defense.js?v=toy3-1';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
-import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=entry-expand-1';
+import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=chore-route-fix-1';
 import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=entry-expand-1';
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=editor-visor-1';
 import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=editor-visor-1';
 import {openAvatarEditor} from './avatar-editor.js?v=npc-ball-1';
-import {createHouseNPC} from './house-npc.js?v=home-detail-2';
+import {createHouseNPC} from './house-npc.js?v=chore-route-fix-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=home-detail-2';
 import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=walkways-20-1';
@@ -197,7 +197,7 @@ function refreshMonsterRoutes(){
   if(path.length){travel.path=path;travel.index=0}else{travel=null;pose='stand';toast('哥吉拉擋住了去路，請選其他位置')}
  }
  if(activity?.phase==='run'){
-  const path=findPath([character.position.x,character.position.z],placement(activity.task).stop);
+  const path=planChorePath([character.position.x,character.position.z],placement(activity.task).stop,activity.surface);
   if(path.length){activity.path=path;activity.index=0}else{activity=null;pose='stand';renderTasks();toast('哥吉拉擋住了家事位置，請先擊退牠')}
  }
 }
@@ -412,11 +412,11 @@ function animate(now){
     }
   }else if(activity?.phase==='run'||activity?.phase==='return'){
     const [x,z]=activity.path[activity.index],dx=x-character.position.x,dz=z-character.position.z,d=Math.hypot(dx,dz);
-    if(d<.035){walkStep(character,x,z);activity.index++;if(activity.index>=activity.path.length){
+    if(d<.035){if(!walkStep(character,x,z)){rerouteChore(activity);return}activity.index++;if(activity.index>=activity.path.length){
       if(activity.phase==='return'){activity=null;pose='stand';renderTasks()}
       else{activity.phase='work';activity.started=now;faceTaskTarget(activity.task);character.userData.body.position.y=0;if(activity.task.id==='scenery'){character.rotation.y=Math.PI;showScenery()}toast(`開始${activity.task.label}`)}
     }}
-    else{const move=Math.min(d,dt*2.05);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
+    else{const move=Math.min(d,dt*2.05);if(!walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move)){rerouteChore(activity);return}character.rotation.y=Math.atan2(dx,dz)}
     step+=dt*19;b.position.y=Math.abs(Math.sin(step))*.050;b.rotation.set(0,0,Math.sin(step)*.055);
     leftArm.rotation.x=Math.sin(step)*.8;rightArm.rotation.x=-Math.sin(step)*.8;
     leftLeg.rotation.x=-Math.sin(step)*.6;rightLeg.rotation.x=Math.sin(step)*.6;
@@ -530,6 +530,25 @@ function choreSurface(task){
  }
 }
 
+function planChorePath(from,preferred,surface){
+ const gap=p=>surface?Math.hypot(Math.max(surface.x0-p[0],0,p[0]-surface.x1),Math.max(surface.z0-p[1],0,p[1]-surface.z1)):Math.hypot(p[0]-preferred[0],p[1]-preferred[1]);
+ if(walkable(...from)&&(surface?gap(from)>=.19&&gap(from)<=.56:gap(from)<=.10))return [[...from]];
+ const candidates=surface?[from,...contactStops(surface),preferred]:[preferred];
+ candidates.sort((a,b)=>Math.hypot(a[0]-from[0],a[1]-from[1])-Math.hypot(b[0]-from[0],b[1]-from[1]));
+ for(const point of candidates){
+  if(!walkable(...point)||(surface&&(gap(point)<.19||gap(point)>.56)))continue;
+  const path=findPath(from,point);if(!path.length)continue;
+  const end=path.at(-1);
+  if(Math.hypot(end[0]-point[0],end[1]-point[1])>.12||!canTraverse(from,path[0])||!walkable(...end)||(surface&&(gap(end)<.19||gap(end)>.56)))continue;
+  return path;
+ }
+ return [];
+}
+function rerouteChore(job){
+ const path=planChorePath([character.position.x,character.position.z],placement(job.task).stop,job.surface);
+ if(!path.length){activity=null;pose='stand';renderTasks();toast('家事位置暫時被擋住，請稍後再試');return false}
+ job.path=path;job.index=0;return true;
+}
 function faceTaskTarget(task){
  if(!character)return;const s=activity?.surface,target=s?[(s.x0+s.x1)/2,s.y,(s.z0+s.z1)/2]:placement(task).marker,dx=target[0]-character.position.x,dz=target[2]-character.position.z;
  if(Math.hypot(dx,dz)>.01)character.rotation.y=Math.atan2(dx,dz);
@@ -546,15 +565,8 @@ function startTask(t){
   leaveRest();
   restExit=null;character.position.y=.07;
   pose='stand';
-  let path=findPath([character.position.x,character.position.z],placement(t).stop);
-  const surface=choreSurface(t);
-  if(surface){
-   const candidates=contactStops(surface).filter(p=>walkable(...p)).map(p=>findPath([character.position.x,character.position.z],p)).filter(p=>p.length>=2);
-   candidates.sort((a,b)=>a.length-b.length);
-   if(!candidates.length)return toast('家具旁暫時沒有能站穩的位置');
-   path=candidates[0];
-  }
-  if(path.length<2)return toast('目前找不到通往家事位置的路');
+  const surface=choreSurface(t),path=planChorePath([character.position.x,character.position.z],placement(t).stop,surface);
+  if(!path.length)return toast('目前找不到通往家事位置的路');
   pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));
   activity={task:t,phase:'run',path,index:0,day:today(),surface};
   if($('#game-dialog').open)$('#game-dialog').close();
