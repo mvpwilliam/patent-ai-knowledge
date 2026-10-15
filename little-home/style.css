@@ -265,10 +265,11 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #world .scene-menu-options button::before{content:"";display:block;width:64px;height:64px;background:center/contain no-repeat;pointer-events:none}
 #world #character-open::before{background-image:url('./assets/menu-character.svg?v=voxel-menu-1')}
 #world #shop-open::before{background-image:url('./assets/menu-department.svg?v=voxel-menu-1')}
-#world .scene-menu-options button[aria-label="玩具保衛戰 · 三分鐘"]::before{background-image:url('./assets/menu-arcade.svg?v=voxel-menu-1')}
+#world .scene-menu-options button[aria-label="遊戲區"]::before{background-image:url('./assets/menu-arcade.svg?v=voxel-menu-1')}
 #world .scene-menu-options button:hover{background:#dce6d7;transform:translateY(-2px)}
 #world .scene-menu-options button:active{transform:scale(.95)}
 @media(prefers-reduced-motion:reduce){#world .scene-menu-options button{transition:none}}
+
 
 
 

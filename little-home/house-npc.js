@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=chore-route-fix-1';
+import {findPath,canTraverse,crossesWall,crossesDynamicObstacle} from './navigation.js?v=games2-1';
 import {pointXZ,furnitureXZ,furnitureXYZ,furnitureShift,entryZero,entryX} from './layout.js?v=entry-expand-1';
 
 import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=home-detail-2';
@@ -152,6 +152,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  };
  return {character,update,actions,get state(){return state},get action(){return action},startAction(id,now=performance.now()){if(state!=='wait')return false;return choose(now,id)}};
 }
+
 
 
 

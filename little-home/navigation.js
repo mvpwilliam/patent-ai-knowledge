@@ -1,9 +1,12 @@
 // Walking envelopes share the revised model's metre coordinates.
-import {scaleX,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=entry-expand-1';
+import {scaleX,X_SCALE,entryZero,entryX,kitchenStart,kitchenEnd,furnitureShift,washerPosition} from './layout.js?v=entry-expand-1';
 const radius=.19,cell=.08; // Restored full-size character walking envelope.
 const shift=(a,b,c,d,s)=>[a+s,b+s,c,d];
 const rect=(x0,x1,z0,z1)=>[scaleX(x0),scaleX(x1),z0,z1];
+const showerLeft=scaleX(5.895+.28/X_SCALE+.13),showerRight=scaleX(7.18+.54/X_SCALE-.065);
 export const wallObstacles=[
+ [scaleX(5.765),showerLeft,5.485,6.23], // solid service shaft
+ [showerLeft-.005,showerLeft+.005,4.625,4.840], // fixed glass; keep doorway clear
  rect(3.1940625,3.3340625,0,4.50), // living/master: only the door beyond the end is passable
  rect(4.45,6.78,3.58,3.72), // master/bath shared wall
  rect(4.385,4.515,3.75,4.50), // bath front jamb; doorway z 4.50–5.55
@@ -44,6 +47,7 @@ export function walkable(x,z){
  const inLiving=inX(.30,3.12)&&z>=.37&&z<=4.50;
  const inHall=inX(.30,4.56)&&z>=4.50&&z<=5.38;
  const inBath=inX(4.45,6.27)&&z>=4.56&&z<=5.36;
+ const inShower=x>=showerLeft-radius&&x<=showerRight-radius&&z>=4.625+radius&&z<=6.10-radius;
  const inDining=inX(.23,2.43)&&z>=5.38&&z<=8.22;
  const inKitchen=inX(.23,5.70)&&z>=8.22&&z<=9.00;
  const inMaster=inX(3.4140625,6.38)&&z>=.28&&z<=3.54;
@@ -53,7 +57,7 @@ export function walkable(x,z){
  const inBalcony=inX(6.02,7.59)&&z>=7.23&&z<=9.00;
  const inBalconyDoor=inX(5.68,6.08)&&z>=8.40&&z<=8.96;
  const inEntry=x>=entryZero+radius&&x<=scaleX(.7)&&z>=8.47&&z<=9.60;
- if(!(inLiving||inHall||inBath||inDining||inKitchen||inMaster||inMasterEntry||inChild||inChildEntry||inBalcony||inBalconyDoor||inEntry))return false;
+ if(!(inLiving||inHall||inBath||inShower||inDining||inKitchen||inMaster||inMasterEntry||inChild||inChildEntry||inBalcony||inBalconyDoor||inEntry))return false;
  return !movementObstacles.some(([a,b,c,d])=>x>=a-radius&&x<=b+radius&&z>=c-radius&&z<=d+radius);
 }
 const key=(i,j)=>i+','+j;
@@ -109,6 +113,7 @@ export function findPath(from,to){
   }
   return [];
 }
+
 
 
 

@@ -3,15 +3,15 @@ import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=home-fixes-1';
-import {installToyDefense} from './toy-defense.js?v=toy3-1';
+import {installToyDefense} from './toy-defense.js?v=games2-1';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
-import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=chore-route-fix-1';
+import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=games2-1';
 import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=entry-expand-1';
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=window-night-1';
 import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=editor-visor-1';
 import {openAvatarEditor} from './avatar-editor.js?v=npc-ball-1';
-import {createHouseNPC} from './house-npc.js?v=window-night-1';
+import {createHouseNPC} from './house-npc.js?v=games2-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=home-detail-2';
 import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=walkways-20-1';
@@ -246,6 +246,9 @@ function moveTo(point,kind='walk',bedSlot=null){
   restExit=null;travel=null;pose='stand';
   const stops={diningChair0:furnitureXZ('dining',[.88,5.94]),diningChair1:furnitureXZ('dining',[.88,6.63]),entryMirror:[entryZero+.45,9.58],bathMirror:[4.73+furnitureShift.basin,4.80],sofa:furnitureXZ('sofa',[2.00,2.04]),mainBed:furnitureXZ('mainBed',[4.25,1.68]),childBed:furnitureXZ('childBed',[4.27,6.90])};
   const destination=stops[kind]||point;
+  // Open the glass door when routing into or out of the shower enclosure.
+  const shower=window.homeScene?.layout.showerPoints;
+  if(shower&&destination&&[destination,[character.position.x,character.position.z]].some(([x,z])=>x>shower.H.x&&z>shower.H.z&&z<6.10))window.homeScene.setShowerOpen(true);
   const path=findPath([character.position.x,character.position.z],destination);
   if(!path.length||Math.hypot(path.at(-1)[0]-destination[0],path.at(-1)[1]-destination[1])>.45)return toast('這裡目前走不到');
   pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));
@@ -1184,7 +1187,7 @@ function openHomePanel(page){
      p.coins+=30;p.xp=Math.min(MAX_XP,p.xp+20);
      // One earned trophy may use an extra inventory slot; purchases retain their 40-item limit.
      if(!p.inventory.some(o=>o.item==='toy-trophy'))p.inventory.push({id:'toy-trophy-'+playerId(),item:'toy-trophy',room:null,slot:null});
-     record(p,'玩具保衛戰 · 三分鐘勝利',30);
+     record(p,'玩具保衛戰 · 兩分鐘勝利',30);
     });
     return '已保存：30 幣、20 EXP。積木恐龍獎盃已在「我的道具」，可以選擇房間擺放。';
    }
@@ -1213,6 +1216,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 

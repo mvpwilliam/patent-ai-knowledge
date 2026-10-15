@@ -921,6 +921,7 @@ function moveAt(e){
   const point=new T.Vector3();
   if(hit){window.homeGameMoveTo?.([hit.point.x,hit.point.z],hit.object.userData.kind);return}
   const objectHit=moveRay.intersectObject(root,true).find(h=>{if(h.object.userData.cameraFaded)return false;
+    for(let n=h.object;n;n=n.parent)if(n===showerFixed)return false;
     for(let n=h.object;n;n=n.parent)if(!n.visible)return false;
     const m=Array.isArray(h.object.material)?h.object.material:[h.object.material];return m.some(v=>v&&v.visible!==false&&(!v.transparent||v.opacity>.05));
   });
@@ -1018,6 +1019,7 @@ window.homeScene={get isNight(){return night},livingWindowView,setShowerWater,ge
     });
   },
   showNews,get currentRoom(){return current}};
+
 
 
 

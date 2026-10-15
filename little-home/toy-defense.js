@@ -1,14 +1,17 @@
 import * as T from './vendor/three.module.js';
-import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=toy3-1';
+import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
 
 export function installToyDefense({canStart,makeHero,onWin}){
  const world=document.querySelector('#world'),canvas=document.querySelector('#scene');
  const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./toy-defense.css?v=toy3-1',import.meta.url);document.head.append(css);
- const entry=document.createElement('button');entry.type='button';entry.title='玩具保衛戰 · 三分鐘';entry.setAttribute('aria-label',entry.title);
+ const entry=document.createElement('button');entry.type='button';entry.title='遊戲區';entry.setAttribute('aria-label',entry.title);
  entry.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h4v4h3V4h3v4h3V4h3v16H4zM10 20v-6h4v6"/></svg>';
  document.querySelector('.scene-menu-options').append(entry);
+ const games=document.createElement('dialog');games.className='game-dialog compact-dialog';games.setAttribute('aria-label','遊戲區');
+ games.innerHTML='<div class="dialog-head"><h2>遊戲區</h2><button aria-label="關閉遊戲區">×</button></div><div class="game-dialog-body" style="display:grid;gap:14px"><button class="game-primary" id="start-defense">🏰 城堡保衛戰 · 2 分鐘</button><a href="./escape.html" style="display:block;padding:18px;border-radius:14px;background:#e8eddf;color:#3d5949;text-align:center;text-decoration:none">⌘ 小屋密室 · 畫面之外</a></div>';
+ document.body.append(games);games.querySelector('.dialog-head button').onclick=()=>games.close();games.querySelector('#start-defense').onclick=()=>{games.close();open()};
  const ui=document.createElement('section');ui.id='toy-defense';ui.hidden=true;ui.setAttribute('aria-label','玩具保衛戰');
- ui.innerHTML=`<div class="td-hud"><div><small>TOY DEFENSE / 180 SEC</small><strong id="td-wave">客廳保衛戰</strong></div><strong id="td-clock">3:00</strong><button id="td-pause" aria-label="暫停戰鬥">Ⅱ</button></div>
+ ui.innerHTML=`<div class="td-hud"><div><small>TOY DEFENSE / 120 SEC</small><strong id="td-wave">客廳保衛戰</strong></div><strong id="td-clock">2:00</strong><button id="td-pause" aria-label="暫停戰鬥">Ⅱ</button></div>
  <div class="td-bars"><label>城堡 <progress id="td-castle" max="180" value="180"></progress><b id="td-castle-num">180</b></label><label>守衛 <progress id="td-hero" max="100" value="100"></progress><b id="td-hero-num">100</b></label><label id="td-boss-row" hidden>恐龍 <progress id="td-boss" max="480" value="480"></progress></label></div>
  <p id="td-notice" role="status">守住城堡，擊退積木恐龍</p>
  <div class="td-controls"><div id="td-stick" role="group" aria-label="拖曳移動角色"><span></span><small>移動</small></div><div class="td-actions"><button id="td-weapon">🫧<small>泡泡槍／切換</small></button><button id="td-dash">➜<small>閃避</small></button></div></div>
@@ -60,8 +63,8 @@ export function installToyDefense({canStart,makeHero,onWin}){
   ui.hidden=false;world.classList.add('td-active');
   const menu=document.querySelector('#scene-game-panel');menu.hidden=true;document.querySelector('#scene-menu-toggle').setAttribute('aria-expanded','false');
   state.status='intro';
-  modal('玩具保衛戰','三分鐘守住城堡，並擊退最後的積木恐龍。自動瞄準攻擊，手機拖曳左下搖桿走位。電腦用 WASD／方向鍵移動、空白鍵閃避、K 切換武器。每分鐘暫停選能力，切到背景也會暫停。',[
-   ['開始守護 · 3:00',()=>{state.status='playing';$('td-shade').hidden=true;last=0},true],['回到小屋',close]
+  modal('玩具保衛戰','兩分鐘守住城堡，並擊退最後的積木恐龍。自動瞄準攻擊，手機拖曳左下搖桿走位。電腦用 WASD／方向鍵移動、空白鍵閃避、K 切換武器。第 40、80 秒暫停選能力，切到背景也會暫停。',[
+   ['開始守護 · 2:00',()=>{state.status='playing';$('td-shade').hidden=true;last=0},true],['回到小屋',close]
   ]);
  }
  function dispose(){hero?.userData.disposeCostume?.();hero?.traverse(n=>{n.geometry?.dispose();if(n.material){for(const m of Array.isArray(n.material)?n.material:[n.material])m.dispose()}});for(const g of geometries)g.dispose();for(const m of materials)m.dispose();geometries=[];materials=[];matCache.clear();geoCache.clear();visuals.clear();shotViews=[];effectViews=[];scene=null;hero=null;castle=null}
@@ -83,8 +86,8 @@ export function installToyDefense({canStart,makeHero,onWin}){
  }
  function finish(){
   resultShown=true;clearInput();
-  if(state.status==='won')modal('三分鐘，守護成功！',`擊退 ${state.kills} 隻玩具怪。獲得 30 幣、20 EXP；首次勝利獲得積木恐龍獎盃。`,[['領取戰利品',claim,true]]);
-  else modal('再挑戰一次',`${state.reason}。本局擊退 ${state.kills} 隻玩具怪，撐了 ${Math.floor(state.time)} 秒。`,[['再玩三分鐘',()=>{for(const g of visuals.values())scene.remove(g);visuals.clear();state=createBattle();runId=crypto.randomUUID();resultShown=false;saved=false;last=0;$('td-weapon').innerHTML='🫧<small>泡泡槍／切換</small>';$('td-shade').hidden=true},true],['回到小屋',close]]);
+  if(state.status==='won')modal('兩分鐘，守護成功！',`擊退 ${state.kills} 隻玩具怪。獲得 30 幣、20 EXP；首次勝利獲得積木恐龍獎盃。`,[['領取戰利品',claim,true]]);
+  else modal('再挑戰一次',`${state.reason}。本局擊退 ${state.kills} 隻玩具怪，撐了 ${Math.floor(state.time)} 秒。`,[['再玩兩分鐘',()=>{for(const g of visuals.values())scene.remove(g);visuals.clear();state=createBattle();runId=crypto.randomUUID();resultShown=false;saved=false;last=0;$('td-weapon').innerHTML='🫧<small>泡泡槍／切換</small>';$('td-shade').hidden=true},true],['回到小屋',close]]);
  }
  function sync(){
   hero.position.set(state.hero.x,0,state.hero.z);hero.rotation.y=Math.atan2(state.hero.dx,state.hero.dz);hero.visible=state.hero.inv<=0||Math.floor(state.time*14)%2===0;
@@ -114,7 +117,7 @@ export function installToyDefense({canStart,makeHero,onWin}){
   const aspect=Math.max(.3,canvas.clientWidth/Math.max(1,canvas.clientHeight));const halfH=Math.max(7.6,7/aspect);camera.left=-halfH*aspect;camera.right=halfH*aspect;camera.top=halfH;camera.bottom=-halfH;camera.updateProjectionMatrix();
   sync();window.homeScene.renderer.render(scene,camera);return true;
  };
- entry.onclick=open;$('td-pause').onclick=pause;
+ entry.onclick=()=>games.showModal();$('td-pause').onclick=pause;
  const switchWeapon=()=>{if(state?.status!=='playing')return;state.weapon=state.weapon==='bubble'?'sword':'bubble';$('td-weapon').innerHTML=state.weapon==='bubble'?'🫧<small>泡泡槍／切換</small>':'⚔<small>玩具劍／切換</small>'};
  $('td-weapon').onclick=switchWeapon;$('td-dash').onclick=()=>{dash=true};
  const pad=$('td-stick');
@@ -129,3 +132,4 @@ export function installToyDefense({canStart,makeHero,onWin}){
  },true);
  document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{clearInput();pause()});document.addEventListener('visibilitychange',()=>{last=0;if(document.hidden){clearInput();pause()}});
 }
+

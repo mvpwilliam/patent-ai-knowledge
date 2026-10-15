@@ -1,5 +1,5 @@
 // Deterministic simulation: no DOM, WebGL, account or wall-clock dependencies.
-export const DURATION=180;
+export const DURATION=120;
 export const UPGRADES=[
  {id:'power',name:'強力彈簧',detail:'所有武器傷害增加 45%'},
  {id:'rapid',name:'高速齒輪',detail:'攻擊間隔縮短 25%'},
@@ -11,7 +11,7 @@ export const UPGRADES=[
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export function createBattle(random=Math.random){return {
- random,time:0,status:'playing',phase:1,choiceAt:60,choices:[],upgrades:[],
+ random,time:0,status:'playing',phase:1,choiceAt:40,choices:[],upgrades:[],
  hero:{x:0,z:3,hp:100,inv:0,dash:0,dashCD:0,dx:0,dz:-1},
  castle:{x:0,z:0,hp:180},enemies:[],shots:[],effects:[],spawn:1,fire:0,
  weapon:'bubble',damage:1,rate:1,range:1,armor:1,speed:1,pierce:false,
@@ -30,7 +30,7 @@ export function chooseUpgrade(s,id){
 function offer(s){
  const pool=[...UPGRADES];s.choices=[];
  while(s.choices.length<3)s.choices.push(pool.splice(Math.floor(s.random()*pool.length),1)[0]);
- s.status='choice';s.choiceAt+=60;s.phase++;s.hero.inv=1.2;
+ s.status='choice';s.choiceAt+=40;s.phase++;s.hero.inv=1.2;
 }
 function effect(s,x,z,color){if(s.effects.length<24)s.effects.push({x,z,color,life:.3})}
 function hitEnemy(s,e,damage){
@@ -58,11 +58,11 @@ export function stepBattle(s,input={},dt=1/30){
  h.z=clamp(h.z+(h.dash>0?h.dz:mz)*speed*dt,-5.1,5.1);
  if(dist(h,c)<1){const a=Math.atan2(h.z,h.x);h.x=Math.cos(a);h.z=Math.sin(a)}
  s.spawn-=dt;
- if(s.spawn<=0&&s.time<165&&s.enemies.length<8){
-  const r=s.random();spawnEnemy(s,s.time<40?'soldier':r<.30?'ranged':r<.57?'charger':'soldier');
-  s.spawn=s.time<60?3.8:s.time<120?2.8:3.4;
+ if(s.spawn<=0&&s.time<110&&s.enemies.length<8){
+  const r=s.random();spawnEnemy(s,s.time<27?'soldier':r<.30?'ranged':r<.57?'charger':'soldier');
+  s.spawn=s.time<40?3.8:s.time<80?2.8:3.4;
  }
- if(s.time>=145&&!s.bossSpawned){s.bossSpawned=true;spawnEnemy(s,'boss')}
+ if(s.time>=85&&!s.bossSpawned){s.bossSpawned=true;spawnEnemy(s,'boss')}
  s.fire-=dt;
  if(input.attack!==false&&s.fire<=0){
   const target=s.enemies.filter(e=>!e.dead&&dist(e,h)<(s.weapon==='sword'?1.9:5.5*s.range)).sort((a,b)=>dist(a,h)-dist(b,h))[0];
@@ -105,6 +105,7 @@ export function stepBattle(s,input={},dt=1/30){
  for(const e of s.effects)e.life-=dt;s.effects=s.effects.filter(e=>e.life>0);
  h.hp=Math.max(0,h.hp);c.hp=Math.max(0,c.hp);
  if(h.hp<=0||c.hp<=0){s.status='lost';s.reason=h.hp<=0?'守衛需要休息了':'城堡被攻破了'}
- else if(s.time>=DURATION){s.status=s.bossDefeated?'won':'lost';s.reason=s.bossDefeated?'守住三分鐘！':'時間到了，積木恐龍還沒被擊退'}
- else if(s.time>=s.choiceAt&&s.choiceAt<180)offer(s);
+ else if(s.time>=DURATION){s.status=s.bossDefeated?'won':'lost';s.reason=s.bossDefeated?'守住兩分鐘！':'時間到了，積木恐龍還沒被擊退'}
+ else if(s.time>=s.choiceAt&&s.choiceAt<DURATION)offer(s);
 }
+
