@@ -448,10 +448,10 @@ for(const z of [-.27,.27])childBlindCords.push(box(-.125,1.44,z,.006,1.50,.008,'
 finishSection('balcony-door-and-north-windows');
 // Living area: the continuous pale oak remains visible around the seating.
 box(.23,.4,2.25,.44,.42,3.2,C.navy,.035);box(.465,.42,1.2,.025,.26,.75,C.white,.008);box(.465,.42,3.25,.025,.26,.75,C.white,.008);box(.465,.42,2.23,.03,.16,.95,C.dark);box(.24,.64,2.28,.43,.045,3.32,C.navy,.014);
-box(.15,1.18,2.1,.095,.93,1.65,'#293b3e',.022);const tvMat=new T.MeshStandardMaterial({color:'#60878b',emissive:'#496b70',emissiveIntensity:.45,roughness:.28});box(.204,1.18,2.1,.012,.83,1.54,tvMat,.009);const tvArt=new T.Group();root.add(tvArt);box(.215,1.18,2.1,.007,.055,.9,'#cadcc8',.002,tvArt);box(.216,1.37,2.1,.006,.11,.41,'#d2d9ad',.01,tvArt);box(.216,1.06,2.1,.006,.04,.65,'#9cb9ac',0,tvArt);
+box(.15,1.18,2.1,.095,1.116,1.98,'#293b3e',.022);const tvMat=new T.MeshStandardMaterial({color:'#60878b',emissive:'#496b70',emissiveIntensity:.45,roughness:.28});box(.204,1.18,2.1,.012,.996,1.848,tvMat,.009);const tvArt=new T.Group();root.add(tvArt);box(.215,1.18,2.1,.007,.055,.9,'#cadcc8',.002,tvArt);box(.216,1.37,2.1,.006,.11,.41,'#d2d9ad',.01,tvArt);box(.216,1.06,2.1,.006,.04,.65,'#9cb9ac',0,tvArt);
 const tvTexture=new T.TextureLoader().load('./assets/tv-picture.webp');
 tvTexture.colorSpace=T.SRGBColorSpace;
-const newsPanel=new T.Mesh(new T.PlaneGeometry(1.52,.77),new T.MeshBasicMaterial({map:tvTexture,side:T.DoubleSide}));
+const newsPanel=new T.Mesh(new T.PlaneGeometry(1.824,.924),new T.MeshBasicMaterial({map:tvTexture,side:T.DoubleSide}));
 newsPanel.rotation.y=Math.PI/2;newsPanel.position.set(.224,1.18,2.1);newsPanel.visible=false;root.add(newsPanel);
 tvArt.visible=false;tvMat.color.set('#141b20');tvMat.emissiveIntensity=0;
 function showNews(on){tv=on;tvMat.color.set(on?'#ffffff':'#141b20');tvMat.emissiveIntensity=on?.45:0;tvArt.visible=false;newsPanel.visible=on;}
@@ -567,6 +567,25 @@ rod([showerHeadX,.13,showerHeadZ],[showerHeadX,1.60,showerHeadZ],.02,C.metal);
 rod([showerHeadX,1.60,showerHeadZ],[showerHeadX,1.60,showerHeadZ-.20],.02,C.metal);
 cyl(showerHeadX,1.58,showerHeadZ-.20,.085,.03,C.metal);
 finishSection('shower-fixtures');
+// One fixed spray emitter serves both manual taps and the resident's shower.
+const showerHeadHit=new T.Mesh(new T.BoxGeometry(.28,.30,.32),windowHitMaterial);
+showerHeadHit.name='shower-head-hit';showerHeadHit.position.set(scaleX(showerHeadX),1.55,showerHeadZ-.20);scene.add(showerHeadHit);
+const sprayPositions=new Float32Array(72*3),sprayGeometry=new T.BufferGeometry();
+sprayGeometry.setAttribute('position',new T.BufferAttribute(sprayPositions,3));
+const showerSpray=new T.Points(sprayGeometry,new T.PointsMaterial({color:'#a7dbea',size:.024,transparent:true,opacity:.72,depthWrite:false}));
+showerSpray.name='shower-water';showerSpray.visible=false;showerSpray.frustumCulled=false;scene.add(showerSpray);
+let showerWaterOn=false;
+function setShowerWater(open){showerWaterOn=!!open;showerSpray.visible=showerWaterOn}
+function updateShowerWater(now){
+ if(!showerWaterOn)return;
+ for(let i=0;i<72;i++){
+  const fall=((now*.00125+i/72)%1),a=i*2.399963,r=.025+fall*.16;
+  sprayPositions[i*3]=scaleX(showerHeadX)+Math.cos(a)*r;
+  sprayPositions[i*3+1]=1.56-fall*1.43;
+  sprayPositions[i*3+2]=showerHeadZ-.20+Math.sin(a)*r;
+ }
+ sprayGeometry.attributes.position.needsUpdate=true;
+}
 // Bathroom interior cladding, matching the reference's charcoal stone
 // tiles with warm white veins and light 60 x 30 cm rectangular grout lines.
 const bathTileCanvas=document.createElement('canvas');bathTileCanvas.width=1024;bathTileCanvas.height=512;
@@ -889,6 +908,23 @@ function moveAt(e){
   if(moveRay.ray.intersectPlane(groundPlane,point))window.homeGameMoveTo?.([point.x,point.z],'walk');
 }
 const doorRay=new T.Raycaster(),doorPointer=new T.Vector2();
+// Shower controls act on the tap itself, without an unreachable approach point.
+function toggleShowerAt(e){
+ const rect=canvas.getBoundingClientRect();
+ doorPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+ scene.updateMatrixWorld(true);doorRay.setFromCamera(doorPointer,camera);
+ const hit=doorRay.intersectObjects([showerHeadHit,showerDoor],true)[0];if(!hit)return false;
+ const blocked=doorRay.intersectObject(root,true).some(h=>{
+  if(h.distance>=hit.distance-.03)return false;
+  for(let n=h.object;n;n=n.parent){if(n===showerDoor)return false;if(!n.visible||n.userData.cameraFaded)return false}
+  const materials=Array.isArray(h.object.material)?h.object.material:[h.object.material];
+  return materials.some(m=>m&&m.visible!==false&&(!m.transparent||m.opacity>.9));
+ });
+ if(blocked)return false;
+ if(hit.object===showerHeadHit){setShowerWater(!showerWaterOn);toast(showerWaterOn?'蓮蓬頭開始噴水':'蓮蓬頭已關水')}
+ else toggleShowerDoor();
+ if(current==='bath')selectRoom('bath');return true;
+}
 function toggleDoorAt(e){
   if(wallLow)return;
   const rect=canvas.getBoundingClientRect();
@@ -917,7 +953,7 @@ canvas.addEventListener('pointermove',e=>{const prior=pointers.get(e.pointerId);
 function release(e){
   const p=pointers.get(e.pointerId);
   if(e.type==='pointerup'&&pointers.size===1&&p&&!p.moved&&Math.hypot(e.clientX-p.startX,e.clientY-p.startY)<8){
-    if(window.homeGameCharacterAt?.(e)||window.homeGameAttackAt?.(e)){
+    if(toggleShowerAt(e)||window.homeGameCharacterAt?.(e)||window.homeGameAttackAt?.(e)){
       clearTimeout(singleTapTimer);lastTap=null;e.preventDefault();
     }else{
       const now=performance.now();
@@ -943,12 +979,12 @@ renderHandle=requestAnimationFrame(animate);
 if(now-lastRender<renderInterval-.5)return;
 const elapsed=now-lastRender;lastRender=now-((Number.isFinite(elapsed)&&elapsed>=renderInterval?elapsed%renderInterval:0));
 if(window.homeBattleFrame?.(now))return;
-window.homeGameUpdate?.(now);if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=followDistance;phi=followPitch;const angle=followYaw;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?(followMode?1.2:1.37):1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}fridgeLeaves.forEach((leaf,i)=>{leaf.rotation.y+=((fridgeOpen?(i===0?1:-1)*Math.PI/3:0)-leaf.rotation.y)*.12});updateCoverings();root.updateMatrixWorld(true);wallFader.update(camera,window.homeGameFocus?.()?.position,followMode,performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}document.addEventListener('visibilitychange',()=>{
+window.homeGameUpdate?.(now);updateShowerWater(now);if(followMode){const focus=window.homeGameFocus?.();if(focus){desiredTarget.set(focus.position.x,focus.position.y+.75,focus.position.z);desiredDist=followDistance;phi=followPitch;const angle=followYaw;theta+=Math.atan2(Math.sin(angle-theta),Math.cos(angle-theta))*.08}}target.lerp(desiredTarget,followMode?.15:.075);dist+=(desiredDist-dist)*.075;let r=dist*(portrait?(followMode?1.2:1.37):1);camera.position.set(target.x+Math.sin(theta)*Math.sin(phi)*r,target.y+Math.cos(phi)*r,target.z+Math.cos(theta)*Math.sin(phi)*r);camera.lookAt(target);for(const door of [...interiorDoors,showerDoor,bathWindow,balconyDoorLeaf])door.rotation.y+=(door.userData.door.target-door.rotation.y)*.17;for(const win of slidingWindows){const state=win.userData.slider;for(let i=0;i<2;i++){state.progress[i]+=((state.opens[i]?1:0)-state.progress[i])*.17;state.leaves[i].position.z=state.origins[i]+(i===0?1:-1)*state.travel*state.progress[i]}}fridgeLeaves.forEach((leaf,i)=>{leaf.rotation.y+=((fridgeOpen?(i===0?1:-1)*Math.PI/3:0)-leaf.rotation.y)*.12});updateCoverings();root.updateMatrixWorld(true);wallFader.update(camera,window.homeGameFocus?.()?.position,followMode,performance.now());renderer.render(scene,camera);if(frame++===0)$('#loading').hidden=true}document.addEventListener('visibilitychange',()=>{
 if(document.hidden){cancelAnimationFrame(renderHandle);renderHandle=0}
 else if(!renderHandle){lastRender=-Infinity;renderHandle=requestAnimationFrame(animate)}
 });renderHandle=requestAnimationFrame(animate);
 // Scene inventory available for non-rendering diagnostics and future game integration.
-window.homeScene={showerTarget:[scaleX(showerHeadX),.10,showerHeadZ-.20],layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,getFollowOrbit:()=>({yaw:followYaw,pitch:followPitch,distance:followDistance}),interactionTargets,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
+window.homeScene={setShowerWater,get showerWaterOn(){return showerWaterOn},showerHeadHit,showerSpray,showerTarget:[scaleX(showerHeadX),.10,showerHeadZ-.20],layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,getFollowOrbit:()=>({yaw:followYaw,pitch:followPitch,distance:followDistance}),interactionTargets,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
   setBalconyDoor(near){const state=balconyDoorLeaf.userData.door;if(near){state.open=true;state.target=state.openAngle}else if(state.autoNear){state.open=false;state.target=state.closedAngle}state.autoNear=near},
   setFridgeOpen(open){fridgeOpen=!!open},
   setShowerOpen(open){const state=showerDoor.userData.door;state.open=!!open;state.target=state.open?state.openAngle:state.closedAngle},

@@ -11,7 +11,7 @@ import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furn
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=editor-visor-1';
 import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=editor-visor-1';
 import {openAvatarEditor} from './avatar-editor.js?v=npc-ball-1';
-import {createHouseNPC} from './house-npc.js?v=chore-route-fix-1';
+import {createHouseNPC} from './house-npc.js?v=shower-tap-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=home-detail-2';
 import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=walkways-20-1';
@@ -1079,9 +1079,10 @@ function updateMonsterRoam(dt,now){
  if(phase<10||phase>=13)return;
  const t=(phase-10)/3,wind=Math.min(1,t/.30),strike=Math.max(0,Math.min(1,(t-.30)/.20)),recover=Math.max(0,Math.min(1,(t-.50)/.50));
  const ease=x=>x*x*(3-2*x),arm=rig.arms[1];
- arm.rotation.x=(-.10+.35*ease(wind)-1.45*ease(strike))*(1-ease(recover))-.10*ease(recover);
- arm.rotation.z=-.18*Math.sin(Math.PI*t);
- rig.chest.rotation.x=.07*Math.sin(Math.PI*t);
+ arm.rotation.x=(-.10+.65*ease(wind)-2.15*ease(strike))*(1-ease(recover))-.10*ease(recover);
+ arm.rotation.z=-.40*Math.sin(Math.PI*t);
+ rig.chest.rotation.x=.18*Math.sin(Math.PI*t);
+ rig.chest.rotation.y=.12*Math.sin(2*Math.PI*t);
 }
 
 function renderMonster(){
