@@ -1,3 +1,4 @@
+import {applyChoreContact,resetChoreContact,contactStops} from './chore-contact.js?v=contact-1';
 import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=side-fast-1';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
@@ -373,6 +374,7 @@ function animate(now){
   updateMarkers();updateMonsterLabel();updateCharacterFeedback();
   if(!character)return;
   const dt=Math.min(.06,(now-lastFrame)/1000||0);lastFrame=now;updateMonsterRoam(dt,now);
+  resetChoreContact(character);
   const b=character.userData.body;
   const [leftArm,rightArm]=character.userData.arms,[leftLeg,rightLeg]=character.userData.legs;
   leftArm.position.set(-.20,.42,.015);rightArm.position.set(.20,.42,.015);
@@ -420,9 +422,9 @@ function animate(now){
   }else if(activity?.phase==='work'){
     faceTaskTarget(activity.task);
     const t=(now-activity.started)/1000;
-    b.position.y=.012*Math.sin(t*14);b.rotation.x=.12+Math.sin(t*10)*.12;b.rotation.z=0;
+    b.position.y=0;b.rotation.set(0,0,0);
     leftArm.position.z=.18;rightArm.position.z=.18;
-    leftArm.position.y=.49+Math.sin(t*16)*.06;rightArm.position.y=.49+Math.sin(t*16+Math.PI)*.06;
+    leftArm.position.y=.49+Math.sin(t*3)*.06;rightArm.position.y=.49+Math.sin(t*3+Math.PI)*.06;
     leftArm.rotation.x=rightArm.rotation.x=-.75;
     if(activity.task.id==='scenery'){b.position.y=.008*Math.sin(t*3);b.rotation.set(0,0,0);leftArm.position.set(-.20,.42,.015);rightArm.position.set(.20,.42,.015);leftArm.rotation.x=rightArm.rotation.x=0}
     if(t>=(activity.task.id==='scenery'?7:2)){if(activity.task.id==='scenery')hideScenery();const finished=activity;activity=null;b.rotation.x=0;finishTask(finished)}
@@ -433,6 +435,7 @@ function animate(now){
   }else{b.position.y=Math.sin(now*.0015)*.008;b.rotation.x=0;b.rotation.z=0}
   updateHandAction(now,rightArm);
   if(!(travel?.phase==='settle'&&(travel.bedSlot||travel.kind==='sofa'||travel.kind.startsWith('diningChair')))){character.userData.updatePose?.(activity?.phase==='work'?'work':travel?'walk':pose);for(const side of ['Left','Right']){const shoulder=character.getObjectByName(side+' shoulder');if(shoulder)shoulder.rotation.z=0}}
+  if(activity?.phase==='work'&&activity.surface)applyChoreContact(character,activity.surface,(now-activity.started)/1000);
   if(furnitureSupport&&(travel?.phase==='settle'||restExit)&&!activity)keepAboveFurniture(character,furnitureSupport);
   const nearBalconyDoor=[character,houseNPC?.character].filter(Boolean).some(p=>Math.abs(p.position.x-scaleX(5.83))<1.12&&Math.abs(p.position.z-8.68)<.82);
   window.homeScene?.setBalconyDoor(nearBalconyDoor);
@@ -509,8 +512,25 @@ function updateMarkers(){
   marker.style.left=x+'px';marker.style.top=y+'px';
  }
 }
+
+// Contact planes match the physical furniture, not the floating ! markers.
+function choreSurface(task){
+ const rect=(kind,x,z,w,d,y)=>{const c=kind?furnitureXYZ(kind,[x,y,z]):[x,y,z];return {x0:c[0]-w/2,x1:c[0]+w/2,z0:c[2]-d/2,z1:c[2]+d/2,y}};
+ switch(task.id){
+ case 'table':case 'tidytable':return rect('dining',2.22,6.30,.75,1.35,.82);
+ case 'sofa':return rect('sofa',2.54,2.03,.68,2.06,.575);
+ case 'mainbed':case 'fold':return rect('mainBed',5.44,1.64,1.90,1.95,.63);
+ case 'childbed':return rect('childBed',5.12,7,1.1,1.94,.61);
+ case 'counter':return rect(null,kitchenStart+.30,9.645,.55,.70,.925);
+ case 'stove':return rect(null,stoveX,9.60,.65,.44,.968);
+ case 'dishes':return rect(null,sinkX,9.61,.55,.55,.925);
+ case 'basin':return rect('basin',4.73,4.10,.62,.64,.82);
+ default:return null;
+ }
+}
+
 function faceTaskTarget(task){
- if(!character)return;const target=placement(task).marker,dx=target[0]-character.position.x,dz=target[2]-character.position.z;
+ if(!character)return;const s=activity?.surface,target=s?[(s.x0+s.x1)/2,s.y,(s.z0+s.z1)/2]:placement(task).marker,dx=target[0]-character.position.x,dz=target[2]-character.position.z;
  if(Math.hypot(dx,dz)>.01)character.rotation.y=Math.atan2(dx,dz);
 }
 function startTask(t){
@@ -525,10 +545,17 @@ function startTask(t){
   leaveRest();
   restExit=null;character.position.y=.07;
   pose='stand';
-  const path=findPath([character.position.x,character.position.z],placement(t).stop);
+  let path=findPath([character.position.x,character.position.z],placement(t).stop);
+  const surface=choreSurface(t);
+  if(surface){
+   const candidates=contactStops(surface).filter(p=>walkable(...p)).map(p=>findPath([character.position.x,character.position.z],p)).filter(p=>p.length>=2);
+   candidates.sort((a,b)=>a.length-b.length);
+   if(!candidates.length)return toast('家具旁暫時沒有能站穩的位置');
+   path=candidates[0];
+  }
   if(path.length<2)return toast('目前找不到通往家事位置的路');
   pose='walk';document.querySelectorAll('[data-pose]').forEach(b=>b.classList.toggle('active',false));
-  activity={task:t,phase:'run',path,index:0,day:today()};
+  activity={task:t,phase:'run',path,index:0,day:today(),surface};
   if($('#game-dialog').open)$('#game-dialog').close();
   renderTasks();
 }
@@ -1142,6 +1169,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
