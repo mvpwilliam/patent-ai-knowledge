@@ -23,7 +23,15 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  }
  const booster=new T.Mesh(new T.BoxGeometry(.36,.09,.34),new T.MeshStandardMaterial({color:'#d4cfad',roughness:1}));booster.name='npc-lego-seat-cushion';booster.position.set(1.50+furnitureShift.dining,.575,5.94);booster.visible=false;home.scene.add(booster);
  const bathX=5.35+furnitureShift.toilet;
+ // One lightweight ball, reused for every two-minute play session.
+ const playBall=new T.Group();playBall.name='npc-play-ball';playBall.visible=false;home.scene.add(playBall);
+ const ballGeometry=new T.SphereGeometry(.115,16,10);
+ const ballMesh=new T.Mesh(ballGeometry,new T.MeshStandardMaterial({color:'#df9856',roughness:.8}));ballMesh.castShadow=true;playBall.add(ballMesh);
+ const stripeMaterial=new T.MeshStandardMaterial({color:'#fff0cd',roughness:.8});
+ for(const angle of [0,Math.PI/2]){const stripe=new T.Mesh(new T.TorusGeometry(.115,.007,4,20),stripeMaterial);stripe.rotation.y=angle;playBall.add(stripe)}
+ let ballStarted=0;
  const actions=[
+  {id:'ball',label:'在客廳玩球',approach:pointXZ([1.2,3.7]),pose:'stand',angle:0,duration:120000},
   {id:'tv',label:'坐沙發看電視',approach:furnitureXZ('sofa',[1.72,2.04]),target:furnitureXYZ('sofa',[2.48,.59,2.03]),pose:'sit',angle:-Math.PI/2},
   {id:'lego',label:'在餐桌玩樂高',approach:furnitureXZ('dining',[.88,5.94]),target:furnitureXYZ('dining',[1.56,.62,5.94]),pose:'sit',angle:Math.PI/2,duration:60000},
   ...bedSlots('childBed').map(slot=>{const bed=alignBedSlot(character,slot);return {id:'sleep',label:'在次臥睡覺',approach:bed.exit,target:bed.target,pose:'lie',angle:bed.angle,bed}}),
@@ -46,6 +54,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
   character.userData.setBathOutfit?.(false);
   if(ownsTV){home.showNews?.(false);ownsTV=false}
   lego.visible=false;booster.visible=false;
+  playBall.visible=false;
   if(ownsFridge){home.setFridgeOpen?.(false);ownsFridge=false}
   water.visible=false;
   state=exit?'return':'wait';settle=0;from=character.position.clone();until=0;
@@ -66,6 +75,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
   if(action.id==='fridge'){home.setFridgeOpen?.(true);ownsFridge=true}
   if(action.id==='tv'){home.showNews?.(true);ownsTV=true}
   if(action.id==='lego'){lego.visible=true;booster.visible=true}
+  if(action.id==='ball'){ballStarted=now;playBall.visible=true}
   if(action.id==='curtain')home.toggleSheer?.();
   state=action.target?'settle':'act';until=now+(action.duration||10000+random()*18000);
  }
@@ -94,6 +104,13 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
   if(action.pose==='sit'){for(const leg of legs)leg.rotation.x=-.85;b.rotation.x=action.id==='tv'?-.23:0}
   if(action.pose==='lie')b.rotation.x=-Math.PI/2;
   if(action.pose==='work'){left.rotation.x=right.rotation.x=-.75+Math.sin(now*.006)*.15}
+  if(action.id==='ball'){
+   // Bounce in place rather than chase a ball through furniture or walls.
+   const phase=((now-ballStarted)%900)/900,bounce=4*phase*(1-phase);
+   playBall.position.set(character.position.x+.20,.19+bounce*.46,character.position.z+.34);
+   playBall.rotation.set(phase*Math.PI*2,0,phase*Math.PI);
+   right.rotation.x=-.45-bounce*.35;b.position.y=-.025*(1-bounce);
+  }
   if(action.id==='shower'){water.visible=true;water.position.copy(character.position);water.children.forEach((drop,i)=>drop.position.set(Math.sin(i*2.4)*.17,1.3-((now*.001+i*.13)%1.2),Math.cos(i*2.4)*.17))}
   if(now>=until||occupied(action))finish();
  }
@@ -101,6 +118,12 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
   // Run after the articulated pose is applied, so actual clothing vertices
   // rest above the cushion while feet may hang over its front edge.
   if(state==='act'&&action?.id==='tv')keepAboveFurniture(character,furnitureSupportSurfaces(home.scene,'sofa'));
+  if(state==='act'&&action?.id==='ball'){
+   const phase=((now-ballStarted)%900)/900,bounce=4*phase*(1-phase);
+   const shoulder=character.getObjectByName('Right shoulder'),elbow=character.getObjectByName('Right elbow');
+   if(shoulder)shoulder.rotation.x=-.4-bounce*.4;
+   if(elbow)elbow.rotation.x=-.35-bounce*.35;
+  }
   if(state!=='act'||action?.id!=='lego')return;
   for(const [i,side]of ['Left','Right'].entries()){
    const shoulder=character.getObjectByName(side+' shoulder'),elbow=character.getObjectByName(side+' elbow');
@@ -111,6 +134,7 @@ export function createHouseNPC(home,makeCharacter,getPeople,random=Math.random){
  };
  return {character,update,actions,get state(){return state},get action(){return action},startAction(id,now=performance.now()){if(state!=='wait')return false;return choose(now,id)}};
 }
+
 
 
 

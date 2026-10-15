@@ -497,9 +497,8 @@ box(.095,.55,.314,.43,.38,.024,'#303e3d',0,peninsula);
 for(const yy of [.22,.49,.71]){box(.5,yy,.31,.30,.21,.025,'#b5aa91',.009,peninsula);box(.5,yy+.065,.33,.20,.013,.017,C.dark,0,peninsula)}
 finishSection('island','translate',furnitureShift.island);
 // Keep the second-bedroom boundary clear of the former tall wardrobe block.
-// Master bedroom: bed only, with the headboard against the exterior wall.
+// Master bedroom: low bed and white pillows, without a headboard.
 // No rug underneath the master bed; leave the wood floor exposed.
-box(6.34,.54,1.64,.16,.94,2.05,'#b0ad98',.08);
 box(5.44,.29,1.64,1.85,.35,1.94,C.wood,.045);
 box(5.44,.52,1.64,1.90,.22,1.95,C.white,.08);
 for(const z of [1.04,1.64,2.24]){const pillow=box(6.04,.70,z,.45,.17,.48,C.white,.07);pillow.rotation.z=-.04}
@@ -640,11 +639,10 @@ bathWallFace('z',4.615,windowRight,showerRight,1.20,2.10,1,'bath-tile-window-rig
 bathWallFace('x',windowWallLeft,4.55,4.625,.10,2.6,1,'bath-tile-corner-side');
 bathWallFace('z',4.625,bathRight,windowWallLeft,.10,2.6,1,'bath-tile-corner-end');
 finishSection('bath-wall-finishes','exact');walls.push(root.getObjectByName('bath-wall-finishes'));
-// Child room: only the bed; the headboard faces the opposite kitchen-side wall.
+// Child room: low bed and white pillows, without a headboard.
 box(5.12,.25,7.00,1.1,.35,1.95,C.wood,.06);
 box(5.12,.51,7.00,1.1,.20,1.94,C.white,.055);
 for(const x of [4.85,5.39])box(x,.70,7.76,.42,.18,.37,C.white,.07);
-box(5.12,.46,8.08,1.13,.55,.11,C.woodlight,.03);
 finishSection('child-bed','translate',furnitureShift.childBed);
 // Kitchen and appliances. The refrigerator-side built-in is a separate tall
 // unit: overhead doors, open display shelf, appliance counter and microwave.
@@ -962,6 +960,7 @@ window.homeScene={layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShif
     });
   },
   showNews,get currentRoom(){return current}};
+
 
 
 

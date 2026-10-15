@@ -9,8 +9,8 @@ import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDyn
 import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=entry-expand-1';
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=editor-visor-1';
 import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=editor-visor-1';
-import {openAvatarEditor} from './avatar-editor.js?v=editor-visor-1';
-import {createHouseNPC} from './house-npc.js?v=pillow-header-1';
+import {openAvatarEditor} from './avatar-editor.js?v=npc-ball-1';
+import {createHouseNPC} from './house-npc.js?v=npc-ball-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=pillow-header-1';
 import {rigMonster,animateMonsterStride,monsterBoxesAt,animateBedEntry,BED_SETTLE_SECONDS,animateSeatEntry,SEAT_SETTLE_SECONDS,furnitureSupportSurfaces,keepAboveFurniture} from './character-motion.js?v=walkways-20-1';
@@ -1142,6 +1142,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
