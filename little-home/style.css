@@ -95,16 +95,21 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #game-dialog input[type=color]::-webkit-color-swatch-wrapper{padding:0}
 #game-dialog input[type=color]::-webkit-color-swatch{border:0;border-radius:5px}
 #game-dialog input[type=color]::-moz-color-swatch{border:0;border-radius:5px}
-.pose-radial{position:absolute;width:196px;height:196px;transform:translate(-50%,-50%);z-index:12;pointer-events:none;border:1px solid #ffffff80;border-radius:50%;background:radial-gradient(circle,transparent 38%,#f7f8ed38 39%,#f7f8ed65 67%,transparent 68%);animation:radial-appear .16s ease-out}
+.pose-radial{position:absolute;width:140px;height:200px;transform:translate(-50%,-50%);z-index:12;pointer-events:none;animation:radial-appear .16s ease-out}
+.pose-radial::before{content:"";position:absolute;inset:20px 5px 20px 0;border:1px solid #ffffff8c;border-radius:22% 75% 75% 22%;background:#fffdf452;pointer-events:none}
+.pose-radial[data-side=left]::before{transform:scaleX(-1)}
 .pose-radial[hidden],.td-active .pose-radial{display:none!important}
 .pose-radial button{position:absolute;width:56px;height:56px;border-radius:50%;padding:6px;background:#fffdf4f2;border:1px solid #fff;color:#405f50;box-shadow:0 4px 14px #253d3524;pointer-events:auto;touch-action:manipulation;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-family:"HomeRoundedLabel","PingFang TC",sans-serif;font-size:12px}
 .pose-radial button svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
-.pose-radial [data-pose=stand]{left:70px;top:0}
-.pose-radial [data-pose=sit]{left:5px;top:115px}
-.pose-radial [data-pose=lie]{right:5px;top:115px}
+.pose-radial [data-pose=stand]{left:42px;top:0}
+.pose-radial [data-pose=sit]{left:80px;top:72px}
+.pose-radial [data-pose=lie]{left:42px;top:144px}
+.pose-radial[data-side=left] [data-pose=stand],.pose-radial[data-side=left] [data-pose=lie]{left:42px}
+.pose-radial[data-side=left] [data-pose=sit]{left:4px}
+.pose-radial[data-side=left] .radial-close{left:96px}
 .pose-radial button.active{background:#405f50;color:#fff;border-color:#b9cbb7}
 .pose-radial button:hover{box-shadow:0 4px 20px #253d3540}
-.pose-radial .radial-close{left:76px;top:76px;width:44px;height:44px;font-family:inherit;font-size:23px;background:#fffdf4d9;box-shadow:none}
+.pose-radial .radial-close{left:0;top:78px;width:44px;height:44px;font-family:inherit;font-size:23px;background:#fffdf4d9;box-shadow:none}
 @keyframes radial-appear{from{opacity:0;transform:translate(-50%,-50%) scale(.85)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
 @media(prefers-reduced-motion:reduce){.pose-radial{animation:none}}
 #world .scene-bottom{bottom:78px;pointer-events:none}
@@ -245,5 +250,10 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 #scene-xp-fill{position:absolute;bottom:0;left:0;width:100%;height:0;background:linear-gradient(to top,#537653,#aac580);border-radius:8px;transition:height .4s ease}
 @media(max-width:700px){#world .scene-xp{top:82px;right:16px}}
 @media(prefers-reduced-motion:reduce){#scene-xp-fill{transition:none}}
+
+
+
+.character-settings{border-top:1px solid #d9dfd3;padding:18px 0 4px}.character-settings button{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:48px;padding:12px 16px;border-radius:12px;background:#e9eee3;text-align:left;font-size:14px}.character-settings small{display:block;margin:8px 4px;color:#758477;font-size:11px}
+
 
 

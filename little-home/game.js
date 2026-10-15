@@ -1,5 +1,6 @@
 import * as T from './vendor/three.module.js';
-import {installPoseRadial} from './pose-radial.js?v=radial-1';
+import {installPoseRadial} from './pose-radial.js?v=side-fast-1';
+import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=home-fixes-1';
 import {installToyDefense} from './toy-defense.js?v=toy3-1';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
@@ -641,43 +642,69 @@ async function subscribeHome(create=false){
   joining=true;homeReady=false;clearSubscriptions();claims={};renderTasks();
   $('#home-share').disabled=true;
   $('#home-code').value=code;$('#account-state').textContent='正在連接家庭…';
+  homeId=code;
+  const joiningUid=user.uid,isCurrentHome=()=>user?.uid===joiningUid&&homeId===code;
+  const cached=!create&&loadHomeCache(localStorage,user.uid,code);
+  gameMeta={id:GAME_META_ID,players:{}};player=newPlayer();profileCache={};
+  if(cached){
+    avatar=outfit(cached.avatar);player=normalizePlayer(cached.player);
+    if(player.avatarDesign&&!designPending)setAvatarDesign(player.avatarDesign);
+    gameMeta.players[user.uid]=player;gameMeta.monster=cached.monster;
+    fillAvatar();setCharacter(avatar);
+    $('#account-state').textContent='已顯示上次資料，正在確認雲端進度…';
+  }
+  renderEconomy();renderPlacements();syncCharacters();renderMonster();
   try{
     const homeRef=api.doc(db,'homes',code);
+    const profileRef=api.doc(db,'homes',code,'profiles',user.uid);
+    let profile;
     if(create){
       await api.runTransaction(db,async tx=>{
         const existing=await tx.get(homeRef);
         if(existing.exists())throw new Error('請再按一次建立家庭');
         tx.set(homeRef,{ownerUid:user.uid,createdAt:api.serverTimestamp()});
       });
+      profile=await api.getDocFromServer(profileRef);
     }else{
-      const home=await api.getDoc(homeRef);
+      // These reads do not depend on each other; start both together.
+      const pair=await Promise.all([api.getDocFromServer(homeRef),api.getDocFromServer(profileRef)]);
+      const home=pair[0];profile=pair[1];
       if(!home.exists())throw new Error('找不到這個家庭，請檢查邀請連結或家庭代碼');
     }
-    homeId=code;
-    const profileRef=api.doc(db,'homes',homeId,'profiles',user.uid);
-    const profile=await api.getDoc(profileRef);
+    if(!isCurrentHome())return;
     if(profile.exists()){
+      const previousAvatar=JSON.stringify(outfit(avatar));
       avatar=outfit(profile.data());localStorage.setItem('little-home-avatar',JSON.stringify(avatar));
-      fillAvatar();setCharacter(avatar);
+      fillAvatar();if(!character||previousAvatar!==JSON.stringify(avatar))setCharacter(avatar);
       if(!hasChosenName()){await ensureAppearance();await api.setDoc(profileRef,outfit(avatar))}
       localStorage.setItem(appearanceKey(),'1');
     }else{await ensureAppearance();await api.setDoc(profileRef,outfit(avatar))}
     const tasksRef=api.doc(db,'homes',homeId,'settings','tasks');
-    const savedTasks=await api.getDoc(tasksRef);
+    const savedTasks=await api.getDocFromServer(tasksRef);
+    if(!isCurrentHome())return;
     if(!savedTasks.exists())await api.setDoc(tasksRef,{items:create?tasks:defaults});
+    const initialItems=savedTasks.exists()?savedTasks.data().items:(create?tasks:defaults);
+    tasks=normalizeTasks(initialItems);
+    // Apply the first server result immediately; do not wait for the subscription.
+    applyMeta(initialItems.find(t=>t.id===GAME_META_ID));
     localStorage.setItem('little-home-code',homeId);
     gameDay=today();homeReady=true;
     $('#account-state').textContent=user.isAnonymous?'訪客已加入家庭。綁定 Google 可在新裝置取回進度。':'Google 帳號已加入家庭，人物進度會同步。';
     $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;
     $('#home-share').disabled=false;
-    unsubscribeTasks=api.onSnapshot(tasksRef,snap=>{
+    unsubscribeTasks=api.onSnapshot(tasksRef,{includeMetadataChanges:true},snap=>{
+      if(!isCurrentHome()||snap.metadata.fromCache)return; // Never roll back to an older SDK cache.
       const items=snap.exists()?snap.data().items:defaults;tasks=normalizeTasks(items);applyMeta(items.find(t=>t.id===GAME_META_ID));renderTasks();
     },error=>{homeReady=false;renderTasks();familyError(error)});
     subscribeClaims();
     unsubscribeProfiles=api.onSnapshot(api.collection(db,'homes',homeId,'profiles'),snap=>{
+      if(!isCurrentHome())return;
       profileCache={};snap.forEach(d=>profileCache[d.id]=outfit(d.data()));syncCharacters();
     },familyError);
-    readPlayer();await mutateGame((p,meta)=>{if(designPending)p.avatarDesign=normalizeAvatarDesign(avatarDesign);if(!meta.monster)meta.monster={bornAt:Date.now()+3600000,hits:0}});designPending=false;publishPresence(true);
+    if(designPending||!gameMeta.monster||!gameMeta.players[playerId()]){
+      await mutateGame((p,meta)=>{if(designPending)p.avatarDesign=normalizeAvatarDesign(avatarDesign);if(!meta.monster)meta.monster={bornAt:Date.now()+3600000,hits:0}});designPending=false;
+    }
+    publishPresence(true);
     const url=new URL(location.href);url.searchParams.delete('home');history.replaceState(null,'',url);
     renderTasks();
   }catch(error){
@@ -709,7 +736,7 @@ function accountError(error){
 }
 async function resumeAccount(){
  const u=auth?.currentUser;user=u||null;accountStatus();
- if(!u){connectedUid=null;homeReady=false;clearSubscriptions();claims={};renderTasks();return}
+ if(!u){connectedUid=null;homeReady=false;clearSubscriptions();claims={};homeId='';gameMeta={id:GAME_META_ID,players:{}};player=newPlayer();profileCache={};renderEconomy();renderPlacements();syncCharacters();renderMonster();renderTasks();return}
  if(authBusy||connectedUid===u.uid||(u.isAnonymous&&!localStorage.getItem('little-home-login-choice')))return;
  connectedUid=u.uid;
  $('#account-state').textContent=u.isAnonymous?'訪客登入成功。':'Google 登入成功。';
@@ -842,6 +869,7 @@ function applyMeta(meta){
  const oldItems=JSON.stringify(Object.values(gameMeta.players||{}).map(p=>p.inventory));
  gameMeta=meta||{id:GAME_META_ID,players:{}};gameMeta.players||={};player=normalizePlayer(gameMeta.players[playerId()]);
  localStorage.setItem(playerKey(),JSON.stringify(player));if(player.avatarDesign&&!designPending&&JSON.stringify(normalizeAvatarDesign(player.avatarDesign))!==JSON.stringify(avatarDesign)){setAvatarDesign(player.avatarDesign);if(character)setCharacter(avatar)}if(character&&oldCostume!==equippedLegendary(player))setCharacter(avatar);renderEconomy();if(oldItems!==JSON.stringify(Object.values(gameMeta.players).map(p=>p.inventory)))renderPlacements();syncCharacters();renderMonster();
+ if(user&&homeId)saveHomeCache(localStorage,{uid:user.uid,home:homeId,avatar:outfit(avatar),player,monster:gameMeta.monster});
 }
 function renderEconomy(){
  const info=levelInfo(player.xp);$('#coin-count').textContent=player.coins.toLocaleString();
@@ -998,7 +1026,7 @@ function renderMonster(){
   g.userData.roamOrigin=[g.position.x,g.position.z];rigMonster(g);scene.add(g);g.updateMatrixWorld(true);monsterMesh=g;
   setDynamicObstacles(monsterBoxesAt(g,g.position.x,g.position.z));refreshMonsterRoutes();
  }
- $('#monster-status').textContent=`生命 ${100-m.hits}/100`;updateMonsterLabel();
+ $('#monster-status').textContent=`${mode==='online'&&!homeReady?'同步中 · ':''}生命 ${100-m.hits}/100`;updateMonsterLabel();
 }
 const monsterLabelPoint=new T.Vector3();
 function updateMonsterLabel(){
@@ -1011,6 +1039,7 @@ function updateMonsterLabel(){
 function disposeMonster(mesh){const materials=new Set();mesh.traverse(n=>{n.geometry?.dispose();if(n.material)for(const m of Array.isArray(n.material)?n.material:[n.material])materials.add(m)});for(const m of materials)m.dispose()}
 async function attackMonster(){
  let defeated=false;
+ if(mode==='online'&&!homeReady)return toast('雲端資料確認中，請稍候再攻擊');
  try{
   await mutateGame((p,meta)=>{defeated=hitHomeMonster(meta,playerId(),p,{memberIds:Object.keys(profileCache),normalize:normalizePlayer,record})});
   toast(defeated?'哥吉拉擊退！全小屋玩家（含離線）升 5 級，最高 20 級。下次一小時後出現':'命中！');
@@ -1058,7 +1087,7 @@ function setupSceneMenu(){
 
 function openHomePanel(page){
  const id={tasks:'#game-dialog',character:'#character-dialog',family:'#family-dialog'}[page];if(!id)return;
- setSceneMenu(false);if(page==='character')renderAvatarPreview();showPanel(id);
+ setSceneMenu(false);if(page==='family')$('#character-dialog').close();if(page==='character')renderAvatarPreview();showPanel(id);
 }
 
 {
@@ -1113,6 +1142,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 

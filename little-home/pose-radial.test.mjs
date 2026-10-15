@@ -13,7 +13,7 @@ function setup(){
  const actor={visible:true,updateWorldMatrix(){}},other={visible:true,updateWorldMatrix(){}};
  let hits=[],pose='stand';
  class Vector{set(){return this}project(){this.x=0;this.y=0;this.z=0;return this}}
- const T={Vector2:Vector,Vector3:Vector,Raycaster:class{setFromCamera(){}intersectObjects(){return hits}},Box3:class{setFromObject(){}getCenter(){}}};
+ const T={Vector2:Vector,Vector3:Vector,Raycaster:class{setFromCamera(){}intersectObjects(){return hits}},Box3:class{constructor(){this.min={x:0,y:0,z:0};this.max={x:1,y:1,z:1}}setFromObject(){}getCenter(){}}};
  const window={homeScene:{camera:{updateMatrixWorld(){}}}};
  const context={T,document,window,MutationObserver:class{observe(){}}};vm.createContext(context);
  vm.runInContext(source.replace(/^import .*;\n/,'').replaceAll('export function','function')+'\nthis.install=installPoseRadial;this.position=radialPosition;',context);
@@ -31,7 +31,7 @@ test('selection applies pose and closes; blank tap dismisses without consuming m
 });
 test('menu stays within portrait, landscape and narrow viewport',()=>{
  const {context}=setup();for(const [w,h]of [[390,700],[700,300],[250,250]])for(const [x,y]of [[0,0],[w,h],[w/2,h/2]]){
-  const p=context.position(x,y,w,h);assert.ok(p.x>=98&&p.x<=w-98);assert.ok(p.y>=98&&p.y<=h-98);
+  const p=context.position(x,y,w,h);assert.ok(p.x>=78&&p.x<=w-78);assert.ok(p.y>=108&&p.y<=h-108);
  }
 });
 test('drag dismisses; battle blocks opening',()=>{
@@ -45,3 +45,4 @@ test('camera tap gate remains in front of radial and monster actions; old toolba
  assert.doesNotMatch(html,/class="pose-buttons scene-poses"/);assert.match(html,/id="pose-radial"[^>]*hidden/);
  assert.equal((html.match(/data-pose=/g)||[]).length,3);
 });
+

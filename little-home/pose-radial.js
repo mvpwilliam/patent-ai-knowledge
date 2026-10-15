@@ -1,13 +1,16 @@
 import * as T from './vendor/three.module.js';
 
-export function radialPosition(x,y,width,height){
- const margin=104;
- return {x:Math.max(Math.min(margin,width/2),Math.min(width-margin,x)),y:Math.max(Math.min(margin,height/2),Math.min(height-margin,y))};
+export function radialPosition(x,y,width,height,actorHalfWidth=20){
+ const halfWidth=70,halfHeight=100,gap=12,edge=8;
+ const right=x+actorHalfWidth+gap+halfWidth;
+ const side=right+halfWidth<=width-edge?'right':'left';
+ const desired=side==='right'?right:x-actorHalfWidth-gap-halfWidth;
+ return {x:Math.max(halfWidth+edge,Math.min(width-halfWidth-edge,desired)),y:Math.max(halfHeight+edge,Math.min(height-halfHeight-edge,y)),side};
 }
 
 export function installPoseRadial({getCharacter,getOthers,getPose,setPose}){
  const world=document.querySelector('#world'),canvas=document.querySelector('#scene'),menu=document.querySelector('#pose-radial');
- const ray=new T.Raycaster(),pointer=new T.Vector2(),bounds=new T.Box3(),center=new T.Vector3();
+ const ray=new T.Raycaster(),pointer=new T.Vector2(),bounds=new T.Box3(),center=new T.Vector3(),corner=new T.Vector3();
  const buttons=[...menu.querySelectorAll('[data-pose]')];let down=null;
  const blocked=()=>world.classList.contains('td-active')||!!document.querySelector('dialog[open]');
  function close(focus=false){menu.hidden=true;canvas.setAttribute('aria-expanded','false');if(focus)canvas.focus({preventScroll:true})}
@@ -17,8 +20,13 @@ export function installPoseRadial({getCharacter,getOthers,getPose,setPose}){
   if(!actor||!actor.visible||!camera||blocked()){close();return}
   bounds.setFromObject(actor);bounds.getCenter(center);center.project(camera);
   if(center.z<=-1||center.z>=1||Math.abs(center.x)>1||Math.abs(center.y)>1){close();return}
-  const p=radialPosition((center.x+1)*world.clientWidth/2,(1-center.y)*world.clientHeight/2,world.clientWidth,world.clientHeight);
+  let left=Infinity,right=-Infinity;
+  for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){
+   corner.set(x,y,z).project(camera);const screenX=(corner.x+1)*world.clientWidth/2;left=Math.min(left,screenX);right=Math.max(right,screenX);
+  }
+  const p=radialPosition((left+right)/2,(1-center.y)*world.clientHeight/2,world.clientWidth,world.clientHeight,(right-left)/2);
   menu.style.left=p.x+'px';menu.style.top=p.y+'px';
+  menu.dataset.side=p.side;
   for(const b of buttons){const active=b.dataset.pose===getPose();b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))}
  }
  function toggle(keyboard=false){
@@ -57,3 +65,4 @@ export function installPoseRadial({getCharacter,getOthers,getPose,setPose}){
  new MutationObserver(()=>{if(blocked())close()}).observe(world,{attributes:true,attributeFilter:['class']});
  return {update,close};
 }
+
