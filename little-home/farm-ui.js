@@ -2,13 +2,13 @@ import {playEvolution} from './farm-evolution.js?v=evo-10';
 import * as T from './vendor/three.module.js';
 import {cropPicture,beastPicture,mountPetViewer} from './farm-art.js?v=evo-10';
 import {CROPS,LINES,AWARDS,FEED_COST,displayFarm,newFarm,slots,plotState,stage,species,dayKey} from './farm-core.js?v=evo-10';
-import {createFarmScene} from './farm-scene.js?v=evo-10';
+import {createFarmScene} from './farm-scene.js?v=roam-12';
 import {createHomePets} from './farm-home.js?v=evo-10';
 export function installFarm({games,canStart,options}){
  const entry=document.createElement('button');entry.type='button';entry.style.cssText=games.querySelector('#start-defense').style.cssText;entry.innerHTML='<span aria-hidden="true">♧</span><span>家庭農場</span>';games.querySelector('.game-dialog-body').append(entry);
  // All game entries use the same colour and dimensions, including the escape link.
  for(const b of games.querySelector('.game-dialog-body').children){b.style.background='#e8eddf';b.style.color='#3d5949';b.style.height='56px';b.style.minHeight='56px'}
- const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./farm.css?v=crop-card-11',import.meta.url);document.head.append(css);
+ const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./farm.css?v=roam-12',import.meta.url);document.head.append(css);
  const world=document.querySelector('#world'),canvas=document.querySelector('#scene'),ui=document.createElement('section');ui.id='family-farm';ui.hidden=true;ui.setAttribute('aria-label','家庭共用農場');ui.innerHTML='<div class="farm-bar"><div><small>OUR FAMILY GARDEN</small><strong>家庭農場</strong></div><button data-menu aria-label="農場暫停選單">Ⅱ 選單</button></div><div class="farm-stock"></div><div class="farm-caption">點土地播種、澆水、採收 · 在「我的夥伴」照顧小雞</div><div class="farm-toolbar"><button data-pets>我的夥伴</button><button data-storage>家庭倉庫</button><button data-awards>獎牌 / T-shirt</button></div>';world.append(ui);
  const dialog=document.createElement('dialog');dialog.className='farm-dialog';dialog.innerHTML='<header><h2></h2><button aria-label="關閉">×</button></header><div class="farm-body"></div><p class="farm-status" role="status" hidden></p>';document.body.append(dialog);const body=dialog.querySelector('.farm-body'),status=dialog.querySelector('.farm-status');
  const empty=newFarm(),ray=new T.Raycaster(),pointer=new T.Vector2(),homePets=createHomePets(window.homeScene.scene);
@@ -19,7 +19,7 @@ export function installFarm({games,canStart,options}){
  const p=(text,cls)=>{const n=document.createElement('p');n.textContent=text;if(cls)n.className=cls;body.append(n);return n};
  function bullets(items){const list=document.createElement('ul');list.className='farm-rules';list.style.cssText='margin:12px 0;padding-left:1.4em;line-height:1.7';for(const text of items){const item=document.createElement('li');item.textContent=text;item.style.margin='6px 0';list.append(item)}body.append(list)}
  function button(text,fn,disabled=false,primary=false){const b=document.createElement('button');b.textContent=text;b.disabled=disabled;b.classList.toggle('primary',primary);b.onclick=fn;body.append(b);return b}
- function title(text){disposeEvolution?.();disposeEvolution=null;disposeViewer?.();disposeViewer=null;dialog.querySelector('h2').textContent=text;body.replaceChildren();status.hidden=true}
+ function title(text){dialog.classList.toggle('farm-plot-dialog',selected?.kind==='plot');disposeEvolution?.();disposeEvolution=null;disposeViewer?.();disposeViewer=null;dialog.querySelector('h2').textContent=text;body.replaceChildren();status.hidden=true}
  function show(kind,id){selected={kind,id};lastSig='';draw();updateFeeding();if(!dialog.open)dialog.showModal()}
  function closeDialog(){if(busy)return;disposeEvolution?.();disposeEvolution=null;disposeViewer?.();disposeViewer=null;dialog.close();selected=null;paused=false;last=0}
  dialog.querySelector('header button').onclick=closeDialog;dialog.addEventListener('cancel',e=>{e.preventDefault();closeDialog()});
