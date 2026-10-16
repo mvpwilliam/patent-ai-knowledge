@@ -1,8 +1,8 @@
 import * as T from './vendor/three.module.js';
-import {cropPicture,beastPicture,mountPetViewer} from './farm-art.js?v=farm-detail-3';
+import {cropPicture,beastPicture,mountPetViewer} from './farm-art.js?v=farm-shape-5';
 import {CROPS,LINES,AWARDS,newFarm,slots,plotState,stage,species,dayKey} from './farm-core.js?v=farm-1';
-import {createFarmScene} from './farm-scene.js?v=farm-label-4';
-import {createHomePets} from './farm-home.js?v=farm-1';
+import {createFarmScene} from './farm-scene.js?v=farm-shape-5';
+import {createHomePets} from './farm-home.js?v=farm-shape-5';
 export function installFarm({games,canStart,options}){
  const entry=document.createElement('button');entry.type='button';entry.style.cssText=games.querySelector('#start-defense').style.cssText;entry.innerHTML='<span aria-hidden="true">♧</span><span>家庭農場</span>';games.querySelector('.game-dialog-body').append(entry);
  // All game entries use the same colour and dimensions, including the escape link.
@@ -49,5 +49,6 @@ export function installFarm({games,canStart,options}){
  for(const ev of ['pointerdown','pointermove','pointerup','pointercancel','dblclick','wheel'])canvas.addEventListener(ev,e=>{if(!active)return;e.preventDefault();e.stopImmediatePropagation();if(ev==='pointerdown')down={x:e.clientX,y:e.clientY,id:e.pointerId};if(ev==='pointercancel')down=null;if(ev==='pointerup'&&down?.id===e.pointerId){const d=Math.hypot(down.x-e.clientX,down.y-e.clientY);down=null;if(d>10||dialog.open)return;const r=canvas.getBoundingClientRect();pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(pointer,view.camera);const hit=view.pick(ray);if(hit?.plot!==undefined)show('plot',hit.plot);else if(hit?.owner)show('pets',hit.owner)}},{capture:true,passive:false});
  document.addEventListener('keydown',e=>{if(!active)return;if(e.key==='Escape'&&!dialog.open){e.preventDefault();e.stopImmediatePropagation();paused=true;show('menu')}if(!dialog.open&&['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)){e.preventDefault();e.stopImmediatePropagation()}},true);document.addEventListener('visibilitychange',()=>{if(active&&document.hidden&&!dialog.open){paused=true;show('menu')}last=0});
 }
+
 
 

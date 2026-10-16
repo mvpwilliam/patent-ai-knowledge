@@ -1,11 +1,11 @@
 import {newFarm,farmAction} from './farm-core.js?v=farm-1';
-import {decorateFarmShirt} from './farm-home.js?v=farm-1';
+import {decorateFarmShirt} from './farm-home.js?v=farm-shape-5';
 import {applyChoreContact,resetChoreContact,contactStops} from './chore-contact.js?v=chore-route-fix-1';
 import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=home-fixes-1';
-import {installToyDefense} from './toy-defense.js?v=farm-label-4';
+import {installToyDefense} from './toy-defense.js?v=farm-shape-5';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=games2-1';
@@ -1246,6 +1246,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
