@@ -1,4 +1,4 @@
-import {installFarm} from './farm-ui.js?v=evo-10';
+import {installFarm} from './farm-ui.js?v=crop-card-11';
 import {installLivingShooter} from './living-shooter.js?v=shooter-1';
 import * as T from './vendor/three.module.js';
 import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
