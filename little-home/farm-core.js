@@ -22,16 +22,19 @@ export function settleEvolutions(f,now){
  }
  return f;
 }
+// Cap legacy crop deadlines using their original watering time; never delay a ripe crop.
+const cropDeadline=p=>p.plantId&&CROPS[p.plantId]&&p.wateredAt>0?Math.min(p.readyAt||Infinity,p.wateredAt+CROPS[p.plantId].minutes*60000):p.readyAt;
+export function normalizeCropTimers(f){for(const p of f.plots)p.readyAt=cropDeadline(p);return f}
 export function displayFarm(f,now){
  const due=Object.values(f.members).some(m=>m.pets.some(p=>p.pendingEvolution&&now>=p.pendingEvolution.readyAt));
- return due?settleEvolutions(structuredClone(f),now):f;
+ return due||f.plots.some(p=>p.readyAt!==cropDeadline(p))?settleEvolutions(normalizeCropTimers(structuredClone(f)),now):f;
 }
 function check(ok,text){if(!ok)throw new Error(text)}
 function currentPet(m,id){const pet=m.pets.find(p=>p.id===id);check(pet,'找不到這隻夥伴');return pet}
 // Execute inside the household's Firestore transaction. A cycle token protects stale dialogs.
 export function farmAction(f,uid,name,a,now){
  check(Number.isFinite(now),'時間讀取失敗');if(f.applied.includes(a.id))return {duplicate:true};
- settleEvolutions(f,now);
+ normalizeCropTimers(f);settleEvolutions(f,now);
  const m=member(f,uid,name);m.name=String(name||m.name).slice(0,12);let message='';
  if(['sow','water','harvest'].includes(a.type)){
   const p=f.plots[a.plot];check(p&&a.plot<slots(f),'這塊土地尚未開放');check(p.cycle===a.cycle,'這塊土地已被家人更新，請重新打開');const status=plotState(p,now);
@@ -52,4 +55,5 @@ export function farmAction(f,uid,name,a,now){
  for(const award of AWARDS)if(m.counts[award.key]>=award.goal&&!m.awards.includes(award.id))m.awards.push(award.id);
  f.applied=[a.id,...f.applied].slice(0,160);f.log=[{id:a.id,name:m.name,text:message,at:now},...f.log].slice(0,20);return {message,shirt:a.type==='shirt'?a.award:undefined};
 }
+
 

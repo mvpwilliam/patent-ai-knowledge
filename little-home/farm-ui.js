@@ -1,8 +1,8 @@
 import * as T from './vendor/three.module.js';
-import {cropPicture,beastPicture,mountPetViewer} from './farm-art.js?v=farm-balance-6';
-import {CROPS,LINES,AWARDS,FEED_COST,displayFarm,newFarm,slots,plotState,stage,species,dayKey} from './farm-core.js?v=farm-balance-6';
-import {createFarmScene} from './farm-scene.js?v=farm-balance-6';
-import {createHomePets} from './farm-home.js?v=farm-balance-6';
+import {cropPicture,beastPicture,mountPetViewer} from './farm-art.js?v=farm-fix-8';
+import {CROPS,LINES,AWARDS,FEED_COST,displayFarm,newFarm,slots,plotState,stage,species,dayKey} from './farm-core.js?v=farm-fix-8';
+import {createFarmScene} from './farm-scene.js?v=farm-fix-8';
+import {createHomePets} from './farm-home.js?v=farm-fix-8';
 export function installFarm({games,canStart,options}){
  const entry=document.createElement('button');entry.type='button';entry.style.cssText=games.querySelector('#start-defense').style.cssText;entry.innerHTML='<span aria-hidden="true">♧</span><span>家庭農場</span>';games.querySelector('.game-dialog-body').append(entry);
  // All game entries use the same colour and dimensions, including the escape link.
@@ -32,7 +32,7 @@ export function installFarm({games,canStart,options}){
  }else if(selected.kind==='pets'){
   const owner=selected.id||uid,person=f.members[owner],own=owner===uid;title(own?'我的夥伴':(person?.name||'家人')+'的夥伴');
   if(!person?.pets.length){p(own?'領養一隻小雞，作物可以決定牠的進化方向。':'這位家人還沒有領養小雞。');if(own)button('領養我的小雞',()=>act({type:'adopt'}),false,true);button('圖鑑與進化規則',()=>show('guide'));return}
-  const pet=person.pets.find(v=>v.id===person.activeId)||person.pets.at(-1),s=stage(pet);previewPet(pet);p(`${pet.name} · 進化 ${s}/5`);const feedToday=person.feedDay===dayKey(now())?person.fedToday:0;
+  const pet=person.pets.find(v=>v.id===person.activeId)||person.pets.at(-1),s=stage(pet);title(`${pet.name} · 進化 ${s}/5`);previewPet(pet);const feedToday=person.feedDay===dayKey(now())?person.fedToday:0;
   if(s<5){p(`今日餵食 ${feedToday}/3`);p('').dataset.feedCountdown='';if(own)for(const [id,c] of Object.entries(CROPS))button(`${c.name} × ${FEED_COST} · 庫存 ${f.stock[id]}`,()=>act({type:'feed',pet:pet.id,crop:id,expectedFeeds:pet.feeds.length}),feedToday>=3||f.stock[id]<FEED_COST||!!pet.pendingEvolution||now()<(person.feedReadyAt||0)).dataset.feedCrop=id}else{if(own){button(person.homeId===pet.id?'讓牠回農場':'帶回小屋放養',()=>act({type:person.homeId===pet.id?'return':'home',pet:pet.id}),false,true);button('領養下一隻小雞',()=>act({type:'adopt'}),person.pets.length>=24)}}
   if(own){button('替牠取名字',()=>show('rename',pet.id));if(person.pets.some(v=>stage(v)===5&&v.id!==pet.id))p('已養成的夥伴','farm-note');for(const saved of person.pets.filter(v=>stage(v)===5&&v.id!==pet.id))button(`${saved.name} · ${species(saved)}${person.homeId===saved.id?'（在小屋）':''}`,()=>show('collection',saved.id))}button('圖鑑與進化規則',()=>show('guide'));
  }else if(selected.kind==='collection'){const pet=m.pets.find(v=>v.id===selected.id);title(pet.name);previewPet(pet);p(species(pet));button(m.homeId===pet.id?'讓牠回農場':'帶回小屋放養',()=>act({type:m.homeId===pet.id?'return':'home',pet:pet.id}),false,true);button('取名字',()=>show('rename',pet.id));p('每人可帶一隻回家，其餘保留在收藏牧場。','farm-note');
@@ -58,6 +58,7 @@ export function installFarm({games,canStart,options}){
  for(const ev of ['pointerdown','pointermove','pointerup','pointercancel','dblclick','wheel'])canvas.addEventListener(ev,e=>{if(!active)return;e.preventDefault();e.stopImmediatePropagation();if(ev==='pointerdown')down={x:e.clientX,y:e.clientY,id:e.pointerId};if(ev==='pointercancel')down=null;if(ev==='pointerup'&&down?.id===e.pointerId){const d=Math.hypot(down.x-e.clientX,down.y-e.clientY);down=null;if(d>10||dialog.open)return;const r=canvas.getBoundingClientRect();pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(pointer,view.camera);const hit=view.pick(ray);if(hit?.plot!==undefined)show('plot',hit.plot);else if(hit?.owner)show('pets',hit.owner)}},{capture:true,passive:false});
  document.addEventListener('keydown',e=>{if(!active)return;if(e.key==='Escape'&&!dialog.open){e.preventDefault();e.stopImmediatePropagation();paused=true;show('menu')}if(!dialog.open&&['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)){e.preventDefault();e.stopImmediatePropagation()}},true);document.addEventListener('visibilitychange',()=>{if(active&&document.hidden&&!dialog.open){paused=true;show('menu')}last=0});
 }
+
 
 
 

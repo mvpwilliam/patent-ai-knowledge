@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {createFarmPet} from './farm-pets.js?v=farm-balance-6';
+import {createFarmPet} from './farm-pets.js?v=farm-fix-8';
 
 const pictures=new Map();
 export function cropPicture(id){
@@ -58,5 +58,6 @@ export function mountPetViewer(container,renderer,pet){
  try{portrait.render(yaw,pitch)}catch(error){portrait.dispose();canvas.remove();throw error}
  return ()=>{cancelAnimationFrame(frame);portrait.dispose();canvas.remove()};
 }
+
 
 
