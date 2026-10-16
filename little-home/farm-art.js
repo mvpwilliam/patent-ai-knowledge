@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {createFarmPet} from './farm-pets.js?v=farm-fix-8';
+import {createFarmPet} from './farm-pets.js?v=evo-10';
 
 const pictures=new Map();
 export function cropPicture(id){
@@ -13,7 +13,7 @@ export function cropPicture(id){
 }
 
 // Offscreen portraits share the game's renderer and release their GPU resources.
-export function createPetPortrait(renderer,petData,size=320){
+export function createPetPortrait(renderer,petData,size=320,transparent=false){
  const scene=new T.Scene(),pet=createFarmPet(petData);
  scene.add(pet,new T.HemisphereLight(0xfff8e5,0x63785c,2));
  const light=new T.DirectionalLight(0xfff4de,3);light.position.set(3,5,5);scene.add(light);
@@ -29,7 +29,7 @@ export function createPetPortrait(renderer,petData,size=320){
   camera.position.copy(center).add(new T.Vector3(Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch)).multiplyScalar(radius*4+1));camera.lookAt(center);
   const old={target:renderer.getRenderTarget(),face:renderer.getActiveCubeFace(),level:renderer.getActiveMipmapLevel(),color:renderer.getClearColor(new T.Color()),alpha:renderer.getClearAlpha(),auto:renderer.autoClear,xr:renderer.xr.enabled};
   try{
-   renderer.xr.enabled=false;renderer.autoClear=true;renderer.setRenderTarget(target);renderer.setClearColor(0xf0f1e4,1);renderer.render(scene,camera);
+   renderer.xr.enabled=false;renderer.autoClear=true;renderer.setRenderTarget(target);renderer.setClearColor(0xf0f1e4,transparent?0:1);renderer.render(scene,camera);
    renderer.readRenderTargetPixels(target,0,0,size,size,pixels);
    for(let y=0;y<size;y++)frame.data.set(pixels.subarray((size-1-y)*size*4,(size-y)*size*4),y*size*4);
    ctx.putImageData(frame,0,0);
@@ -46,8 +46,8 @@ export function beastPicture(renderer,line,stage=5){
 }
 
 // Rendering only on pointer/keyboard changes keeps an idle preview inexpensive.
-export function mountPetViewer(container,renderer,pet){
- const portrait=createPetPortrait(renderer,pet),canvas=portrait.canvas;
+export function mountPetViewer(container,renderer,pet,{transparent=false}={}){
+ const portrait=createPetPortrait(renderer,pet,320,transparent),canvas=portrait.canvas;
  canvas.className='farm-pet-viewer';canvas.tabIndex=0;canvas.setAttribute('role','img');canvas.setAttribute('aria-label',pet.name+'，可拖曳旋轉的 3D 夥伴；方向鍵旋轉');
  container.append(canvas);let yaw=.64,pitch=.4,drag=null,frame=0;
  const repaint=()=>{if(!frame)frame=requestAnimationFrame(()=>{frame=0;portrait.render(yaw,pitch)})};
@@ -58,6 +58,7 @@ export function mountPetViewer(container,renderer,pet){
  try{portrait.render(yaw,pitch)}catch(error){portrait.dispose();canvas.remove();throw error}
  return ()=>{cancelAnimationFrame(frame);portrait.dispose();canvas.remove()};
 }
+
 
 
 
