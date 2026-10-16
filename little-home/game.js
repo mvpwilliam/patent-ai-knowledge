@@ -1,9 +1,11 @@
+import {newFarm,farmAction} from './farm-core.js?v=farm-1';
+import {decorateFarmShirt} from './farm-home.js?v=farm-1';
 import {applyChoreContact,resetChoreContact,contactStops} from './chore-contact.js?v=chore-route-fix-1';
 import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=home-fixes-1';
-import {installToyDefense} from './toy-defense.js?v=shooter-1';
+import {installToyDefense} from './toy-defense.js?v=farm-1';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=games2-1';
@@ -123,12 +125,13 @@ function makeCharacter(v,design={}){
  mesh.updateMatrixWorld(true);
  const sourceHeight=design.bodyType==='child'?new T.Box3().setFromObject(mesh).getSize(new T.Vector3()).y:mesh.userData.baseStandingHeight||new T.Box3().setFromObject(mesh).getSize(new T.Vector3()).y;
  mesh.scale.multiplyScalar((design.bodyType==='child'?1.20:1.80)*PLAYER_SCALE/sourceHeight);mesh.updateMatrixWorld(true);
+ if(design.farmShirt)decorateFarmShirt(mesh,design.farmShirt);
  const bounds=new T.Box3().setFromObject(mesh);mesh.userData.standingHeight=bounds.max.y-bounds.min.y;return mesh;
 }
 function setCharacter(v){
  if(new URLSearchParams(location.search).get('avatar')==='dad-white'){v=outfit({...v,...dadWhitePreset});avatarDesign=normalizeAvatarDesign({...avatarDesign,glasses:true,eyewear:'round',hairStyle:'korean'});avatar=v;localStorage.setItem('little-home-avatar',JSON.stringify(v));fillAvatar();}
  if(!scene)return;const previous=character?.position.clone(),angle=character?.rotation.y;
- if(character){character.userData.disposeCostume?.();scene.remove(character)}character=makeCharacter(v,{...avatarDesign,legendaryOutfit:equippedLegendary(player)});scene.add(character);
+ if(character){character.userData.disposeCostume?.();scene.remove(character)}character=makeCharacter(v,{...avatarDesign,legendaryOutfit:equippedLegendary(player),farmShirt:player.farmShirt});scene.add(character);
  if(previous){character.position.copy(previous);character.rotation.y=angle;resolveMonsterOverlap(character);return}
  const start=[...(user?.uid||localActorId)].reduce((sum,c)=>sum+c.charCodeAt(0),0)%tour.length;
  character.position.set(tour[start][0],.07,tour[start][1]);route=(start+1)%tour.length;
@@ -258,7 +261,7 @@ function moveTo(point,kind='walk',bedSlot=null){
 }
 window.homeGameMoveTo=moveTo;
 let mirrorRenderer=null,mirrorPortrait=null;
-function makeMirrorAvatar(){const portrait=makeCharacter(outfit(avatar),avatarDesign);portrait.name='my-mirror-reflection';return portrait}
+function makeMirrorAvatar(){const portrait=makeCharacter(outfit(avatar),{...avatarDesign,farmShirt:player.farmShirt});portrait.name='my-mirror-reflection';return portrait}
 function openMirror(){
  const dialog=$('#mirror-dialog');if(!dialog)return;
  $('#mirror-caption').textContent=`鏡中的${avatar.name}`;
@@ -628,7 +631,7 @@ function renderAvatarPreview(previewOutfit=equippedLegendary(player)){
   disposeAvatarPreview();
   const portraitScene=new T.Scene();portraitScene.add(new T.HemisphereLight('#ffffff','#72816f',2.5));
   const light=new T.DirectionalLight('#fff7e9',2);light.position.set(-2,4,4);portraitScene.add(light);
-  avatarPreviewActor=createPixelDad(outfit(avatar),normalizeAvatarDesign({...avatarDesign,legendaryOutfit:previewOutfit}));avatarPreviewActor.userData.updatePose?.('stand');avatarPreviewActor.rotation.y=.2;portraitScene.add(avatarPreviewActor);
+  avatarPreviewActor=createPixelDad(outfit(avatar),normalizeAvatarDesign({...avatarDesign,legendaryOutfit:previewOutfit}));if(player.farmShirt)decorateFarmShirt(avatarPreviewActor,player.farmShirt);avatarPreviewActor.userData.updatePose?.('stand');avatarPreviewActor.rotation.y=.2;portraitScene.add(avatarPreviewActor);
   const bounds=new T.Box3().setFromObject(avatarPreviewActor),center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3());
   const camera=new T.PerspectiveCamera(32,240/260,.01,20),distance=Math.max(size.y,size.x/camera.aspect)/(2*Math.tan(camera.fov*Math.PI/360))*1.2;
   camera.position.set(center.x,center.y,center.z+distance);camera.lookAt(center);avatarPreviewRenderer.render(portraitScene,camera);canvas.hidden=false;
@@ -899,6 +902,14 @@ let gameMeta={id:GAME_META_ID,players:{}},player=newPlayer(),profileCache={},pre
 let inventoryTab='全部',pendingPlacement=null,placementObjects=new Map(),monsterMesh=null;
 const playerId=()=>user?.uid||localActorId;
 const playerKey=()=>`little-home-player-${homeId||'preview'}-${playerId()}`;
+const farmStorageKey=()=>`little-home-farm-${homeId||'preview'}-${mode==='online'?'shared':playerId()}`;
+let localFarmKey='',localFarmData=null;
+function getFarmState(){
+ if(gameMeta.farm)return gameMeta.farm;
+ if(mode==='online')return null;
+ const key=farmStorageKey();if(localFarmKey!==key){localFarmKey=key;localFarmData=safeRead(key,null)}return localFarmData;
+}
+
 const normalizePlayer=p=>({...newPlayer(),...p,inventory:Array.isArray(p?.inventory)?p.inventory:[],legendaryOwned:Array.isArray(p?.legendaryOwned)?[...new Set(p.legendaryOwned.filter(id=>outfitById(id)))]:[],completed:p?.completed||{},bonuses:p?.bonuses||{},ledger:p?.ledger||[]});
 function readPlayer(){player=normalizePlayer(safeRead(playerKey(),newPlayer()))}
 function dayTasks(){
@@ -918,6 +929,7 @@ function rewardPlayer(p,t,day){
 }
 async function mutateGame(change){
  if(syncBusy)throw new Error('上一筆正在儲存，請稍候');syncBusy=true;
+ const mutationScope=`${homeId||'preview'}:${playerId()}`;
  try{
   if(mode==='online'){
    if(!homeReady||!user)throw new Error('家庭尚未連線');
@@ -926,9 +938,11 @@ async function mutateGame(change){
    await api.runTransaction(db,async tx=>{
     const snap=await tx.get(ref),items=snap.exists()?snap.data().items:defaults;
     const meta=structuredClone(items.find(t=>t.id===GAME_META_ID)||{id:GAME_META_ID,players:{}});
+    if(mutationScope!==`${homeId||'preview'}:${playerId()}`)throw new Error('家庭或帳號已切換，請重新操作');
     const p=normalizePlayer(meta.players[playerId()]);change(p,meta);meta.players[playerId()]=p;
     tx.set(ref,{items:[...items.filter(t=>t.id!==GAME_META_ID),meta]});updated=meta;
    });
+   if(mutationScope!==`${homeId||'preview'}:${playerId()}`)throw new Error('家庭已切換，原家庭的操作已保存，請重新進入');
    applyMeta(updated);
   }else{
    const p=normalizePlayer(structuredClone(player));change(p,gameMeta);gameMeta.players[playerId()]=p;applyMeta(gameMeta);
@@ -936,10 +950,11 @@ async function mutateGame(change){
  }finally{syncBusy=false;renderEconomy()}
 }
 function applyMeta(meta){
- const oldCostume=equippedLegendary(player);
+ const oldCostume=equippedLegendary(player),oldFarmShirt=player.farmShirt;
  const oldItems=JSON.stringify(Object.values(gameMeta.players||{}).map(p=>p.inventory));
  gameMeta=meta||{id:GAME_META_ID,players:{}};gameMeta.players||={};player=normalizePlayer(gameMeta.players[playerId()]);
- localStorage.setItem(playerKey(),JSON.stringify(player));if(player.avatarDesign&&!designPending&&JSON.stringify(normalizeAvatarDesign(player.avatarDesign))!==JSON.stringify(avatarDesign)){setAvatarDesign(player.avatarDesign);if(character)setCharacter(avatar)}if(character&&oldCostume!==equippedLegendary(player))setCharacter(avatar);renderEconomy();if(oldItems!==JSON.stringify(Object.values(gameMeta.players).map(p=>p.inventory)))renderPlacements();syncCharacters();renderMonster();
+ localStorage.setItem(playerKey(),JSON.stringify(player));if(player.avatarDesign&&!designPending&&JSON.stringify(normalizeAvatarDesign(player.avatarDesign))!==JSON.stringify(avatarDesign)){setAvatarDesign(player.avatarDesign);if(character)setCharacter(avatar)}if(character&&(oldCostume!==equippedLegendary(player)||oldFarmShirt!==player.farmShirt))setCharacter(avatar);renderEconomy();if(oldItems!==JSON.stringify(Object.values(gameMeta.players).map(p=>p.inventory)))renderPlacements();syncCharacters();renderMonster();
+ if(gameMeta.farm)localStorage.setItem(farmStorageKey(),JSON.stringify(gameMeta.farm));
  if(user&&homeId)saveHomeCache(localStorage,{uid:user.uid,home:homeId,avatar:outfit(avatar),player,monster:gameMeta.monster});
 }
 function renderEconomy(){
@@ -1048,7 +1063,7 @@ function onlinePlayers(){return Object.entries(gameMeta.players||{}).filter(([id
 function syncCharacters(){
  if(!scene)return;const online=onlinePlayers(),visible=online.slice(0,5),ids=new Set(visible.map(([id])=>id));
  for(const [id,item] of characters)if(!ids.has(id)){item.mesh.userData.disposeCostume?.();scene.remove(item.mesh);characters.delete(id)}
- for(const [id,p] of visible){const profile=profileCache[id];if(!profile)continue;let item=characters.get(id);const remoteDesign=normalizeAvatarDesign({...p.avatarDesign,hairStyle:p.avatarDesign?.hairStyle||profile.hair,legendaryOutfit:equippedLegendary(p)});const signature=JSON.stringify([profile,remoteDesign]);
+ for(const [id,p] of visible){const profile=profileCache[id];if(!profile)continue;let item=characters.get(id);const remoteDesign=normalizeAvatarDesign({...p.avatarDesign,hairStyle:p.avatarDesign?.hairStyle||profile.hair,legendaryOutfit:equippedLegendary(p)});remoteDesign.farmShirt=p.farmShirt;const signature=JSON.stringify([profile,remoteDesign]);
  if(!item||item.signature!==signature){if(item){item.mesh.userData.disposeCostume?.();scene.remove(item.mesh)}const mesh=makeCharacter(outfit(profile),remoteDesign);scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach)&&!crossesDynamicObstacle([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;item.mesh.userData.bedReservation=p.bedReservation;resolveMonsterOverlap(item.mesh);
  }
  const list=$('#member-list');list.replaceChildren();for(const [id,v] of Object.entries(profileCache)){const row=document.createElement('p');const active=id===playerId()||online.some(([uid])=>uid===id);row.textContent=`${v.name} · ${active?'上線':'離線'}${active&&id!==playerId()&&!ids.has(id)?'（成員列）':''}`;list.append(row)}
@@ -1173,12 +1188,26 @@ function openHomePanel(page){
   setupSceneMenu();
   let battleOwner='';
   installToyDefense({
+   farmOptions:{
+    getFarm:getFarmState,getKey:()=>`${homeId||'preview'}:${playerId()}`,
+    getUser:()=>({id:playerId(),name:avatar.name}),getProfiles:()=>({...profileCache,[playerId()]:{name:avatar.name}}),toast,
+    async action(action,owner){
+     if(owner!==`${homeId||'preview'}:${playerId()}`)throw new Error('家庭或帳號已切換，請重新進入農場');
+     let result;const at=Date.now();
+     await mutateGame((p,meta)=>{
+      if(owner!==`${homeId||'preview'}:${playerId()}`)throw new Error('家庭或帳號已切換');
+      const farm=structuredClone(meta.farm||(mode==='online'?newFarm():getFarmState()||newFarm()));
+      result=farmAction(farm,playerId(),avatar.name,action,at);meta.farm=farm;
+      if(action.type==='shirt')p.farmShirt=action.award||'';
+     });return result;
+    }
+   },
    canStart(){
-    if(activity){toast('先完成或取消目前的家事，再開始保衛戰');return false}
+    if(activity){toast('先完成或取消目前的家事，再進入小遊戲');return false}
     if(!character||!scene||syncBusy||(mode==='online'&&(!homeReady||!user))){toast('角色資料尚未就緒，請稍候再試');return false}
     battleOwner=`${homeId||'preview'}:${playerId()}`;return true;
    },
-   makeHero(){const copy=makeCharacter(avatar,{...avatarDesign});copy.userData.updatePose?.('stand');return copy},
+   makeHero(){const copy=makeCharacter(avatar,{...avatarDesign,farmShirt:player.farmShirt});copy.userData.updatePose?.('stand');return copy},
    async onWin(runId, result={}){
     const shooting=result.kind==='shooter';const coins=shooting?Math.max(30,Math.min(50,Math.floor(Number(result.coins)||30))):30;
     if(battleOwner!==`${homeId||'preview'}:${playerId()}`)throw new Error('帳號或家庭已切換，無法把這局獎勵存入不同角色');
@@ -1217,6 +1246,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 

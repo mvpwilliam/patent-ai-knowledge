@@ -1,8 +1,9 @@
+import {installFarm} from './farm-ui.js?v=farm-1';
 import {installLivingShooter} from './living-shooter.js?v=shooter-1';
 import * as T from './vendor/three.module.js';
 import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
 
-export function installToyDefense({canStart,makeHero,onWin}){
+export function installToyDefense({canStart,makeHero,onWin,farmOptions}){
  const world=document.querySelector('#world'),canvas=document.querySelector('#scene');
  const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./toy-defense.css?v=toy3-1',import.meta.url);document.head.append(css);
  const entry=document.createElement('button');entry.type='button';entry.title='遊戲區';entry.setAttribute('aria-label',entry.title);
@@ -133,6 +134,8 @@ export function installToyDefense({canStart,makeHero,onWin}){
  },true);
  document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{clearInput();pause()});document.addEventListener('visibilitychange',()=>{last=0;if(document.hidden){clearInput();pause()}});
  installLivingShooter({games,canStart,makeHero,onWin});
+ if(farmOptions)installFarm({games,canStart,options:farmOptions});
 }
+
 
 
