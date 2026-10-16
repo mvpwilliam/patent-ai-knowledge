@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {CROPS,slots,plotState} from './farm-core.js?v=farm-1';
+import {CROPS,slots,plotState} from './farm-core.js?v=farm-balance-6';
 export function createFarmScene(){
  const scene=new T.Scene();scene.background=new T.Color('#dfe7d6');const camera=new T.OrthographicCamera(-6,6,7,-7,.1,60);camera.position.set(0,11,13);camera.lookAt(0,0,0);
  scene.add(new T.HemisphereLight(0xfff8e9,0x7c9378,2.5));const sun=new T.DirectionalLight(0xffefd5,2.3);sun.position.set(-5,10,4);scene.add(sun);
@@ -19,4 +19,5 @@ export function createFarmScene(){
 
  },pick(ray){const hit=ray.intersectObjects(hits,true)[0];return hit?{plot:hit.object.userData.plot}:null},dispose(){geo.dispose();mats.forEach(m=>m.dispose());extra.forEach(o=>o.userData.dispose())}};
 }
+
 

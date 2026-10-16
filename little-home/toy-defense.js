@@ -1,4 +1,4 @@
-import {installFarm} from './farm-ui.js?v=farm-shape-5';
+import {installFarm} from './farm-ui.js?v=farm-balance-6';
 import {installLivingShooter} from './living-shooter.js?v=shooter-1';
 import * as T from './vendor/three.module.js';
 import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
@@ -136,6 +136,7 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions}){
  installLivingShooter({games,canStart,makeHero,onWin});
  if(farmOptions)installFarm({games,canStart,options:farmOptions});
 }
+
 
 
 

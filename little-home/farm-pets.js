@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {createEmberRex} from './ember-rex.js?v=farm-shape-5';
-import {stage} from './farm-core.js?v=farm-1';
+import {stage} from './farm-core.js?v=farm-balance-6';
 export function createFarmPet(pet){
  const s=stage(pet),line=pet.line||'mixed';
  if(line==='tomato'&&s>=3){const g=createEmberRex({growthStage:s});g.scale.multiplyScalar([0,0,0,.65,.82,1][s]);return g}
@@ -67,4 +67,5 @@ export function createFarmPet(pet){
  for(const batch of batches){const p=[],n=[],c=[];for(const {geo,color} of batch.parts){const flat=geo.index?geo.toNonIndexed():geo,col=new T.Color(color);p.push(...flat.attributes.position.array);n.push(...flat.attributes.normal.array);for(let i=0;i<flat.attributes.position.count;i++)c.push(col.r,col.g,col.b);if(flat!==geo)flat.dispose();geo.dispose()}if(p.length){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setAttribute('normal',new T.Float32BufferAttribute(n,3));g.setAttribute('color',new T.Float32BufferAttribute(c,3));g.computeBoundingSphere();geos.push(g);const mesh=new T.Mesh(g,material);mesh.castShadow=mesh.receiveShadow=true;batch.g.add(mesh)}}
  root.scale.setScalar(adult?.82+s*.035:.85+s*.10);root.userData.update=(t,{walk=false}={})=>{head.rotation.y=Math.sin(t*1.2)*.07;legs.forEach((l,i)=>{l.position.y=-.16+(walk?Math.max(0,Math.sin(t*7+i*Math.PI))*.035:0)});wings.forEach((w,i)=>w.rotation.z=Math.sin(t*2)*.04*(i%2?-1:1))};root.userData.dispose=()=>{geos.forEach(g=>g.dispose());material.dispose()};return root;
 }
+
 

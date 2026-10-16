@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
-import {createFarmPet} from './farm-pets.js?v=farm-shape-5';
-import {stage,AWARDS} from './farm-core.js?v=farm-1';
+import {createFarmPet} from './farm-pets.js?v=farm-balance-6';
+import {stage,AWARDS} from './farm-core.js?v=farm-balance-6';
 import {walkable,canTraverse} from './navigation.js?v=games2-1';
 export function createHomePets(scene){
  const views=new Map();let elapsed=0,lastKey='';
@@ -9,4 +9,5 @@ export function createHomePets(scene){
 }
 // Reuse the existing chest decal transform, so both adult and child rigs keep their fit.
 export function decorateFarmShirt(actor,id){const award=AWARDS.find(a=>a.id===id);if(!award)return;let decal;actor.traverse(n=>{if(n.name==='Tiger shirt print')decal=n});if(!decal)return;const canvas=document.createElement('canvas');canvas.width=512;canvas.height=448;const c=canvas.getContext('2d');c.fillStyle='#faf2d6';c.beginPath();c.arc(256,150,86,0,Math.PI*2);c.fill();c.fillStyle='#bd9754';c.beginPath();c.arc(256,150,70,0,Math.PI*2);c.fill();c.fillStyle='#fff5d8';c.font='bold 75px sans-serif';c.textAlign='center';c.fillText('★',256,176);c.fillStyle='#faf2d6';c.fillRect(12,250,488,95);c.fillStyle='#354e3e';c.font='bold 62px sans-serif';c.fillText(award.name,256,320);const texture=new T.CanvasTexture(canvas);const material=decal.material.clone();material.map=texture;decal.material=material;decal.visible=true;const previous=actor.userData.disposeCostume;actor.userData.disposeCostume=()=>{previous?.();material.dispose();texture.dispose()}}
+
 
