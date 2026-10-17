@@ -1,11 +1,11 @@
 import {newFarm,farmAction} from './farm-core.js?v=evo-10';
-import {decorateFarmShirt} from './farm-home.js?v=shirts-15';
+import {decorateFarmShirt} from './farm-home.js?v=shirts-16';
 import {applyChoreContact,resetChoreContact,contactStops} from './chore-contact.js?v=chore-route-fix-1';
 import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=home-fixes-1';
-import {installToyDefense} from './toy-defense.js?v=shirts-15';
+import {installToyDefense} from './toy-defense.js?v=shirts-16';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=games2-1';
@@ -137,7 +137,19 @@ function setCharacter(v){
  character.position.set(tour[start][0],.07,tour[start][1]);route=(start+1)%tour.length;
  resolveMonsterOverlap(character);
 }
+function rememberRestExit(){
+ // Preserve the approach point if an entry animation is interrupted.
+ if(!restExit&&travel?.phase==='settle')restExit=travel.exit;
+ // Recover characters left standing inside a dining chair by older builds.
+ if(!restExit&&character&&!walkable(character.position.x,character.position.z)){
+  for(const z of [5.94,6.63]){
+   const center=furnitureXZ('dining',[1.41,z]),exit=furnitureXZ('dining',[.88,z]);
+   if(Math.hypot(character.position.x-center[0],character.position.z-center[1])<.48&&walkable(...exit)&&!crossesWall([character.position.x,character.position.z],exit)){restExit=exit;break}
+  }
+ }
+}
 function leaveRest(){
+ rememberRestExit();
  if(restExit){character.position.set(restExit[0],.07,restExit[1]);restExit=null}
  character.position.y=.07;furnitureSupport=null;
 }
@@ -145,9 +157,11 @@ let currentBed=null,movementRequest=0,floorPose=false,poseLift=0,furnitureSuppor
 function releaseBed(){currentBed=null;if(character)character.userData.bedReservation=null}
 function setPose(next){
  if(activity)return toast('先完成目前的家事');if(!character)return;
+ rememberRestExit();
  movementRequest++;cancelHandAction();travel=null;
+ if(next==='stand'&&restExit)leaveRest();
  if(pose==='sit')window.homeScene?.showNews(false);
- // Keep the root at the clicked location, including when already on furniture.
+ // Floor poses stay in place; standing from furniture returns to its approach point.
  pose=next;floorPose=true;poseLift=0;poseStarted=performance.now();
  const body=character.userData.body;body.position.y=0;body.rotation.set(next==='lie'?-Math.PI/2:0,0,0);
  for(const limb of [...character.userData.arms,...character.userData.legs])limb.rotation.set(0,0,0);
@@ -224,6 +238,7 @@ function updateHandAction(now,rightArm){
 }
 function approachTarget(point,onArrival=null,label='走到旁邊',maxRadius=.9,customPoints=null){
  if(activity){toast('先完成目前的家事');return false}if(!character)return false;
+ rememberRestExit();
  const from=restExit||[character.position.x,character.position.z],candidates=[];
  if(customPoints){for(const p of customPoints)if(walkable(...p))candidates.push({point:p,score:Math.hypot(p[0]-from[0],p[1]-from[1])})}
  else for(const r of [0,.3,.5,.7,.9])for(let i=0;i<(r?12:1);i++){
@@ -242,10 +257,11 @@ function moveTo(point,kind='walk',bedSlot=null){
  if(bedSlot&&character)bedSlot=alignBedSlot(character,bedSlot);
   if(activity)return toast('先完成目前的家事');
   if(!character)return;if((kind==='mainBed'||kind==='childBed')&&!bedSlot)return moveToBed(point,kind);
+  rememberRestExit();
   movementRequest++;furnitureSupport=null;releaseBed();currentBed=bedSlot;if(character)character.userData.bedReservation=bedSlot;floorPose=false;poseLift=0;cancelHandAction();
   if(kind.startsWith('diningChair')){const z=kind==='diningChair0'?5.94:6.63;if(onlinePlayers().some(([,p])=>p.presence.pose==='sit'&&Math.hypot(p.presence.x-(1.41+furnitureShift.dining),p.presence.z-z)<.25))return toast('這張椅子有人坐，請選另一張')}
   if(pose==='sit')window.homeScene?.showNews(false);
-  if(restExit&&pose!=='walk')character.position.set(restExit[0],.07,restExit[1]);
+  if(restExit)character.position.set(restExit[0],.07,restExit[1]);
   restExit=null;travel=null;pose='stand';
   const stops={diningChair0:furnitureXZ('dining',[.88,5.94]),diningChair1:furnitureXZ('dining',[.88,6.63]),entryMirror:[entryZero+.45,9.58],bathMirror:[4.73+furnitureShift.basin,4.80],sofa:furnitureXZ('sofa',[2.00,2.04]),mainBed:furnitureXZ('mainBed',[4.25,1.68]),childBed:furnitureXZ('childBed',[4.27,6.90])};
   const destination=stops[kind]||point;

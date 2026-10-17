@@ -36,7 +36,7 @@ export function decorateFarmShirt(actor,id){
  const width=size.x*1.04,depth=size.z*1.06,hip=b.min.y;
  box(group,width,size.y,depth,cx,(b.min.y+b.max.y)/2,cz);
  const hem=new T.Group();hem.position.set(cx,hip,cz);group.add(hem);
- const hemHeight=size.y*.62;
+ const hemHeight=size.y*.28; // Mid-length: cover the hips without reaching mid-thigh.
  box(hem,width*1.03,hemHeight,depth,0,-hemHeight/2,0);
  // Neck ring, not a solid block over the neck.
  const neckW=width*.58,neckD=depth*.88,t=.018;
