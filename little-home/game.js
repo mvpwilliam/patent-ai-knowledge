@@ -501,7 +501,7 @@ function chooseTask(t){
   selectedTask=t.id;$('#chore-name').textContent=t.label;
   for(const marker of $('#chore-markers').children)marker.setAttribute('aria-expanded',String(marker.dataset.task===t.id));
   $('#chore-start').disabled=!!activity||(mode==='online'&&(!user||!homeReady));
-  $('#chore-popup').hidden=false;
+  $('#chore-popup').hidden=false;updateTaskPopup();
 }
 $('#chore-start').onclick=()=>{const task=tasks.find(t=>t.id===selectedTask);closeTaskPopup();if(task)startTask(task)};
 $('#chore-close').onclick=closeTaskPopup;
@@ -520,6 +520,19 @@ function renderMarkers(){
  }
  updateMarkers();
 }
+function updateTaskPopup(){
+ const popup=$('#chore-popup');if(!selectedTask){popup.hidden=true;return}
+ const marker=[...$('#chore-markers').children].find(m=>m.dataset.task===selectedTask);
+ if(!marker||marker.hidden){popup.hidden=true;return}
+ const world=$('#world'),w=world.clientWidth,h=world.clientHeight;
+ popup.hidden=false;
+ const x=parseFloat(marker.style.left),y=parseFloat(marker.style.top),pw=popup.offsetWidth,ph=popup.offsetHeight,gap=30,pad=8;
+ let left=x+gap;
+ if(left+pw>w-pad)left=x-gap-pw;
+ if(left<pad){left=Math.max(pad,Math.min(w-pw-pad,x-pw/2));popup.style.top=Math.max(pad,Math.min(h-ph-pad,y+gap))+'px'}
+ else popup.style.top=Math.max(pad,Math.min(h-ph-pad,y-ph/2))+'px';
+ popup.style.left=left+'px';
+}
 function updateMarkers(){
  if(!scene)return;const t=activity&&activity.phase!=='return'?activity.task:null;
  $('#active-task').hidden=!t;$('#task-cancel').hidden=!t;
@@ -534,6 +547,7 @@ function updateMarkers(){
   // Keep the prompt on its world anchor, even when nearby chores overlap.
   marker.style.left=x+'px';marker.style.top=y+'px';
  }
+ updateTaskPopup();
 }
 
 // Contact planes match the physical furniture, not the floating ! markers.
