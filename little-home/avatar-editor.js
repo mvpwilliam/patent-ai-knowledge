@@ -14,6 +14,7 @@ export function openAvatarEditor(profile,design={},required=false){return new Pr
 .avatar-studio .av-foot span:empty{display:none}
 .avatar-studio .av-save{display:block;flex-shrink:0;width:100%;min-width:0;min-height:54px;padding:15px 20px;font-size:17px;font-weight:700;line-height:1.4;border-radius:14px;touch-action:manipulation}
 `;document.head.append(style)}
+ let clothingChanged=false;
  let draft={...profile},shape=normalizeAvatarDesign(design),yaw=.25,pose='stand',renderer,scene,actor,camera;
  const canvas=dialog.querySelector('.av-view canvas'),fields=dialog.querySelector('.av-fields');
  for(const [key,label,min,max]of [['faceWidth','臉寬',.82,1.2],['chin','下巴飽滿度',.6,1.6],['eyeSize','眼睛大小',.65,1.4],['eyeGap','眼睛間距',.75,1.25],['browAngle','眉毛角度',-.5,.5]]){const l=document.createElement('label');l.textContent=label;const input=document.createElement('input');input.type='range';input.min=min;input.max=max;input.step=.01;input.dataset.design=key;l.append(input);dialog.querySelector('.av-sliders').append(l)}
@@ -21,14 +22,14 @@ export function openAvatarEditor(profile,design={},required=false){return new Pr
  function dispose(){actor?.userData.disposeCostume?.();actor?.traverse(n=>{n.geometry?.dispose();if(n.material)n.material.dispose()})}
  function draw(){if(!renderer)return;actor.rotation.y=yaw;actor.userData.updatePose(pose);renderer.render(scene,camera)}
  function rebuild(){try{dispose();scene=new T.Scene();scene.background=new T.Color('#e9eee6');scene.add(new T.HemisphereLight('#ffffff','#69705f',2.5));const light=new T.DirectionalLight('#ffffff',2);light.position.set(-2,4,3);scene.add(light);actor=createPixelDad(draft,shape);scene.add(actor);draw()}catch(e){dialog.querySelector('.av-foot span').textContent='預覽暫時無法顯示，仍可儲存造型。'}}
- function read(){for(const e of fields.querySelectorAll('[data-field]'))draft[e.dataset.field]=e.value;for(const e of fields.querySelectorAll('[data-design]'))shape[e.dataset.design]=e.type==='checkbox'?e.checked:e.type==='range'?Number(e.value):e.value;draft.hair=['long','cap'].includes(shape.hairStyle)?shape.hairStyle:'korean';shape.glasses=shape.eyewear==='round';shape=normalizeAvatarDesign(shape);rebuild()}
+ function read(event){if(event?.target?.dataset.field==='shirt'){clothingChanged=true;shape.legendaryOutfit=''}for(const e of fields.querySelectorAll('[data-field]'))draft[e.dataset.field]=e.value;for(const e of fields.querySelectorAll('[data-design]'))shape[e.dataset.design]=e.type==='checkbox'?e.checked:e.type==='range'?Number(e.value):e.value;draft.hair=['long','cap'].includes(shape.hairStyle)?shape.hairStyle:'korean';shape.glasses=shape.eyewear==='round';shape=normalizeAvatarDesign(shape);rebuild()}
  fields.addEventListener('input',read);fields.addEventListener('change',read);
 
  for(const b of dialog.querySelectorAll('[data-view]'))b.onclick=()=>{pose=b.dataset.view;draw()};
  let pointer=null;canvas.onpointerdown=e=>{pointer=e.clientX;canvas.setPointerCapture(e.pointerId)};canvas.onpointermove=e=>{if(pointer===null)return;yaw+=(e.clientX-pointer)*.015;pointer=e.clientX;draw()};canvas.onpointerup=canvas.onpointercancel=()=>pointer=null;
  let done=false;function finish(value){if(done)return;done=true;dispose();renderer?.dispose();dialog.close();dialog.remove();resolve(value)}
  dialog.querySelector('.av-close')?.addEventListener('click',()=>finish(null));dialog.addEventListener('cancel',e=>{e.preventDefault();if(!required)finish(null)});
- dialog.querySelector('.av-save').onclick=()=>{if(!draft.name.trim()){dialog.querySelector('.av-foot span').textContent='請輸入名字';fields.querySelector('[data-field=name]').focus();return}finish({profile:{...draft,name:draft.name.trim().slice(0,12)},design:normalizeAvatarDesign(shape)})};
+ dialog.querySelector('.av-save').onclick=()=>{if(!draft.name.trim()){dialog.querySelector('.av-foot span').textContent='請輸入名字';fields.querySelector('[data-field=name]').focus();return}finish({profile:{...draft,name:draft.name.trim().slice(0,12)},design:normalizeAvatarDesign(shape),clothingChanged})};
  document.body.append(dialog);sync();dialog.showModal();
  try{renderer=new T.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(280,340,false);camera=new T.PerspectiveCamera(35,280/340,.01,10);camera.position.set(0,.55,2.05);camera.lookAt(0,.50,0);rebuild();
  draw();

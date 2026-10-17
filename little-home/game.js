@@ -5,14 +5,14 @@ import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
-import {installToyDefense} from './toy-defense.js?v=outfit-feed-17';
+import {installToyDefense} from './toy-defense.js?v=outfit-feed-18';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=games2-1';
 import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=entry-expand-1';
 import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=window-night-1';
 import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=editor-visor-1';
-import {openAvatarEditor} from './avatar-editor.js?v=npc-ball-1';
+import {openAvatarEditor} from './avatar-editor.js?v=outfit-feed-18';
 import {createHouseNPC} from './house-npc.js?v=games2-1';
 import {createGodzilla} from './godzilla.js?v=103';
 import {bedSlots,sameBed,alignBedSlot} from './bed-slots.js?v=home-detail-2';
@@ -693,10 +693,10 @@ async function editAvatar(){
  const parent=$('#character-dialog'),returnToCharacter=parent.open;if(returnToCharacter)parent.close();
  try{
   const result=await openAvatarEditor(avatar,{...avatarDesign,legendaryOutfit:equippedLegendary(player)},false);if(!result)return;
-  avatar=outfit(result.profile);setAvatarDesign(result.design,true);fillAvatar();await saveAvatar();
+  avatar=outfit(result.profile);setAvatarDesign(result.design,true);fillAvatar();await saveAvatar(!!result.clothingChanged);
  }finally{if(returnToCharacter){renderAvatarPreview();parent.showModal();$('#avatar-edit').focus()}}
 }
-async function saveAvatar(){
+async function saveAvatar(replaceClothing=false){
   const name=String(avatar.name||'').trim();if(!name||name.length>12){toast('請輸入 1～12 個字的名字');return}
   const appearanceURL=new URL(location.href);appearanceURL.searchParams.delete('avatar');history.replaceState(null,'',appearanceURL);
   avatar=outfit({...avatar,name});
@@ -704,7 +704,7 @@ async function saveAvatar(){
   localStorage.setItem(appearanceKey(),'1');
   localStorage.setItem(nameKey(),'1');
   if(user&&homeReady)try{await api.setDoc(api.doc(db,'homes',homeId,'profiles',user.uid),avatar)}catch{toast('造型已存本機，雲端同步失敗');return}
-  if(homeReady){try{await mutateGame(p=>{p.avatarDesign=normalizeAvatarDesign(avatarDesign)});designPending=false}catch{toast('造型已存本機，捏臉同步稍後重試');return}}
+  if(homeReady||mode!=='online'){try{await mutateGame(p=>{p.avatarDesign=normalizeAvatarDesign(avatarDesign);if(replaceClothing){p.farmShirt='';p.legendaryEquipped=''}});designPending=false}catch{toast('造型已存本機，捏臉同步稍後重試');return}}
   $('#game-status').textContent=`${avatar.name} 正在家裡過日子`;toast('角色造型已儲存');
 }
 function clearSubscriptions(){
