@@ -1,4 +1,4 @@
-import {installFarm} from './farm-ui.js?v=pause-exit-22';
+import {installFarm} from './farm-ui.js?v=direct-exit-23';
 import * as T from './vendor/three.module.js';
 import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
 
