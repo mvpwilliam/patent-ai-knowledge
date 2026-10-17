@@ -27,7 +27,7 @@ test('adult and child mirrors center real bounds; bath crops to face',()=>{
   else assert.ok(camera.top-camera.bottom>height);
  }
 });
-test('pause halts elapsed time and requires confirmation before clearing progress',()=>{
+test('pause halts elapsed time; quitting directly clears progress without confirmation',()=>{
  const source=read('./escape.js');
  assert.match(source,/!document.hidden&&!state.escaped&&!paused/);
  const start=source.indexOf('function resumeGame()'),end=source.indexOf("pauseDialog.querySelector",start);
@@ -35,7 +35,7 @@ test('pause halts elapsed time and requires confirmation before clearing progres
  const ctx={paused:false,previous:0,performance:{now:()=>42},room:{pause(){}},pauseDialog:{showModal(){},close(){closed++}},state:{escaped:false},save(){},initial(){cleared++;return {}},location:{href:''},window:{confirm:()=>false}};
  vm.createContext(ctx);vm.runInContext(source.slice(start,end),ctx);
  ctx.pauseGame();assert.equal(ctx.paused,true);
- ctx.quitGame();assert.equal(cleared,0);assert.equal(ctx.location.href,'');
  ctx.resumeGame();assert.equal(ctx.paused,false);assert.equal(ctx.previous,42);assert.equal(closed,1);
- ctx.window.confirm=()=>true;ctx.quitGame();assert.equal(cleared,1);assert.equal(ctx.location.href,'./');
+ ctx.window.confirm=()=>{throw new Error('No extra confirmation allowed')};ctx.quitGame();assert.equal(cleared,1);assert.equal(ctx.location.href,'./');
+ assert.ok(!read('./escape.html').includes('<a href="./">'));
 });
