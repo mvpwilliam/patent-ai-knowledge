@@ -1,4 +1,4 @@
-import {installFarm} from './farm-ui.js?v=shirts-16';
+import {installFarm} from './farm-ui.js?v=outfit-feed-17';
 import * as T from './vendor/three.module.js';
 import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
 

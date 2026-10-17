@@ -5,7 +5,7 @@ import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
-import {installToyDefense} from './toy-defense.js?v=shooter-off-1';
+import {installToyDefense} from './toy-defense.js?v=outfit-feed-17';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=games2-1';
@@ -647,7 +647,7 @@ function renderAvatarPreview(previewOutfit=equippedLegendary(player)){
   disposeAvatarPreview();
   const portraitScene=new T.Scene();portraitScene.add(new T.HemisphereLight('#ffffff','#72816f',2.5));
   const light=new T.DirectionalLight('#fff7e9',2);light.position.set(-2,4,4);portraitScene.add(light);
-  avatarPreviewActor=createPixelDad(outfit(avatar),normalizeAvatarDesign({...avatarDesign,legendaryOutfit:previewOutfit}));if(player.farmShirt)decorateFarmShirt(avatarPreviewActor,player.farmShirt);avatarPreviewActor.userData.updatePose?.('stand');avatarPreviewActor.rotation.y=.2;portraitScene.add(avatarPreviewActor);
+  avatarPreviewActor=createPixelDad(outfit(avatar),normalizeAvatarDesign({...avatarDesign,legendaryOutfit:previewOutfit}));if(player.farmShirt&&!previewOutfit)decorateFarmShirt(avatarPreviewActor,player.farmShirt);avatarPreviewActor.userData.updatePose?.('stand');avatarPreviewActor.rotation.y=.2;portraitScene.add(avatarPreviewActor);
   const bounds=new T.Box3().setFromObject(avatarPreviewActor),center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3());
   const camera=new T.PerspectiveCamera(32,240/260,.01,20),distance=Math.max(size.y,size.x/camera.aspect)/(2*Math.tan(camera.fov*Math.PI/360))*1.2;
   camera.position.set(center.x,center.y,center.z+distance);camera.lookAt(center);avatarPreviewRenderer.render(portraitScene,camera);canvas.hidden=false;
@@ -986,7 +986,7 @@ function renderEconomy(){
  $('#daily-progress').textContent=`今日家事 ${dayTasks().filter(t=>taskDone(t)).length}／${dayTasks().length}`;
  renderInventory();renderShop();renderLegendaryWardrobe();
 }
-function equippedLegendary(p){return p?.xp>=MAX_XP&&Array.isArray(p.legendaryOwned)&&p.legendaryOwned.includes(p.legendaryEquipped)&&outfitById(p.legendaryEquipped)?p.legendaryEquipped:''}
+function equippedLegendary(p){return !p?.farmShirt&&p?.xp>=MAX_XP&&Array.isArray(p.legendaryOwned)&&p.legendaryOwned.includes(p.legendaryEquipped)&&outfitById(p.legendaryEquipped)?p.legendaryEquipped:''}
 function renderLegendaryWardrobe(){
  const list=$('#legendary-list');if(!list)return;list.replaceChildren();const unlocked=player.xp>=MAX_XP,current=equippedLegendary(player);
  $('#legendary-note').textContent=unlocked?(player.legendaryFreeClaimed?'首套已領取 · 其餘每套 1,200 遊戲幣':'恭喜滿級！任選一套免費領取，之後每套 1,200 遊戲幣'):'20 級解鎖 · 首套免費，現在可先預覽';
@@ -1005,9 +1005,9 @@ async function wearLegendary(id){
  if(activity||travel)return toast('請先完成目前的動作，再換裝');
  try{await mutateGame(p=>{
   if(p.xp<MAX_XP)throw new Error('升到 20 級後即可解鎖');
-  if(id===''){p.legendaryEquipped='';return}
-  if(p.legendaryOwned.includes(id)){p.legendaryEquipped=id;return}
-  const result=unlockLegendary(p,id,MAX_XP);record(p,`${result.free?'滿級免費領取':'套裝解鎖'}：${result.item.name}`,-result.cost);
+  if(id===''){p.legendaryEquipped='';p.farmShirt='';return}
+  if(p.legendaryOwned.includes(id)){p.legendaryEquipped=id;p.farmShirt='';return}
+  const result=unlockLegendary(p,id,MAX_XP);p.farmShirt='';record(p,`${result.free?'滿級免費領取':'套裝解鎖'}：${result.item.name}`,-result.cost);
  });renderAvatarPreview();$('#legendary-preview-label').textContent='';toast(id?`已換上${outfitById(id).name}`:'已換回日常服裝')}catch(e){toast(e.message||'套裝未儲存，請再試一次')}
 }
 $('#legendary-remove').onclick=()=>wearLegendary('');
@@ -1214,7 +1214,7 @@ function openHomePanel(page){
       if(owner!==`${homeId||'preview'}:${playerId()}`)throw new Error('家庭或帳號已切換');
       const farm=structuredClone(meta.farm||(mode==='online'?newFarm():getFarmState()||newFarm()));
       result=farmAction(farm,playerId(),avatar.name,action,at);meta.farm=farm;
-      if(action.type==='shirt')p.farmShirt=action.award||'';
+      if(action.type==='shirt'){p.farmShirt=action.award||'';if(action.award)p.legendaryEquipped='';}
      });return result;
     }
    },
