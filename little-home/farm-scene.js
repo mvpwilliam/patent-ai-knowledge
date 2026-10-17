@@ -5,24 +5,31 @@ export function createFarmScene(){
  const scene=new T.Scene();scene.background=new T.Color('#dfe7d6');const camera=new T.OrthographicCamera(-6,6,7,-7,.1,60);camera.position.set(0,11,13);camera.lookAt(0,0,0);
  scene.add(new T.HemisphereLight(0xfff8e9,0x7c9378,2.5));const sun=new T.DirectionalLight(0xffefd5,2.3);sun.position.set(-5,10,4);scene.add(sun);
  const companions=new Map();let walkTime=0,lastWalkTime=null;
+ function nameTag(name){
+  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.font='600 40px sans-serif';canvas.width=Math.ceil(ctx.measureText(name).width)+32;canvas.height=64;
+  ctx.font='600 40px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=7;ctx.strokeStyle='#fafbf2';ctx.strokeText(name,canvas.width/2,32);ctx.fillStyle='#365342';ctx.fillText(name,canvas.width/2,32);
+  const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
+  const material=new T.SpriteMaterial({map:texture,transparent:true,depthTest:false,depthWrite:false}),label=new T.Sprite(material);
+  label.scale.set(canvas.width/64*.48,.48,1);label.renderOrder=10;label.userData.dispose=()=>{texture.dispose();material.dispose()};return label;
+ }
  function syncCompanions(f,time){
   const dt=time>0&&lastWalkTime>0?Math.min(.05,Math.max(0,time-lastWalkTime)):0;lastWalkTime=time;walkTime+=dt;
   const wanted=new Set();
   Object.entries(f.members).sort(([a],[b])=>a.localeCompare(b)).forEach(([owner,m],index)=>{
    const pet=m.pets.find(p=>p.id===m.activeId)||m.pets.at(-1);if(!pet)return;wanted.add(owner);
-   const key=JSON.stringify([pet.id,pet.line,pet.feeds.length,pet.history]);
+   const key=JSON.stringify([pet.id,pet.line,pet.feeds.length,pet.history,pet.name]);
    let item=companions.get(owner);
-   if(item?.key!==key){if(item){scene.remove(item.group);item.model.userData.dispose()}
+   if(item?.key!==key){if(item){scene.remove(item.group);item.model.userData.dispose();item.label.userData.dispose()}
     const group=new T.Group(),model=createFarmPet(pet);group.add(model);model.updateMatrixWorld(true);
-    const bounds=new T.Box3().setFromObject(model),size=bounds.getSize(new T.Vector3()),factor=Math.min(1.25/Math.max(.01,size.y),1.3/Math.max(.01,size.x,size.z));
-    model.scale.multiplyScalar(factor);model.position.y-=bounds.min.y*factor;group.userData.owner=owner;scene.add(group);item={group,model,key};companions.set(owner,item);
+    const bounds=new T.Box3().setFromObject(model),size=bounds.getSize(new T.Vector3()),factor=.8*Math.min(1.25/Math.max(.01,size.y),1.3/Math.max(.01,size.x,size.z));
+    model.scale.multiplyScalar(factor);model.position.y-=bounds.min.y*factor;group.userData.owner=owner;const label=nameTag(pet.name||'小雞');label.position.y=size.y*factor+.32;group.add(label);scene.add(group);item={group,model,label,key};companions.set(owner,item);
    }
    // Walk around the front lawn, keeping the planting grid and tools clear.
    const points=[[-1.65,2.85],[1.65,2.85],[1.65,4.35],[-1.65,4.35]],phase=(walkTime*.16+index*.93)%4,segment=Math.floor(phase),fraction=phase-segment,a=points[segment],b=points[(segment+1)%4];
    item.group.position.set(a[0]+(b[0]-a[0])*fraction,0,a[1]+(b[1]-a[1])*fraction);
    item.group.rotation.y=Math.atan2(b[0]-a[0],b[1]-a[1]);item.model.userData.update?.(walkTime+index,{walk:dt>0});
   });
-  for(const [owner,item] of companions)if(!wanted.has(owner)){scene.remove(item.group);item.model.userData.dispose();companions.delete(owner)}
+  for(const [owner,item] of companions)if(!wanted.has(owner)){scene.remove(item.group);item.model.userData.dispose();item.label.userData.dispose();companions.delete(owner)}
  }
  const geo=new T.BoxGeometry(1,1,1),mats=new Map(),extra=[],hits=[],plants=[];
  const mat=c=>{if(!mats.has(c))mats.set(c,new T.MeshLambertMaterial({color:c}));return mats.get(c)};
@@ -38,7 +45,7 @@ export function createFarmScene(){
  function rebuildCrop(plot,id,status,phase){plot.crop.clear();if(!id)return;const height=.13+phase*.45;for(const [x,z] of [[-.32,-.23],[.3,-.17],[0,.28]]){box(plot.crop,.045,height,.045,'#698a55',x,.22+height/2,z);for(const sign of [-1,1]){const leaf=box(plot.crop,.20,.035,.10,'#8ca866',x+sign*.10,.24+height*.65,z);leaf.rotation.z=sign*.45}if(phase>.45){const c=id==='radish'?'#eee6cf':id==='tomato'?'#d36e52':'#e3a64d';const w=id==='pumpkin'?.32:.21;box(plot.crop,w,id==='radish'?.25:w,w,c,x,.23+(id==='tomato'?height*.7:.05),z);if(id==='pumpkin'){for(const dx of [-.1,.1])box(plot.crop,.025,.28,.31,'#cc8e38',x+dx,.28,z);box(plot.crop,.045,.10,.045,'#697e4c',x,.47,z)}}}plot.crop.scale.setScalar(status==='READY'?1.08:1)}
  return {scene,camera,hits,sync(f,profiles,now,aspect,time){syncCompanions(f,time);const half=Math.max(6.2,4.4/aspect);camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();plots.forEach((p,i)=>{const data=f.plots[i],status=plotState(data,now),unlocked=i<slots(f),progress=data.wateredAt?Math.min(1,(now-data.wateredAt)/(data.readyAt-data.wateredAt)):0,phase=status==='PLANTED'?.1:progress<.4?.25:progress<.8?.6:1,key=[data.plantId,status,phase].join('/');p.soil.material=mat(!unlocked?'#a2a58b':status==='READY'?'#9d9c55':status==='GROWING'?'#695742':'#82634b');if(key!==p.key){p.key=key;rebuildCrop(p,data.plantId,status,phase)}p.crop.rotation.z=status==='READY'?Math.sin(time*2+i)*.025:0});
 
- },pick(ray){const hit=ray.intersectObjects([...hits,...Array.from(companions.values(),v=>v.group)],true)[0];if(!hit)return null;let object=hit.object;while(object){if(object.userData.owner)return {owner:object.userData.owner};object=object.parent}return {plot:hit.object.userData.plot}},dispose(){for(const item of companions.values())item.model.userData.dispose();companions.clear();geo.dispose();mats.forEach(m=>m.dispose());extra.forEach(o=>o.userData.dispose())}};
+ },pick(ray){const hit=ray.intersectObjects([...hits,...Array.from(companions.values(),v=>v.group)],true)[0];if(!hit)return null;let object=hit.object;while(object){if(object.userData.owner)return {owner:object.userData.owner};object=object.parent}return {plot:hit.object.userData.plot}},dispose(){for(const item of companions.values()){item.model.userData.dispose();item.label.userData.dispose()}companions.clear();geo.dispose();mats.forEach(m=>m.dispose());extra.forEach(o=>o.userData.dispose())}};
 }
 
 
