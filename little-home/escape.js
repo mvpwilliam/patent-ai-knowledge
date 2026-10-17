@@ -41,8 +41,6 @@ function resumeGame(){paused=false;previous=performance.now();room?.pause(false)
 function pauseGame(){if(paused||state.escaped)return;paused=true;room?.pause(true);save();pauseDialog.showModal()}
 function quitGame(){
  if(state.escaped){location.href='./';return}
- pauseGame();
- if(!window.confirm('確定放棄本局並回到小屋？本局線索與進度將清除。'))return;
  state=initial();save();location.href='./';
 }
 pauseDialog.querySelector('[data-resume]').onclick=resumeGame;
@@ -50,7 +48,6 @@ pauseDialog.querySelector('[data-quit]').onclick=quitGame;
 pauseDialog.addEventListener('cancel',e=>{e.preventDefault();resumeGame()});
 const pauseButton=document.createElement('button');pauseButton.textContent='暫停';pauseButton.id='pause-game';pauseButton.onclick=pauseGame;
 document.querySelector('header').append(pauseButton);
-const exitLink=document.querySelector('header a');exitLink.textContent='放棄退出';exitLink.onclick=e=>{e.preventDefault();quitGame()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dialog.open&&!pauseDialog.open){e.preventDefault();pauseGame()}});
 let previous=performance.now(),savedAt=0;setInterval(()=>{const now=performance.now();if(!document.hidden&&!state.escaped&&!paused)state.elapsed+=Math.min((now-previous)/1000,2);previous=now;ui();if(now-savedAt>3000){save();savedAt=now}},250);document.addEventListener('visibilitychange',()=>{previous=performance.now();if(document.hidden&&!state.escaped)pauseGame();save()});window.addEventListener('pagehide',save);
 ui();if(state.escaped)showWin();else open('note');
