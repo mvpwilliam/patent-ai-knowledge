@@ -15,7 +15,7 @@ function run(type,value){const msg=act(state,type,value);save();ui();message(msg
 function feedback(msg){content.querySelector('.feedback')?.remove();text(msg,'feedback')}
 function password(type){const form=document.createElement('form');form.className='code';const input=document.createElement('input');input.type='text';input.inputMode='numeric';input.pattern='[0-9]{4}';input.maxLength=4;input.autocomplete='off';input.placeholder='四位密碼';input.setAttribute('aria-label','四位密碼');const b=document.createElement('button');b.textContent='解鎖';b.className='primary';form.append(input,b);form.onsubmit=e=>{e.preventDefault();const msg=run(type,input.value);if(type==='door'&&state.escaped){showWin();return}if(type==='cabinet'&&state.cabinet){open('cabinet');feedback(msg)}else feedback(msg)};content.append(form)}
 function snapshot(){if(!state.snapshot){text('螢幕上尚未留下紀錄。');return}const p=state.snapshot;text(`定格時間 ${time(p.time)}\n金幣 ${p.coins.toLocaleString()}\n怪獸生命 ${p.hp}/100`,'paper');if(state.cabinet)text('已封存 · 開櫃密碼 '+cabinetCode(state));}
-function open(id){if(paused)return;current=id;room?.focus?.(id);
+function open(id){if(paused)return;current=id;
  if(id==='note'){show('沙發上的紙條');text(NOTE,'paper');buttons([['收好紙條，開始探索',()=>dialog.close(),true]]);remember('note');return}
  if(id==='sofa'){show('電視前的沙發');text('坐墊邊露出一張紙。兩側寬厚的扶手，剛好讓手歇息。');buttons([['閱讀紙條',()=>open('note')],['查看坐墊',()=>{show('沙發坐墊');text('坐墊下沒有東西。扶手側面似乎有幾道刻痕。');buttons([['查看扶手',()=>open('arm')]])}],['查看左右扶手',()=>open('arm')]]);return}
  if(id==='arm'){show('沙發扶手 · 刻痕');text('靠電視那一側，刻著一個時鐘和兩個相乘的方框。');text('［分］ × ［秒］','paper');remember('arm');return}
@@ -26,7 +26,7 @@ function open(id){if(paused)return;current=id;room?.focus?.(id);
   const g=document.createElement('div');g.className='grid';grid(state.turns).flat().forEach((n,i)=>{const b=document.createElement('button');b.textContent=n;b.disabled=![0,2,6,8].includes(i);b.classList.toggle('selected',state.corners.includes(i));b.setAttribute('aria-label',({0:'左上角',2:'右上角',6:'左下角',8:'右下角'}[i]||'中央數字')+' '+n);b.onclick=()=>{const msg=run('corner',i);open('painting');feedback(msg)};g.append(b)});content.append(g);
   if(state.overlay)text(OVERLAY);
   buttons([['查看畫框右側',()=>open('edge')],['順時針轉 90°',()=>{run('rotate');open('painting')}],...(state.cabinet&&!state.overlay?[['放上透明定位片',()=>{run('overlay');open('painting')},true]]:[])]);return}
- if(id==='edge'){show('畫框厚邊 · 方位刻印');const directions=['右 →','下 ↓','左 ←','上 ↑'];text('刻印與畫作一起轉動。從正面看，目前北方指向：');text('N · 北 '+directions[state.turns%4],'paper');remember('north');room?.lookAtPainting();buttons([['回到畫作正面',()=>open('painting'),true]]);return}
+ if(id==='edge'){show('畫框厚邊 · 方位刻印');const directions=['右 →','下 ↓','左 ←','上 ↑'];text('刻印與畫作一起轉動。從正面看，目前北方指向：');text('N · 北 '+directions[state.turns%4],'paper');remember('north');buttons([['回到畫作正面',()=>open('painting'),true]]);return}
  if(id==='door'){show('出口大門');if(state.escaped){showWin();return}text('門邊的數字盤等待四位密碼。');if(state.painting){text(PLAQUE,'paper');text('四角紀錄：4862　／　開櫃密碼：'+cabinetCode(state))}password('door');return}
  if(id==='notebook'){show('紙條與紀錄');text(NOTE,'paper');if(state.notes.includes('arm'))text('扶手刻字：［分］×［秒］');snapshot();if(state.cabinet)text('透明定位片：'+OVERLAY);if(state.notes.includes('north'))text('畫框的北方刻印會隨畫作轉動，與攝影機方向無關。');if(state.painting)text('四角紀錄：4862\n門鎖銘牌：'+PLAQUE);return}
 }
@@ -54,4 +54,4 @@ const exitLink=document.querySelector('header a');exitLink.textContent='放棄�
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dialog.open&&!pauseDialog.open){e.preventDefault();pauseGame()}});
 let previous=performance.now(),savedAt=0;setInterval(()=>{const now=performance.now();if(!document.hidden&&!state.escaped&&!paused)state.elapsed+=Math.min((now-previous)/1000,2);previous=now;ui();if(now-savedAt>3000){save();savedAt=now}},250);document.addEventListener('visibilitychange',()=>{previous=performance.now();if(document.hidden&&!state.escaped)pauseGame();save()});window.addEventListener('pagehide',save);
 ui();if(state.escaped)showWin();else open('note');
-import('./escape-real-room.js?v=home-1').then(({createRoom})=>{room=createRoom($('view'),open);room.pause(paused);ui()}).catch(()=>{$('load-error').hidden=false});
+import('./escape-real-room.js?v=retain-view-3').then(({createRoom})=>{room=createRoom($('view'),open);room.pause(paused);ui()}).catch(()=>{$('load-error').hidden=false});

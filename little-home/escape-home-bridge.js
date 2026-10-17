@@ -48,6 +48,6 @@ window.addEventListener('message',e=>{
  if(e.origin!==location.origin||e.source!==parent)return;
  if(e.data?.type==='escape-reset')focusRoom();
  if(e.data?.type==='escape-pause')paused=!!e.data.paused;
- if(e.data?.type==='escape-focus')focusRoom(({painting:'dining',cabinet:'entry',door:'entry',tv:'living',sofa:'living',monster:'living'})[e.data.id]||'living');
+ // Object dialogs do not change the player's orbit; only reset does.
 });
 parent.postMessage({type:'escape-ready'},location.origin);

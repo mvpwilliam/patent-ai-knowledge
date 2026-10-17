@@ -9,5 +9,5 @@ export function createRoom(canvas,onPick){
   if(e.data?.type==='escape-pick'&&!paused)onPick(e.data.id);
   if(e.data?.type==='escape-ready'){document.getElementById('load-error').hidden=true;send({type:'escape-pause',paused})}
  });
- return {sync(){},pause(value){paused=value;send({type:'escape-pause',paused})},reset(){send({type:'escape-reset'})},focus(id){send({type:'escape-focus',id})},lookAtPainting(){send({type:'escape-focus',id:'painting'})}};
+ return {sync(){},pause(value){paused=value;send({type:'escape-pause',paused})},reset(){send({type:'escape-reset'})},focus(){},lookAtPainting(){}};
 }
