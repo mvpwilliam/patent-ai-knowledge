@@ -1045,10 +1045,22 @@ function renderInventory(){
  document.querySelectorAll('[data-inventory-tab]').forEach(b=>{const active=b.dataset.inventoryTab===inventoryTab;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});
 }
 function shopMessage(message){const el=$('#shop-status');if(el){el.textContent=message;el.hidden=false}}
+function showPurchaseSuccess(item){
+ const dialog=document.createElement('dialog');
+ dialog.className='game-dialog compact-dialog';
+ dialog.setAttribute('aria-labelledby','purchase-success-title');
+ dialog.style.cssText='width:min(340px,calc(100vw - 32px));max-height:80dvh;padding:24px;box-sizing:border-box;text-align:center';
+ const heading=document.createElement('h2');heading.id='purchase-success-title';heading.textContent='購買成功';heading.style.cssText='margin:0 0 14px;font-size:22px';
+ const message=document.createElement('p');message.textContent='「'+item.name+'」已放入道具欄。';message.style.cssText='line-height:1.6;margin:0 0 20px';
+ const confirm=document.createElement('button');confirm.type='button';confirm.textContent='確定';confirm.autofocus=true;confirm.style.cssText='width:100%;min-height:48px;border:0;border-radius:12px;background:#405f50;color:white;font:inherit';
+ confirm.onclick=()=>dialog.close();
+ dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+ dialog.append(heading,message,confirm);document.body.append(dialog);dialog.showModal();
+}
 async function buyItem(item){
  if(item.rewardOnly||syncBusy)return;
  shopMessage(`正在購買「${item.name}」…`);
- try{const id=crypto.randomUUID();await mutateGame(p=>{if(p.coins<item.price)throw new Error('遊戲幣不足');if(p.inventory.length>=40)throw new Error('道具欄已滿（40 件）');p.coins-=item.price;p.inventory.push({id,item:item.id,room:null,slot:null});record(p,`購買${item.name}`,-item.price)});const message=`購買成功！「${item.name}」已放入道具欄。`;shopMessage(message);toast(message)}catch(e){const message=e.message||'購買未成功，請稍後再試';shopMessage(message);toast(message)}
+ try{const id=crypto.randomUUID();await mutateGame(p=>{if(p.coins<item.price)throw new Error('遊戲幣不足');if(p.inventory.length>=40)throw new Error('道具欄已滿（40 件）');p.coins-=item.price;p.inventory.push({id,item:item.id,room:null,slot:null});record(p,`購買${item.name}`,-item.price)});const message=`購買成功！「${item.name}」已放入道具欄。`;$('#shop-status').hidden=true;showPurchaseSuccess(item)}catch(e){const message=e.message||'購買未成功，請稍後再試';shopMessage(message);toast(message)}
 }
 // Small tabletop items use reserved surface slots and never occupy walkways.
 const slots={living:[[scaleX(.24),.68,1.25],[scaleX(.24),.68,2.65]],dining:[furnitureXYZ('dining',[2.22,.83,5.95]),furnitureXYZ('dining',[2.22,.83,6.55])],kitchen:[[scaleX(2.64),.98,9.48],[scaleX(2.91),.98,9.48]],main:[[scaleX(4.25),.10,.30],[scaleX(4.55),.10,.30]],child:[[scaleX(3.05),.10,7.94],[scaleX(3.40),.10,7.94]],entry:[[entryZero+.18,1.05,8.10],[entryZero+.90,1.05,8.10]],bath:[[scaleX(4.55),.84,4.02]],balcony:[[washerPosition.x-.22,1.02,washerPosition.z],[washerPosition.x+.22,1.02,washerPosition.z]]};
