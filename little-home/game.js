@@ -5,7 +5,7 @@ import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
-import {installToyDefense} from './toy-defense.js?v=direct-exit-23';
+import {installToyDefense} from './toy-defense.js?v=side22';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=games2-1';
@@ -1266,7 +1266,7 @@ function openHomePanel(page){
     if(!character||!scene||syncBusy||(mode==='online'&&(!homeReady||!user))){toast('角色資料尚未就緒，請稍候再試');return false}
     battleOwner=`${homeId||'preview'}:${playerId()}`;return true;
    },
-   makeHero(){const copy=makeCharacter(avatar,{...avatarDesign,farmShirt:player.farmShirt});copy.userData.updatePose?.('stand');return copy},
+   makeHero(){const copy=makeCharacter(avatar,{...avatarDesign,legendaryOutfit:equippedLegendary(player),farmShirt:player.farmShirt});copy.userData.updatePose?.('stand');return copy},
    async onWin(runId, result={}){
     const shooting=result.kind==='shooter';const coins=shooting?Math.max(30,Math.min(50,Math.floor(Number(result.coins)||30))):30;
     if(battleOwner!==`${homeId||'preview'}:${playerId()}`)throw new Error('帳號或家庭已切換，無法把這局獎勵存入不同角色');
@@ -1305,6 +1305,7 @@ function openHomePanel(page){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect();
 }
+
 
 
 
