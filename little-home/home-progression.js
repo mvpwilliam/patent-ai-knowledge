@@ -9,13 +9,15 @@ export function levelInfo(xp=0){
 export function hitHomeMonster(meta,actorId,actor,{now=Date.now(),memberIds=[],normalize=p=>p,record=()=>{}}={}){
  const monster=meta.monster;
  if(!monster||now<monster.bornAt||monster.hits>=100)throw new Error('哥吉拉還沒出現');
- monster.hits++;
+ const damage=levelInfo(actor.xp).level===20?5:1;
+ monster.hits=Math.min(100,monster.hits+damage);
  if(monster.hits<100)return false;
  meta.players||={};meta.players[actorId]=actor;
  for(const id of new Set([...Object.keys(meta.players),...memberIds,actorId])){
   const p=id===actorId?actor:normalize(meta.players[id]);
   p.xp=Math.min(MAX_XP,Math.round((Math.max(0,Number(p.xp)||0)+5*MAX_XP/19)*1e6)/1e6);
-  record(p,'擊退哥吉拉 · 全體升 5 級（最高 20 級）',0);meta.players[id]=p;
+  p.coins=(Number(p.coins)||0)+500;
+  record(p,'擊退哥吉拉 · 全體獲得 500 遊戲幣、升 5 級（最高 20 級）',500);meta.players[id]=p;
  }
  monster.defeats=(monster.defeats||0)+1;monster.lastDefeatedAt=now;
  monster.bornAt=now+3600000;monster.hits=0;

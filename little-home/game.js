@@ -4,7 +4,7 @@ import {applyChoreContact,resetChoreContact,contactStops} from './chore-contact.
 import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
-import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=home-fixes-1';
+import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
 import {installToyDefense} from './toy-defense.js?v=shooter-off-1';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
@@ -1147,7 +1147,7 @@ async function attackMonster(){
  if(mode==='online'&&!homeReady)return toast('雲端資料確認中，請稍候再攻擊');
  try{
   await mutateGame((p,meta)=>{defeated=hitHomeMonster(meta,playerId(),p,{memberIds:Object.keys(profileCache),normalize:normalizePlayer,record})});
-  toast(defeated?'哥吉拉擊退！全小屋玩家（含離線）升 5 級，最高 20 級。下次一小時後出現':'命中！');
+  toast(defeated?'哥吉拉擊退！全小屋玩家（含離線）各得 500 遊戲幣、升 5 級，最高 20 級。下次一小時後出現':'命中！');
  }catch(e){toast(e.message||'攻擊未儲存')}
 }
 const monsterRay=new T.Raycaster(),monsterPointer=new T.Vector2();
