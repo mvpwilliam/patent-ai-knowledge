@@ -1,5 +1,4 @@
 import {installFarm} from './farm-ui.js?v=shirts-16';
-import {installLivingShooter} from './living-shooter.js?v=shooter-1';
 import * as T from './vendor/three.module.js';
 import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
 
@@ -133,7 +132,7 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions}){
   if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' ','escape','k'].includes(e.key.toLowerCase())){e.preventDefault();e.stopImmediatePropagation();keys.add(e.key.toLowerCase());if(e.code==='Space'&&!e.repeat)dash=true;if(e.key.toLowerCase()==='k'&&!e.repeat)switchWeapon();if(e.key==='Escape'&&!e.repeat){if(state.status==='paused')resume();else pause()}}
  },true);
  document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{clearInput();pause()});document.addEventListener('visibilitychange',()=>{last=0;if(document.hidden){clearInput();pause()}});
- installLivingShooter({games,canStart,makeHero,onWin});
+ // Living-room shooter temporarily unlisted; source retained for re-release.
  if(farmOptions)installFarm({games,canStart,options:farmOptions});
 }
 
