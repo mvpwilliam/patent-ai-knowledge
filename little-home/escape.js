@@ -1,7 +1,7 @@
 import {NOTE,OVERLAY,PLAQUE,initial,grid,cabinetCode,act} from './escape-core.js?v=escape-1';
 const $=id=>document.getElementById(id),key='little-home-escape-01';
 let state=initial();try{const saved=JSON.parse(localStorage.getItem(key));if(saved?.version===1&&Number.isFinite(saved.elapsed)&&Array.isArray(saved.notes)&&Array.isArray(saved.corners))state={...state,...saved}}catch{}
-let room=null,current=null;
+let room=null,current=null,paused=false;
 function save(){try{localStorage.setItem(key,JSON.stringify(state))}catch{}}
 function time(t){t=Math.floor(t)%6000;return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
 function ui(){ $('time').textContent=time(state.elapsed);$('coins').textContent=state.coins.toLocaleString();$('hp').textContent=state.hp+'/100';$('stage').textContent=state.escaped?'完成 / 已逃出小屋':state.painting?'03 / 尋找歸途':state.cabinet?'02 / 畫中的方向':'01 / 尋找三份證詞';room?.sync(state)}
@@ -15,7 +15,7 @@ function run(type,value){const msg=act(state,type,value);save();ui();message(msg
 function feedback(msg){content.querySelector('.feedback')?.remove();text(msg,'feedback')}
 function password(type){const form=document.createElement('form');form.className='code';const input=document.createElement('input');input.type='text';input.inputMode='numeric';input.pattern='[0-9]{4}';input.maxLength=4;input.autocomplete='off';input.placeholder='四位密碼';input.setAttribute('aria-label','四位密碼');const b=document.createElement('button');b.textContent='解鎖';b.className='primary';form.append(input,b);form.onsubmit=e=>{e.preventDefault();const msg=run(type,input.value);if(type==='door'&&state.escaped){showWin();return}if(type==='cabinet'&&state.cabinet){open('cabinet');feedback(msg)}else feedback(msg)};content.append(form)}
 function snapshot(){if(!state.snapshot){text('螢幕上尚未留下紀錄。');return}const p=state.snapshot;text(`定格時間 ${time(p.time)}\n金幣 ${p.coins.toLocaleString()}\n怪獸生命 ${p.hp}/100`,'paper');if(state.cabinet)text('已封存 · 開櫃密碼 '+cabinetCode(state));}
-function open(id){current=id;
+function open(id){if(paused)return;current=id;room?.focus?.(id);
  if(id==='note'){show('沙發上的紙條');text(NOTE,'paper');buttons([['收好紙條，開始探索',()=>dialog.close(),true]]);remember('note');return}
  if(id==='sofa'){show('電視前的沙發');text('坐墊邊露出一張紙。兩側寬厚的扶手，剛好讓手歇息。');buttons([['閱讀紙條',()=>open('note')],['查看坐墊',()=>{show('沙發坐墊');text('坐墊下沒有東西。扶手側面似乎有幾道刻痕。');buttons([['查看扶手',()=>open('arm')]])}],['查看左右扶手',()=>open('arm')]]);return}
  if(id==='arm'){show('沙發扶手 · 刻痕');text('靠電視那一側，刻著一個時鐘和兩個相乘的方框。');text('［分］ × ［秒］','paper');remember('arm');return}
@@ -33,6 +33,25 @@ function open(id){current=id;
 function showWin(){show('你找到了畫面之外');text('熟悉的時間、金幣與生命值，原來一直在指引你。大門已經打開。','paper');buttons([['回到小屋',()=>location.href='./',true],['留在房間看看',()=>dialog.close()]])}
 $('close').onclick=()=>dialog.close();$('notebook').onclick=()=>open('notebook');document.querySelectorAll('[data-object]').forEach(b=>b.onclick=()=>open(b.dataset.object));$('reset-view').onclick=()=>room?.reset();
 $('restart').onclick=()=>{show('重新開始本局？');text('這會清除本局線索與密碼進度。');buttons([['保留進度',()=>dialog.close()],['重新開始',()=>{state=initial();save();ui();message('新的密室等待探索。');open('note')},true]])};
-let previous=performance.now(),savedAt=0;setInterval(()=>{const now=performance.now();if(!document.hidden&&!state.escaped)state.elapsed+=Math.min((now-previous)/1000,2);previous=now;ui();if(now-savedAt>3000){save();savedAt=now}},250);document.addEventListener('visibilitychange',()=>{previous=performance.now();save()});window.addEventListener('pagehide',save);
+const pauseDialog=document.createElement('dialog');
+pauseDialog.setAttribute('aria-label','遊戲暫停');
+pauseDialog.innerHTML='<h2>遊戲已暫停</h2><p>計時與解謎操作已停止。</p><div class="actions"><button class="primary" data-resume>繼續遊戲</button><button data-quit>放棄並退出</button></div>';
+document.body.append(pauseDialog);
+function resumeGame(){paused=false;previous=performance.now();room?.pause(false);pauseDialog.close()}
+function pauseGame(){if(paused||state.escaped)return;paused=true;room?.pause(true);save();pauseDialog.showModal()}
+function quitGame(){
+ if(state.escaped){location.href='./';return}
+ pauseGame();
+ if(!window.confirm('確定放棄本局並回到小屋？本局線索與進度將清除。'))return;
+ state=initial();save();location.href='./';
+}
+pauseDialog.querySelector('[data-resume]').onclick=resumeGame;
+pauseDialog.querySelector('[data-quit]').onclick=quitGame;
+pauseDialog.addEventListener('cancel',e=>{e.preventDefault();resumeGame()});
+const pauseButton=document.createElement('button');pauseButton.textContent='暫停';pauseButton.id='pause-game';pauseButton.onclick=pauseGame;
+document.querySelector('header').append(pauseButton);
+const exitLink=document.querySelector('header a');exitLink.textContent='放棄退出';exitLink.onclick=e=>{e.preventDefault();quitGame()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!dialog.open&&!pauseDialog.open){e.preventDefault();pauseGame()}});
+let previous=performance.now(),savedAt=0;setInterval(()=>{const now=performance.now();if(!document.hidden&&!state.escaped&&!paused)state.elapsed+=Math.min((now-previous)/1000,2);previous=now;ui();if(now-savedAt>3000){save();savedAt=now}},250);document.addEventListener('visibilitychange',()=>{previous=performance.now();if(document.hidden&&!state.escaped)pauseGame();save()});window.addEventListener('pagehide',save);
 ui();if(state.escaped)showWin();else open('note');
-import('./escape-scene.js?v=escape-1').then(({createRoom})=>{room=createRoom($('view'),open);ui()}).catch(()=>{$('load-error').hidden=false});
+import('./escape-real-room.js?v=home-1').then(({createRoom})=>{room=createRoom($('view'),open);room.pause(paused);ui()}).catch(()=>{$('load-error').hidden=false});

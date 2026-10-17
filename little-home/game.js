@@ -5,7 +5,7 @@ import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
-import {installToyDefense} from './toy-defense.js?v=outfit-feed-18';
+import {installToyDefense} from './toy-defense.js?v=pause-exit-22';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=games2-1';
@@ -278,7 +278,7 @@ function moveTo(point,kind='walk',bedSlot=null){
 window.homeGameMoveTo=moveTo;
 let mirrorRenderer=null,mirrorPortrait=null;
 function makeMirrorAvatar(){const portrait=makeCharacter(outfit(avatar),{...avatarDesign,farmShirt:player.farmShirt});portrait.name='my-mirror-reflection';return portrait}
-function openMirror(){
+function openMirror(kind='entryMirror'){
  const dialog=$('#mirror-dialog');if(!dialog)return;
  $('#mirror-caption').textContent=`鏡中的${avatar.name}`;
  try{
@@ -286,7 +286,22 @@ function openMirror(){
   const mirrorScene=new T.Scene();mirrorScene.background=new T.Color('#dce4df');
   mirrorScene.add(new T.HemisphereLight('#ffffff','#708b78',2.5));const light=new T.DirectionalLight('#fff5e7',2);light.position.set(2,3,4);mirrorScene.add(light);
   if(mirrorPortrait)mirrorPortrait.traverse(n=>{n.geometry?.dispose();n.material?.dispose()});mirrorPortrait=makeMirrorAvatar();mirrorScene.add(mirrorPortrait);
-  const camera=new T.PerspectiveCamera(37,260/350,.1,10);camera.position.set(0,.75,2.7);camera.lookAt(0,.55,0);mirrorRenderer.render(mirrorScene,camera);
+  mirrorPortrait.userData.updatePose?.('stand');
+  mirrorPortrait.position.set(0,0,0);mirrorPortrait.rotation.set(0,0,0);mirrorPortrait.updateMatrixWorld(true);
+  const bounds=new T.Box3().setFromObject(mirrorPortrait),size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3());
+  const faceOnly=kind==='bathMirror';
+  // Frame the actual model bounds, not the old fixed-size avatar coordinates.
+  const faceBounds=new T.Box3();
+  if(faceOnly)mirrorPortrait.traverse(n=>{if(/Head|Face pixel|nose|Mouth| ear$/i.test(n.name))faceBounds.expandByObject(n)});
+  const hasFace=faceOnly&&!faceBounds.isEmpty();
+  const focus=hasFace?faceBounds.getCenter(new T.Vector3()):center.clone();
+  const faceSize=hasFace?faceBounds.getSize(new T.Vector3()):size.clone().multiplyScalar(.3);
+  if(faceOnly&&!hasFace)focus.y=bounds.max.y-size.y*.15;
+  const aspect=260/350;
+  const height=faceOnly?Math.max(faceSize.y*1.15,faceSize.x/aspect*1.15):Math.max(size.y*1.12,size.x/aspect*1.12);
+  const camera=new T.OrthographicCamera(-height*aspect/2,height*aspect/2,height/2,-height/2,.01,20);
+  camera.position.set(focus.x,focus.y,bounds.max.z+3);camera.lookAt(focus);
+  mirrorRenderer.render(mirrorScene,camera);
   dialog.showModal();
  }catch(error){toast('鏡子畫面暫時無法顯示');console.warn(error)}
 }
@@ -413,7 +428,7 @@ function animate(now){
          document.querySelectorAll('[data-pose]').forEach(btn=>btn.classList.toggle('active',btn.dataset.pose==='stand'));
          if(done.onArrival)Promise.resolve(done.onArrival()).catch(()=>toast('互動暫時失敗，請再試一次'));
         }
-        else if(travel.kind.includes('Mirror')){const kind=travel.kind;travel=null;pose='stand';character.rotation.y=kind==='entryMirror'?-Math.PI/2:Math.PI;openMirror()}else{travel.phase='settle';travel.from=character.position.clone();travel.fromAngle=character.rotation.y;travel.progress=0}
+        else if(travel.kind.includes('Mirror')){const kind=travel.kind;travel=null;pose='stand';character.rotation.y=kind==='entryMirror'?-Math.PI/2:Math.PI;openMirror(kind)}else{travel.phase='settle';travel.from=character.position.clone();travel.fromAngle=character.rotation.y;travel.progress=0}
       }}else{const move=Math.min(d,dt*1.6);walkStep(character,character.position.x+dx/d*move,character.position.z+dz/d*move);character.rotation.y=Math.atan2(dx,dz)}
       step+=dt*17;b.position.y=Math.abs(Math.sin(step))*.035;b.rotation.set(0,0,Math.sin(step)*.035);
       leftArm.rotation.x=Math.sin(step)*.5;rightArm.rotation.x=-Math.sin(step)*.5;
