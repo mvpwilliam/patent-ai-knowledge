@@ -1007,6 +1007,10 @@ else if(!renderHandle){lastRender=-Infinity;renderHandle=requestAnimationFrame(a
 // Scene inventory available for non-rendering diagnostics and future game integration.
 window.homeScene={get isNight(){return night},livingWindowView,setShowerWater,get showerWaterOn(){return showerWaterOn},showerHeadHit,showerSpray,showerTarget:[scaleX(showerHeadX),.10,showerHeadZ-.20],layout:{scaleX,entryZero,kitchenStart,kitchenEnd,furnitureShift,sinkX,stoveX,showerPoints},root,scene,camera,renderer,rooms,selectRoom,getFollowMode:()=>followMode,getFollowOrbit:()=>({yaw:followYaw,pitch:followPitch,distance:followDistance}),interactionTargets,interiorWalls,doorFrames,showerDoor,toggleShowerDoor,balconyDoorLeaf,bathWindow,toggleBathWindow,bathWindowHit,slidingWindows,toggleSheer,toggleBlinds,toggleChildBlinds,updateCoverings,
   setBalconyDoor(near){const state=balconyDoorLeaf.userData.door;if(near){state.open=true;state.target=state.openAngle}else if(state.autoNear){state.open=false;state.target=state.closedAngle}state.autoNear=near},
+  setInspectionOrbit(yaw,pitch,distance){
+    followMode=true;topView=false;followYaw=yaw;followPitch=pitch;followDistance=distance;
+    theta=yaw;phi=pitch;desiredDist=distance;
+  },
   setFridgeOpen(open){fridgeOpen=!!open},
   setShowerOpen(open){const state=showerDoor.userData.door;state.open=!!open;state.target=state.open?state.openAngle:state.closedAngle},
   updateDoorsAt(x,z,others=[]){
