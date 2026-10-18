@@ -1,3 +1,4 @@
+import {applyGameMenuIcons} from './game-menu-icons.js?v=icons26';
 import {installFarm} from './farm-ui.js?v=direct-exit-23';
 import {installSideShooter} from './side-shooter.js?v=long25';
 import * as T from './vendor/three.module.js';
@@ -135,7 +136,9 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions}){
  document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{clearInput();pause()});document.addEventListener('visibilitychange',()=>{last=0;if(document.hidden){clearInput();pause()}});
  installSideShooter({games,canStart,makeHero,onWin});
  if(farmOptions)installFarm({games,canStart,options:farmOptions});
+ applyGameMenuIcons(games);
 }
+
 
 
 
