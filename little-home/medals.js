@@ -23,7 +23,7 @@ export function queueEscapeMedal(context,at=Date.now()){
 let serial=0;
 function style(){
  if(document.querySelector('#medal-styles'))return;
- const css=document.createElement('link');css.id='medal-styles';css.rel='stylesheet';css.href=new URL('./medals.css?v=medal-1',import.meta.url);document.head.append(css);
+ const css=document.createElement('link');css.id='medal-styles';css.rel='stylesheet';css.href=new URL('./medals.css?v=medal-row-2',import.meta.url);document.head.append(css);
 }
 export function medalCard(id,{name='',earnedAt=null,locked=false,compact=false}={}){
  style();const m=MEDALS[id];if(!m)throw new Error('未知獎牌');
