@@ -5,7 +5,8 @@ import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
-import {installToyDefense} from './toy-defense.js?v=feed27';
+import {installToyDefense} from './toy-defense.js?v=medal-1';
+import {MEDALS,awardMedal,medalCard,renderMedalCollection,beginEscapeMedal,pendingMedalKey} from './medals.js?v=medal-1';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=games2-1';
@@ -824,6 +825,7 @@ async function subscribeHome(create=false){
       await mutateGame((p,meta)=>{if(designPending)p.avatarDesign=normalizeAvatarDesign(avatarDesign);if(!meta.monster)meta.monster={bornAt:Date.now()+3600000,hits:0}});designPending=false;
     }
     publishPresence(true);
+    claimEscapeMedal();
     const url=new URL(location.href);url.searchParams.delete('home');history.replaceState(null,'',url);
     renderTasks();
   }catch(error){
@@ -1013,7 +1015,7 @@ function renderEconomy(){
  $('#player-level').textContent=`Lv.${info.level} · ${info.title}`;$('#xp-meter').value=info.progress;
  $('#xp-label').textContent=info.level===20?(player.legendaryFreeClaimed?'已滿級 · 家事繼續賺幣':'已滿級 · 下方可免費領取一套傳說套裝'):`${Number(player.xp.toFixed(1))} / ${MAX_XP} EXP`;
  $('#daily-progress').textContent=`今日家事 ${dayTasks().filter(t=>taskDone(t)).length}／${dayTasks().length}`;
- renderInventory();renderShop();renderLegendaryWardrobe();
+ renderInventory();renderShop();renderLegendaryWardrobe();renderMedals();
 }
 function equippedLegendary(p){return !p?.farmShirt&&p?.xp>=MAX_XP&&Array.isArray(p.legendaryOwned)&&p.legendaryOwned.includes(p.legendaryEquipped)&&outfitById(p.legendaryEquipped)?p.legendaryEquipped:''}
 function renderLegendaryWardrobe(){
@@ -1235,7 +1237,27 @@ function setupSceneMenu(){
 
 function openHomePanel(page){
  const id={tasks:'#game-dialog',character:'#character-dialog',family:'#family-dialog'}[page];if(!id)return;
- setSceneMenu(false);if(page==='family')$('#character-dialog').close();if(page==='character')renderAvatarPreview();showPanel(id);
+ setSceneMenu(false);if(page==='family')$('#character-dialog').close();if(page==='character'){renderAvatarPreview();renderMedals();claimEscapeMedal()}showPanel(id);
+}
+
+function medalOwner(){return `${homeId||'preview'}:${playerId()}`}
+function renderMedals(){
+ let section=$('#medal-collection');
+ if(!section){section=document.createElement('section');section.id='medal-collection';$('#character-dialog .character-settings').before(section)}
+ const signature=JSON.stringify([medalOwner(),avatar.name,player.medals]);if(section.dataset.signature===signature)return;section.dataset.signature=signature;
+ renderMedalCollection(section,player,avatar.name);
+}
+let escapeMedalSaving=false;
+async function claimEscapeMedal(){
+ if(escapeMedalSaving||syncBusy||(mode==='online'&&(!homeReady||!user)))return;
+ const owner=medalOwner(),key=pendingMedalKey(owner),pending=safeRead(key,null);
+ if(!pending||!Number.isFinite(pending.earnedAt))return;
+ escapeMedalSaving=true;
+ try{
+  await mutateGame(p=>{if(owner!==medalOwner())throw new Error('帳號或家庭已切換');awardMedal(p,'escape',pending.earnedAt)});
+  localStorage.removeItem(key);renderMedals();toast('密室逃脫大師獎牌已收入「我的角色」');
+ }catch(e){toast('密室獎牌待保存，請稍後開啟「我的角色」重試')}
+ finally{escapeMedalSaving=false}
 }
 
 {
@@ -1247,6 +1269,10 @@ function openHomePanel(page){
   setupSceneMenu();
   let battleOwner='';
   installToyDefense({
+   prepareEscape(){
+    if(syncBusy||(mode==='online'&&(!homeReady||!user))){toast('角色資料尚未就緒，請稍候再進入密室');return false}
+    try{beginEscapeMedal(medalOwner(),avatar.name);return true}catch{toast('無法保存通關紀錄，請確認瀏覽器允許儲存資料');return false}
+   },
    farmOptions:{
     getFarm:getFarmState,getKey:()=>`${homeId||'preview'}:${playerId()}`,
     getUser:()=>({id:playerId(),name:avatar.name}),getProfiles:()=>({...profileCache,[playerId()]:{name:avatar.name}}),toast,
@@ -1269,8 +1295,10 @@ function openHomePanel(page){
    makeHero(){const copy=makeCharacter(avatar,{...avatarDesign,legendaryOutfit:equippedLegendary(player),farmShirt:player.farmShirt});copy.userData.updatePose?.('stand');return copy},
    async onWin(runId, result={}){
     const shooting=result.kind==='shooter';const coins=shooting?Math.max(30,Math.min(50,Math.floor(Number(result.coins)||30))):30;
+    const medalId=shooting?'shooter':'castle';
     if(battleOwner!==`${homeId||'preview'}:${playerId()}`)throw new Error('帳號或家庭已切換，無法把這局獎勵存入不同角色');
     await mutateGame(p=>{
+     awardMedal(p,medalId);
      if((p.toyDefenseRuns||[]).includes(runId))return;
      p.toyDefenseRuns=[runId,...(p.toyDefenseRuns||[])].slice(0,30);
      p.coins+=coins;p.xp=Math.min(MAX_XP,p.xp+20);
@@ -1278,7 +1306,8 @@ function openHomePanel(page){
      if(!p.inventory.some(o=>o.item==='toy-trophy'))p.inventory.push({id:'toy-trophy-'+playerId(),item:'toy-trophy',room:null,slot:null});
      record(p,shooting?'客廳防衛戰 · 勝利':'玩具保衛戰 · 兩分鐘勝利',coins);
     });
-    return `已保存：${coins} 幣、20 EXP。積木恐龍獎盃已在「我的道具」，可以選擇房間擺放。`;
+    const card=document.createElement('div');card.append(medalCard(medalId,{name:avatar.name,earnedAt:player.medals?.[medalId]?.earnedAt,compact:true}));
+    const note=document.createElement('p');note.textContent=`已保存：${coins} 幣、20 EXP。「${MEDALS[medalId].name}」已收入「我的角色 → 我的獎牌」。積木恐龍獎盃可在「我的道具」擺放。`;card.append(note);return card;
    }
   });
   for(const [id,page] of [['character-open','character'],['family-open','family']])$('#'+id).onclick=()=>openHomePanel(page);
@@ -1303,7 +1332,7 @@ function openHomePanel(page){
   for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=>lastHumanInput=Date.now());
   document.addEventListener('visibilitychange',()=>publishPresence(true,!document.hidden));
   window.addEventListener('pagehide',()=>publishPresence(true,false));
-  connect();
+  connect().then(()=>claimEscapeMedal());
 }
 
 

@@ -1,8 +1,13 @@
 import {NOTE,OVERLAY,PLAQUE,initial,grid,cabinetCode,act} from './escape-core.js?v=escape-1';
+import {medalCard,escapeMedalContext,queueEscapeMedal} from './medals.js?v=medal-1';
 const $=id=>document.getElementById(id),key='little-home-escape-01';
 let state=initial();try{const saved=JSON.parse(localStorage.getItem(key));if(saved?.version===1&&Number.isFinite(saved.elapsed)&&Array.isArray(saved.notes)&&Array.isArray(saved.corners))state={...state,...saved}}catch{}
+const medalContext=escapeMedalContext();
+// A shared device must never credit another player's completed escape.
+if(state.medalOwner&&state.medalOwner!==medalContext?.owner)state=initial();
+state.medalOwner=medalContext?.owner||null;
 let room=null,current=null,paused=false;
-function save(){try{localStorage.setItem(key,JSON.stringify(state))}catch{}}
+function save(){state.medalOwner=medalContext?.owner||null;try{localStorage.setItem(key,JSON.stringify(state))}catch{}}
 function time(t){t=Math.floor(t)%6000;return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
 function ui(){ $('time').textContent=time(state.elapsed);$('coins').textContent=state.coins.toLocaleString();$('hp').textContent=state.hp+'/100';$('stage').textContent=state.escaped?'完成 / 已逃出小屋':state.painting?'03 / 尋找歸途':state.cabinet?'02 / 畫中的方向':'01 / 尋找三份證詞';room?.sync(state)}
 function message(text){$('status').textContent=text}
@@ -30,7 +35,14 @@ function open(id){if(paused)return;current=id;
  if(id==='door'){show('出口大門');if(state.escaped){showWin();return}text('門邊的數字盤等待四位密碼。');if(state.painting){text(PLAQUE,'paper');text('四角紀錄：4862　／　開櫃密碼：'+cabinetCode(state))}password('door');return}
  if(id==='notebook'){show('紙條與紀錄');text(NOTE,'paper');if(state.notes.includes('arm'))text('扶手刻字：［分］×［秒］');snapshot();if(state.cabinet)text('透明定位片：'+OVERLAY);if(state.notes.includes('north'))text('畫框的北方刻印會隨畫作轉動，與攝影機方向無關。');if(state.painting)text('四角紀錄：4862\n門鎖銘牌：'+PLAQUE);return}
 }
-function showWin(){show('你找到了畫面之外');text('熟悉的時間、金幣與生命值，原來一直在指引你。大門已經打開。','paper');buttons([['回到小屋',()=>location.href='./',true],['留在房間看看',()=>dialog.close()]])}
+function showWin(){
+ show('逃脫成功！');
+ state.medalEarnedAt||=Date.now();save();
+ content.append(medalCard('escape',{name:medalContext?.name||'',earnedAt:state.medalEarnedAt,compact:true}));
+ let stored=false;try{stored=queueEscapeMedal(medalContext,state.medalEarnedAt)}catch{}
+ text(stored?'通關已記錄。回到小屋後，獎牌會自動收入原角色的「我的獎牌」。':'本次通關獎牌已展示。請從小屋的遊戲區進入密室，才能將獎牌保存至角色收藏。','medal-save-note');
+ buttons([['回到小屋',()=>location.href='./',true],['留在房間看看',()=>dialog.close()]]);
+}
 $('close').onclick=()=>dialog.close();$('notebook').onclick=()=>open('notebook');document.querySelectorAll('[data-object]').forEach(b=>b.onclick=()=>open(b.dataset.object));$('reset-view').onclick=()=>room?.reset();
 $('restart').onclick=()=>{show('重新開始本局？');text('這會清除本局線索與密碼進度。');buttons([['保留進度',()=>dialog.close()],['重新開始',()=>{state=initial();save();ui();message('新的密室等待探索。');open('note')},true]])};
 const pauseDialog=document.createElement('dialog');

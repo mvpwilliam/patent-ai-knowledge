@@ -53,7 +53,7 @@ document.addEventListener('touchmove',e=>{
  if(!saved||!touch)return;
  const t=e.touches[0];if(!t)return;
  const dx=touch.x-t.clientX,dy=touch.y-t.clientY;touch={x:t.clientX,y:t.clientY};
- const boundary=e.target instanceof Element?e.target.closest('dialog[open],.td-card'):null;
+ const boundary=e.target instanceof Element?e.target.closest('dialog[open],.td-card,.ss-card'):null;
  if(boundary&&e.touches.length===1){
   for(let node=e.target;node instanceof Element;node=node.parentElement){
    const css=getComputedStyle(node),vertical=Math.abs(dy)>=Math.abs(dx);
