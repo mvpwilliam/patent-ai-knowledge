@@ -13,7 +13,7 @@ export function rankingRows(players,profiles,kind){
  rows.sort((a,b)=>b.score-a.score||(a.at||0)-(b.at||0)||a.id.localeCompare(b.id));
  let rank=0;rows.forEach((r,i)=>{if(i===0||r.score!==rows[i-1].score)rank=i+1;r.rank=rank});return rows;
 }
-function styles(){if(document.getElementById('leaderboard-style'))return;const l=document.createElement('link');l.id='leaderboard-style';l.rel='stylesheet';l.href=new URL('./leaderboard.css?v=rank-1',import.meta.url);document.head.append(l)}
+function styles(){if(document.getElementById('leaderboard-style'))return;const l=document.createElement('link');l.id='leaderboard-style';l.rel='stylesheet';l.href=new URL('./leaderboard.css?v=rank-2',import.meta.url);document.head.append(l)}
 export function resultScorePanel(result,submit){
  styles();const box=document.createElement('section');box.className='result-score';const score=document.createElement('strong'),note=document.createElement('p'),retry=document.createElement('button');
  score.textContent=`本局 ${result.score.toLocaleString()} 分`;note.textContent='正在保存排行榜成績…';note.setAttribute('role','status');retry.textContent='重試保存成績';retry.hidden=true;box.append(score,note,retry);
@@ -22,13 +22,14 @@ export function resultScorePanel(result,submit){
 }
 export function installLeaderboard({getState}){
  styles();const dialog=document.createElement('dialog');dialog.className='game-dialog leaderboard-dialog';dialog.setAttribute('aria-label','積分排行榜');
- dialog.innerHTML='<div class="dialog-head"><h2>積分排行榜</h2><button aria-label="關閉排行榜">×</button></div><div class="game-dialog-body"><p data-scope></p><div class="leaderboard-tabs" role="group" aria-label="選擇遊戲"></div><p class="leaderboard-rule"></p><div class="leaderboard-table"></div></div>';
+ dialog.innerHTML='<div class="dialog-head"><h2>積分排行榜</h2><button aria-label="關閉排行榜">×</button></div><div class="game-dialog-body"><p data-scope></p><div class="leaderboard-tabs" role="group" aria-label="選擇遊戲"></div><ul class="leaderboard-rule"></ul><div class="leaderboard-table"></div></div>';
  document.body.append(dialog);dialog.querySelector('.dialog-head button').onclick=()=>dialog.close();let selected='castle';
  for(const [id,g] of Object.entries(SCORE_GAMES)){const b=document.createElement('button');b.textContent=g.name;b.dataset.game=id;b.onclick=()=>{selected=id;render()};dialog.querySelector('.leaderboard-tabs').append(b)}
  function render(){
   if(!dialog.open)return;const {players,profiles,uid,online,ready}=getState();
   dialog.querySelector('[data-scope]').textContent=online?(ready?'家庭排行榜 · 每位玩家只列最高分':'家庭資料連線中，請稍候…'):'本機排行榜 · 加入家庭後可和家人比較';
-  dialog.querySelector('.leaderboard-rule').textContent=SCORE_GAMES[selected].rule+' 完成本局即記分，失敗也可上榜；中途退出不計。相同分數並列。';
+  const rules=dialog.querySelector('.leaderboard-rule');rules.replaceChildren();
+  for(const line of [...SCORE_GAMES[selected].rule.replace(/。$/,'').split('；'),'完成本局即記分，失敗也可上榜','中途退出不計分','相同分數並列']){const li=document.createElement('li');li.textContent=line;rules.append(li)}
   dialog.querySelectorAll('[data-game]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.game===selected)));
   const body=dialog.querySelector('.leaderboard-table');body.replaceChildren();if(online&&!ready)return;
   const rows=rankingRows(players,profiles,selected);if(!rows.length){const p=document.createElement('p');p.textContent='還沒有成績，來挑戰第一筆紀錄！';body.append(p);return}

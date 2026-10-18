@@ -1,4 +1,4 @@
-import {battleResult,resultScorePanel} from './leaderboard.js?v=rank-1';
+import {battleResult,resultScorePanel} from './leaderboard.js?v=rank-2';
 import {bindSideStick} from './side-stick.js?v=joy24';
 import * as T from './vendor/three.module.js';
 import {createSideGame,stepSide,toggleSideTank,WEAPONS} from './side-core.js?v=long25';
