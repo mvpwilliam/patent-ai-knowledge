@@ -114,7 +114,7 @@ function pointOnTour(distance){
   return [tour[0][0],tour[0][1],0];
 }
 const outfit=v=>({name:String(v.name||'小屋主').slice(0,12),skin:v.skin||'#e9b990',hair:v.hair==='bob'?'korean':v.hair||'korean',hairColor:v.hairColor||'#4d3834',shirt:v.shirt||'#7899a0'});
-const toast=s=>{if(character&&!document.querySelector('dialog[open]')&&!/儲存|同步|Google|登入|名字|造型|家庭/.test(s))return showCharacterFeedback(s);const e=$('#toast');e.textContent=s;e.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>e.classList.remove('show'),2600)};
+const toast=s=>{if(character&&!document.querySelector('dialog[open]')&&!/儲存|同步|Google|登入|名字|造型|家庭/.test(s))return showCharacterFeedback(s);const e=$('#toast');const host=[...document.querySelectorAll('dialog[open]')].at(-1)||document.body;host.append(e);if(typeof e.showPopover==='function'){e.setAttribute('popover','manual');e.style.margin='0';e.style.border='0';e.style.overflow='visible';if(!e.matches(':popover-open'))e.showPopover()}e.textContent=s;e.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>{e.classList.remove('show');if(e.matches(':popover-open'))e.hidePopover()},2600)};
 const boundedCode=s=>s.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,24);
 const claimKey=()=>`little-home-claims-${gameDay}`;
 
@@ -1015,16 +1015,16 @@ function renderEconomy(){
  $('#scene-xp-meter').setAttribute('aria-valuenow',String(xpPercent));
  $('#scene-xp-meter').setAttribute('aria-valuetext',info.level===20?'20 級，已滿級':`目前 ${info.level} 級，升級進度 ${xpPercent}%`);
  $('#player-level').textContent=`Lv.${info.level} · ${info.title}`;$('#xp-meter').value=info.progress;
- $('#xp-label').textContent=info.level===20?(player.legendaryFreeClaimed?'已滿級 · 家事繼續賺幣':'已滿級 · 下方可免費領取一套傳說套裝'):`${Number(player.xp.toFixed(1))} / ${MAX_XP} EXP`;
+ $('#xp-label').textContent=info.level===20?'已滿級':`${Number(player.xp.toFixed(1))} / ${MAX_XP} EXP`;
  $('#daily-progress').textContent=`今日家事 ${dayTasks().filter(t=>taskDone(t)).length}／${dayTasks().length}`;
  renderInventory();renderShop();renderLegendaryWardrobe();renderFarmWardrobe();renderMedals();leaderboard?.refresh();
 }
 function renderFarmWardrobe(){
- let section=$('#farm-wardrobe');if(!section){section=document.createElement('section');section.id='farm-wardrobe';const style=document.createElement('style');style.textContent='#farm-wardrobe button,.wardrobe-normal{appearance:none;-webkit-appearance:none;border:1px solid #dce2d2;border-radius:14px;background:#e8eddf;color:#405c4e;font:inherit;font-weight:600;min-height:44px;padding:10px 16px;cursor:pointer}#farm-wardrobe button:disabled{opacity:.5;cursor:default}#farm-wardrobe button:focus-visible,.wardrobe-normal:focus-visible{outline:2px solid #b79560;outline-offset:3px}.wardrobe-normal{display:block;width:100%;margin:14px 0 4px;text-align:center}.wardrobe-normal:disabled{opacity:.5;cursor:default}';document.head.append(style);section.innerHTML='<h3>農場紀念 T-shirt</h3><div data-shirts></div><button data-normal class="wardrobe-normal">日常服裝</button>';$('#character-dialog .legendary-wardrobe').before(section);section.querySelector('[data-normal]').onclick=()=>wearFarmShirt(null)}
+ let section=$('#farm-wardrobe');if(!section){section=document.createElement('section');section.id='farm-wardrobe';const style=document.createElement('style');style.textContent='#farm-wardrobe button,.wardrobe-normal{appearance:none;-webkit-appearance:none;border:1px solid #dce2d2;border-radius:14px;background:#e8eddf;color:#405c4e;font:inherit;font-weight:600;min-height:44px;padding:10px 16px;cursor:pointer}#farm-wardrobe button:disabled{opacity:.5;cursor:default}#farm-wardrobe button:focus-visible,.wardrobe-normal:focus-visible{outline:2px solid #b79560;outline-offset:3px}.wardrobe-normal{display:block;width:100%;margin:14px 0 4px;text-align:center}.wardrobe-normal:disabled{opacity:.5;cursor:default}';document.head.append(style);section.innerHTML='<h3>農場紀念 T-shirt</h3><div data-shirts></div>';$('#character-dialog .legendary-wardrobe').before(section);$('#outfit-normal').onclick=()=>wearFarmShirt(null)}
  const list=section.querySelector('[data-shirts]');list.replaceChildren();list.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px';const awards=getFarmState()?.members[playerId()]?.awards||[];
- for(const a of AWARDS){const card=document.createElement('article');card.style.cssText='min-width:0;padding:10px;text-align:center;border:1px solid #dce2d2;border-radius:16px;background:#f0f2e8';const image=shirtPreview(a.id,a.name),name=document.createElement('strong'),b=document.createElement('button');const unlocked=awards.includes(a.id),worn=player.farmShirt===a.id;name.textContent=a.name;name.style.cssText='display:block;font-size:14px;margin:6px 0';if(!unlocked)image.style.opacity='.45';b.textContent=worn?'已穿上':unlocked?'穿上':'尚未解鎖';b.disabled=syncBusy||!unlocked||worn;b.style.cssText='min-height:44px;width:100%;margin-top:6px';b.onclick=()=>wearFarmShirt(a.id);card.append(image,name,b);list.append(card)}section.querySelector('[data-normal]').disabled=syncBusy||(!player.farmShirt&&!equippedLegendary(player));
+ for(const a of AWARDS){const card=document.createElement('article');card.style.cssText='min-width:0;padding:10px;text-align:center;border:1px solid #dce2d2;border-radius:16px;background:#f0f2e8';const image=shirtPreview(a.id,a.name),name=document.createElement('strong'),b=document.createElement('button');const unlocked=awards.includes(a.id),worn=player.farmShirt===a.id;name.textContent=a.name;name.style.cssText='display:block;font-size:14px;margin:6px 0';if(!unlocked)image.style.opacity='.45';b.textContent=worn?'已穿上':unlocked?'穿上':'尚未解鎖';b.disabled=syncBusy||!unlocked||worn;b.style.cssText='min-height:44px;width:100%;margin-top:6px';b.onclick=()=>wearFarmShirt(a.id);card.append(image,name,b);list.append(card)}$('#outfit-normal').disabled=syncBusy||(!player.farmShirt&&!equippedLegendary(player));
 }
-async function wearFarmShirt(id){if(activity||travel)return toast('請先完成目前的動作，再換裝');try{await mutateGame((p,meta)=>{const farm=meta.farm||getFarmState();if(id&&!farm?.members[playerId()]?.awards?.includes(id))throw Error('這件紀念 T-shirt 尚未解鎖');p.farmShirt=id||'';p.legendaryEquipped=''});renderAvatarPreview();$('#legendary-preview-label').textContent='';toast(id?'已換上'+AWARDS.find(a=>a.id===id).name:'已換回日常服裝')}catch(e){toast(e.message||'換裝未儲存，請重試')}}
+async function wearFarmShirt(id){if(activity||travel)return toast('請先完成目前的動作，再換裝');try{await mutateGame((p,meta)=>{const farm=meta.farm||getFarmState();if(id&&!farm?.members[playerId()]?.awards?.includes(id))throw Error('這件紀念 T-shirt 尚未解鎖');p.farmShirt=id||'';p.legendaryEquipped=''});renderAvatarPreview();$('#legendary-preview-label').textContent='';toast('已換上')}catch(e){toast(e.message||'換裝未儲存，請重試')}}
 function equippedLegendary(p){return !p?.farmShirt&&p?.xp>=MAX_XP&&Array.isArray(p.legendaryOwned)&&p.legendaryOwned.includes(p.legendaryEquipped)&&outfitById(p.legendaryEquipped)?p.legendaryEquipped:''}
 const legendaryPortraits=new Map();
 function legendaryPortrait(item){
@@ -1055,7 +1055,7 @@ async function wearLegendary(id){
   if(id===''){p.legendaryEquipped='';p.farmShirt='';return}
   if(p.legendaryOwned.includes(id)){p.legendaryEquipped=id;p.farmShirt='';return}
   const result=unlockLegendary(p,id,MAX_XP);p.farmShirt='';record(p,`${result.free?'滿級免費領取':'套裝解鎖'}：${result.item.name}`,-result.cost);
- });renderAvatarPreview();$('#legendary-preview-label').textContent='';toast(id?`已換上${outfitById(id).name}`:'已換回日常服裝')}catch(e){toast(e.message||'套裝未儲存，請再試一次')}
+ });renderAvatarPreview();$('#legendary-preview-label').textContent='';toast('已換上')}catch(e){toast(e.message||'套裝未儲存，請再試一次')}
 }
 
 function showPanel(id){$(id).showModal()}
