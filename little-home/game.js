@@ -5,7 +5,8 @@ import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
-import {installToyDefense} from './toy-defense.js?v=medal-1';
+import {installToyDefense} from './toy-defense.js?v=rank-1';
+import {installLeaderboard,saveBestScore,rankingRows} from './leaderboard.js?v=rank-1';
 import {MEDALS,awardMedal,medalCard,renderMedalCollection,beginEscapeMedal,pendingMedalKey} from './medals.js?v=medal-1';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
@@ -1015,7 +1016,7 @@ function renderEconomy(){
  $('#player-level').textContent=`Lv.${info.level} · ${info.title}`;$('#xp-meter').value=info.progress;
  $('#xp-label').textContent=info.level===20?(player.legendaryFreeClaimed?'已滿級 · 家事繼續賺幣':'已滿級 · 下方可免費領取一套傳說套裝'):`${Number(player.xp.toFixed(1))} / ${MAX_XP} EXP`;
  $('#daily-progress').textContent=`今日家事 ${dayTasks().filter(t=>taskDone(t)).length}／${dayTasks().length}`;
- renderInventory();renderShop();renderLegendaryWardrobe();renderMedals();
+ renderInventory();renderShop();renderLegendaryWardrobe();renderMedals();leaderboard?.refresh();
 }
 function equippedLegendary(p){return !p?.farmShirt&&p?.xp>=MAX_XP&&Array.isArray(p.legendaryOwned)&&p.legendaryOwned.includes(p.legendaryEquipped)&&outfitById(p.legendaryEquipped)?p.legendaryEquipped:''}
 function renderLegendaryWardrobe(){
@@ -1247,7 +1248,7 @@ function renderMedals(){
  const signature=JSON.stringify([medalOwner(),avatar.name,player.medals]);if(section.dataset.signature===signature)return;section.dataset.signature=signature;
  renderMedalCollection(section,player,avatar.name);
 }
-let escapeMedalSaving=false;
+let escapeMedalSaving=false,leaderboard=null;
 async function claimEscapeMedal(){
  if(escapeMedalSaving||syncBusy||(mode==='online'&&(!homeReady||!user)))return;
  const owner=medalOwner(),key=pendingMedalKey(owner),pending=safeRead(key,null);
@@ -1267,8 +1268,17 @@ async function claimEscapeMedal(){
   resolveMonsterOverlap(houseNPC?.character);
 
   setupSceneMenu();
+  leaderboard=installLeaderboard({getState:()=>({players:{...gameMeta.players,[playerId()]:player},profiles:{...profileCache,[playerId()]:{name:avatar.name}},uid:playerId(),online:mode==='online',ready:homeReady})});
   let battleOwner='';
   installToyDefense({
+   openLeaderboard:kind=>leaderboard.open(kind),
+   async onResult(result){
+    const owner=battleOwner;if(owner!==medalOwner())throw new Error('帳號或家庭已切換，無法保存原角色的成績');
+    let improved=false;
+    await mutateGame(p=>{if(owner!==medalOwner())throw new Error('帳號或家庭已切換');improved=saveBestScore(p,result)});
+    const rows=rankingRows(gameMeta.players,profileCache,result.kind),row=rows.find(r=>r.id===playerId());
+    return `${improved?'刷新個人最高分！':'成績已保存。'}最高 ${player.bestScores[result.kind].score.toLocaleString()} 分${row?` · ${mode==='online'?'家庭':'本機'}第 ${row.rank} 名`:''}`;
+   },
    prepareEscape(){
     if(syncBusy||(mode==='online'&&(!homeReady||!user))){toast('角色資料尚未就緒，請稍候再進入密室');return false}
     try{beginEscapeMedal(medalOwner(),avatar.name);return true}catch{toast('無法保存通關紀錄，請確認瀏覽器允許儲存資料');return false}
@@ -1299,6 +1309,7 @@ async function claimEscapeMedal(){
     if(battleOwner!==`${homeId||'preview'}:${playerId()}`)throw new Error('帳號或家庭已切換，無法把這局獎勵存入不同角色');
     await mutateGame(p=>{
      awardMedal(p,medalId);
+     if(result.finished)saveBestScore(p,result);
      if((p.toyDefenseRuns||[]).includes(runId))return;
      p.toyDefenseRuns=[runId,...(p.toyDefenseRuns||[])].slice(0,30);
      p.coins+=coins;p.xp=Math.min(MAX_XP,p.xp+20);

@@ -1,10 +1,11 @@
 import {applyGameMenuIcons} from './game-menu-icons.js?v=feed27';
 import {installFarm} from './farm-ui.js?v=feed27';
-import {installSideShooter} from './side-shooter.js?v=medal-1';
+import {installSideShooter} from './side-shooter.js?v=rank-1';
+import {battleResult,castleScore,resultScorePanel} from './leaderboard.js?v=rank-1';
 import * as T from './vendor/three.module.js';
 import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
 
-export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEscape}){
+export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEscape,onResult,openLeaderboard}){
  const world=document.querySelector('#world'),canvas=document.querySelector('#scene');
  const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./toy-defense.css?v=toy3-1',import.meta.url);document.head.append(css);
  const entry=document.createElement('button');entry.type='button';entry.title='遊戲區';entry.setAttribute('aria-label',entry.title);
@@ -14,6 +15,7 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEs
  games.innerHTML="<div class=\"dialog-head\"><h2>遊戲區</h2><button aria-label=\"關閉遊戲區\">×</button></div><div class=\"game-dialog-body\" style=\"display:grid;gap:14px\"><button id=\"start-defense\" style=\"box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:56px;min-height:56px;padding:0 14px;border:0;border-radius:14px;font:inherit;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;background:#405f50;color:#fff\"><span aria-hidden=\"true\">🏰</span><span>城堡保衛戰</span></button><a href=\"./escape.html\" style=\"box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:56px;min-height:56px;padding:0 14px;border:0;border-radius:14px;font:inherit;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;background:#e8eddf;color:#3d5949\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" style=\"flex-shrink:0\"><path d=\"M5 21V3h14v18M3 21h18M8 21V6h8v15\"/><rect x=\"10\" y=\"12\" width=\"4\" height=\"4\" rx=\"1\"/><path d=\"M11 12v-1a1 1 0 0 1 2 0v1\"/></svg><span>小屋密室</span></a></div>";
  document.body.append(games);games.querySelector('.dialog-head button').onclick=()=>games.close();games.querySelector('#start-defense').onclick=()=>{games.close();open()};
  games.querySelector('a[href="./escape.html"]').addEventListener('click',e=>{if(prepareEscape&&!prepareEscape())e.preventDefault()});
+ const rankButton=document.createElement('button');rankButton.textContent='積分排行榜';rankButton.style.cssText=games.querySelector('#start-defense').style.cssText;rankButton.onclick=()=>{games.close();openLeaderboard('castle')};
  const ui=document.createElement('section');ui.id='toy-defense';ui.hidden=true;ui.setAttribute('aria-label','玩具保衛戰');
  ui.innerHTML=`<div class="td-hud"><div><small>TOY DEFENSE / 120 SEC</small><strong id="td-wave">客廳保衛戰</strong></div><strong id="td-clock">2:00</strong><button id="td-pause" aria-label="暫停戰鬥">Ⅱ</button></div>
  <div class="td-bars"><label>城堡 <progress id="td-castle" max="180" value="180"></progress><b id="td-castle-num">180</b></label><label>守衛 <progress id="td-hero" max="100" value="100"></progress><b id="td-hero-num">100</b></label><label id="td-boss-row" hidden>恐龍 <progress id="td-boss" max="480" value="480"></progress></label></div>
@@ -23,6 +25,7 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEs
  world.append(ui);
  const $=id=>ui.querySelector('#'+id);
  let state=null,scene=null,camera=null,hero=null,castle=null,active=false,last=0,runId='',resultShown=false,saving=false,saved=false,previousMode='',quitPending=false;
+ let scoreReady=Promise.resolve();
  let oldClear,oldAlpha,geometries=[],materials=[],visuals=new Map(),shotViews=[],effectViews=[],stickPointer=null,stick={x:0,z:0},dash=false,keys=new Set();
  const matCache=new Map(),geoCache=new Map();
  const material=color=>{if(!matCache.has(color)){const m=new T.MeshLambertMaterial({color});materials.push(m);matCache.set(color,m)}return matCache.get(color)};
@@ -84,7 +87,7 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEs
  async function claim(){
   if(saving||saved)return;saving=true;
   modal('正在保存戰利品','請稍候，正在寫入你的角色資料。',[]);
-  try{const reward=await onWin(runId);saved=true;modal('城堡守住了！',reward,[['回到小屋',close,true]])}
+  try{await scoreReady.catch(()=>{});const reward=await onWin(runId,battleResult('castle',state));saved=true;modal('城堡守住了！',reward,[['查看排行榜',()=>openLeaderboard('castle')],['回到小屋',close,true]])}
   catch(e){modal('勝利！獎勵尚未保存',e.message||'連線暫時失敗，可重試領取。',[['重試保存',claim,true],['放棄獎勵並回家',()=>{modal('放棄這次獎勵？','離開後無法重新領取這局獎勵。',[['繼續領取',claim,true],['確定離開',close]])}]])}
   finally{saving=false}
  }
@@ -92,6 +95,8 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEs
   resultShown=true;clearInput();
   if(state.status==='won')modal('兩分鐘，守護成功！',`擊退 ${state.kills} 隻玩具怪。獲得 30 幣、20 EXP；首次勝利獲得積木恐龍獎盃。`,[['領取戰利品',claim,true]]);
   else modal('再挑戰一次',`${state.reason}。本局擊退 ${state.kills} 隻玩具怪，撐了 ${Math.floor(state.time)} 秒。`,[['再玩兩分鐘',()=>{for(const g of visuals.values())scene.remove(g);visuals.clear();state=createBattle();runId=crypto.randomUUID();resultShown=false;saved=false;last=0;$('td-weapon').innerHTML='🫧<small>泡泡槍／切換</small>';$('td-shade').hidden=true},true],['回到小屋',close]]);
+  $('td-content').prepend(resultScorePanel(battleResult('castle',state),result=>(scoreReady=onResult(result))));
+  const rank=document.createElement('button');rank.textContent='查看排行榜';rank.onclick=()=>openLeaderboard('castle');$('td-buttons').append(rank);
  }
  function sync(){
   hero.position.set(state.hero.x,0,state.hero.z);hero.rotation.y=Math.atan2(state.hero.dx,state.hero.dz);hero.visible=state.hero.inv<=0||Math.floor(state.time*14)%2===0;
@@ -105,7 +110,7 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEs
   while(effectViews.length<state.effects.length){const m=box(scene,.5,.08,.5,'#ffe5a0');effectViews.push(m)}
   effectViews.forEach((m,i)=>{const e=state.effects[i];m.visible=!!e;if(e){m.position.set(e.x,.12,e.z);m.scale.setScalar(1+(.3-e.life)*4);m.material=material(e.color)}});
   $('td-clock').textContent=`${Math.floor(Math.ceil(DURATION-state.time)/60)}:${String(Math.ceil(DURATION-state.time)%60).padStart(2,'0')}`;
-  $('td-wave').textContent=`第 ${state.phase} 波 · 擊退 ${state.kills}`;
+  $('td-wave').textContent=`第 ${state.phase} 波 · ${castleScore(state).toLocaleString()} 分`;
   $('td-castle').value=state.castle.hp;$('td-hero').value=state.hero.hp;$('td-castle-num').textContent=Math.ceil(state.castle.hp);$('td-hero-num').textContent=Math.ceil(state.hero.hp);
   const boss=state.enemies.find(e=>e.kind==='boss');$('td-boss-row').hidden=!boss;if(boss)$('td-boss').value=boss.hp;
   $('td-notice').textContent=boss?'積木恐龍出現！膨脹蓄力時，準備閃避':state.bossDefeated?'恐龍擊退！繼續守住城堡到 0:00':'自動攻擊 · 走位保護城堡';
@@ -130,14 +135,15 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEs
  for(const event of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(event,e=>{if(e.pointerId===stickPointer)clearInput()});
  for(const event of ['pointerdown','pointermove','pointerup','dblclick','wheel'])canvas.addEventListener(event,e=>{if(active){e.preventDefault();e.stopImmediatePropagation()}},{capture:true,passive:false});
  document.addEventListener('keydown',e=>{
-  if(!active)return;
+  if(!active||document.querySelector('.leaderboard-dialog[open]'))return;
   if(e.key==='Tab'&&!$('td-shade').hidden){const bs=[...$('td-shade').querySelectorAll('button:not(:disabled)')];if(bs.length){e.preventDefault();const index=bs.indexOf(document.activeElement);bs[(index+(e.shiftKey?-1:1)+bs.length)%bs.length].focus()}return}
   if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' ','escape','k'].includes(e.key.toLowerCase())){e.preventDefault();e.stopImmediatePropagation();keys.add(e.key.toLowerCase());if(e.code==='Space'&&!e.repeat)dash=true;if(e.key.toLowerCase()==='k'&&!e.repeat)switchWeapon();if(e.key==='Escape'&&!e.repeat){if(state.status==='paused')resume();else pause()}}
  },true);
  document.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{clearInput();pause()});document.addEventListener('visibilitychange',()=>{last=0;if(document.hidden){clearInput();pause()}});
- installSideShooter({games,canStart,makeHero,onWin});
+ installSideShooter({games,canStart,makeHero,onWin,onResult,openLeaderboard});
  if(farmOptions)installFarm({games,canStart,options:farmOptions});
  applyGameMenuIcons(games);
+ games.querySelector('.game-dialog-body').append(rankButton);
 }
 
 
