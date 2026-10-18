@@ -1,5 +1,5 @@
 import {applyGameMenuIcons} from './game-menu-icons.js?v=feed27';
-import {installFarm} from './farm-ui.js?v=wardrobe29';
+import {installFarm} from './farm-ui.js?v=wardrobe30';
 import {installSideShooter} from './side-shooter.js?v=rank-2';
 import {battleResult,castleScore,resultScorePanel} from './leaderboard.js?v=rank-2';
 import * as T from './vendor/three.module.js';

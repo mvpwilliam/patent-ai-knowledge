@@ -1,4 +1,4 @@
-import {shirtPreview} from './farm-shirt-preview.js?v=wardrobe29';
+import {shirtPreview} from './farm-shirt-preview.js?v=wardrobe30';
 import {AWARDS,newFarm,farmAction} from './farm-core.js?v=battle28';
 import {decorateFarmShirt} from './farm-home.js?v=shirts-16';
 import {applyChoreContact,resetChoreContact,contactStops} from './chore-contact.js?v=chore-route-fix-1';
@@ -6,7 +6,7 @@ import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
-import {installToyDefense} from './toy-defense.js?v=wardrobe29';
+import {installToyDefense} from './toy-defense.js?v=wardrobe30';
 import {installLeaderboard,saveBestScore,rankingRows} from './leaderboard.js?v=rank-2';
 import {MEDALS,awardMedal,medalCard,renderMedalCollection,beginEscapeMedal,pendingMedalKey} from './medals.js?v=medal-row-2';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
@@ -1020,7 +1020,7 @@ function renderEconomy(){
  renderInventory();renderShop();renderLegendaryWardrobe();renderFarmWardrobe();renderMedals();leaderboard?.refresh();
 }
 function renderFarmWardrobe(){
- let section=$('#farm-wardrobe');if(!section){section=document.createElement('section');section.id='farm-wardrobe';section.innerHTML='<h3>農場紀念 T-shirt</h3><div data-shirts></div><button data-normal>換回日常服裝</button>';$('#character-dialog .legendary-wardrobe').before(section);section.querySelector('[data-normal]').onclick=()=>wearFarmShirt(null)}
+ let section=$('#farm-wardrobe');if(!section){section=document.createElement('section');section.id='farm-wardrobe';const style=document.createElement('style');style.textContent='#farm-wardrobe button,.wardrobe-normal{appearance:none;-webkit-appearance:none;border:1px solid #dce2d2;border-radius:14px;background:#e8eddf;color:#405c4e;font:inherit;font-weight:600;min-height:44px;padding:10px 16px;cursor:pointer}#farm-wardrobe button:disabled{opacity:.5;cursor:default}#farm-wardrobe button:focus-visible,.wardrobe-normal:focus-visible{outline:2px solid #b79560;outline-offset:3px}.wardrobe-normal{display:block;width:100%;margin:14px 0 4px;text-align:center}.wardrobe-normal:disabled{opacity:.5;cursor:default}';document.head.append(style);section.innerHTML='<h3>農場紀念 T-shirt</h3><div data-shirts></div><button data-normal class="wardrobe-normal">日常服裝</button>';$('#character-dialog .legendary-wardrobe').before(section);section.querySelector('[data-normal]').onclick=()=>wearFarmShirt(null)}
  const list=section.querySelector('[data-shirts]');list.replaceChildren();list.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px';const awards=getFarmState()?.members[playerId()]?.awards||[];
  for(const a of AWARDS){const card=document.createElement('article');card.style.cssText='min-width:0;padding:10px;text-align:center;border:1px solid #dce2d2;border-radius:16px;background:#f0f2e8';const image=shirtPreview(a.id,a.name),name=document.createElement('strong'),b=document.createElement('button');const unlocked=awards.includes(a.id),worn=player.farmShirt===a.id;name.textContent=a.name;name.style.cssText='display:block;font-size:14px;margin:6px 0';if(!unlocked)image.style.opacity='.45';b.textContent=worn?'已穿上':unlocked?'穿上':'尚未解鎖';b.disabled=syncBusy||!unlocked||worn;b.style.cssText='min-height:44px;width:100%;margin-top:6px';b.onclick=()=>wearFarmShirt(a.id);card.append(image,name,b);list.append(card)}section.querySelector('[data-normal]').disabled=syncBusy||(!player.farmShirt&&!equippedLegendary(player));
 }
