@@ -1,5 +1,5 @@
 // Reuse the real home geometry and furniture, without login or economy writes.
-import './app.js?v=escape-window-2';
+import './app.js?v=master-blinds-1';
 import * as T from './vendor/three.module.js';
 import {createGodzilla} from './godzilla.js?v=103';
 const style=document.createElement('style');

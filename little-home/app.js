@@ -853,12 +853,13 @@ target.x=scaleX(target.x);desiredTarget.x=scaleX(desiredTarget.x);
 let current='all';function selectRoom(k){current=k;let r=rooms[k];desiredTarget.set(...r.pos);desiredDist=r.dist;$('#roomtitle').textContent=r.name;$('#roomdesc').textContent=r.desc;document.querySelectorAll('[data-room]').forEach(b=>b.classList.toggle('active',b.dataset.room===k));$('#roomactions').replaceChildren();if(k==='dining'){action('坐第一張餐椅',()=>window.homeGameMoveTo?.(null,'diningChair0'));action('坐第二張餐椅',()=>window.homeGameMoveTo?.(null,'diningChair1'))}if(k==='entry'||k==='bath')action('照鏡子',()=>window.homeGameMoveTo?.(null,k==='entry'?'entryMirror':'bathMirror'));if(k==='bath'){action(showerDoor.userData.door.open?'關閉淋浴門':'推開淋浴門',()=>{toggleShowerDoor();selectRoom('bath')});action(bathWindow.userData.door.open?'關閉浴室窗戶':'打開浴室窗戶',()=>{toggleBathWindow();selectRoom('bath')})}if(k==='child')action(childBlindRaised?'放下百葉窗':'拉起百葉窗',()=>{toggleChildBlinds();selectRoom('child')});if(k==='main')action(blindRaised?'放下百葉窗':'拉起百葉窗',()=>{toggleBlinds();selectRoom('main')});if(k==='living'){action(tv?'關閉電視':'開啟電視',()=>{showNews(!tv);selectRoom('living');toast(tv?'電視打開了':'享受安靜的客廳')});action(curtainClosed?'蛇型簾往右收':'展開蛇型簾',()=>{toggleSheer();selectRoom('living')})}}function action(label,fn){let b=document.createElement('button');b.textContent=label;b.onclick=fn;$('#roomactions').append(b)}let toastTimer;function toast(t){if(window.homeGameFeedback&&!document.querySelector('dialog[open]'))return window.homeGameFeedback(t);$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),2400)}
 function toggleSheer(){curtainClosed=!curtainClosed;toast(curtainClosed?'蛇型簾展開了':'蛇型簾往右收起了')}
 function toggleChildBlinds(){childBlindRaised=!childBlindRaised;toast(childBlindRaised?'次臥百葉窗拉起了':'次臥百葉窗放下了')}
-function toggleBlinds(){blindRaised=!blindRaised;toast(blindRaised?'百葉窗拉起了':'百葉窗放下了')}
+function toggleBlinds(){blindRaised=!blindRaised;toast(blindRaised?'主臥百葉窗全部拉起了':'主臥百葉窗放下了')}
 function updateCoverings(){
   coverProgress+=((curtainClosed?0:1)-coverProgress)*.12;
   livingFabric.scale.x=1-.88*coverProgress;
   livingFabric.position.x=livingFabric.userData.rightEdge*(1-livingFabric.scale.x);
   blindProgress+=((blindRaised?1:0)-blindProgress)*.12;
+  if(Math.abs((blindRaised?1:0)-blindProgress)<.001)blindProgress=blindRaised?1:0;
   for(const slat of blindSlats)slat.position.y=slat.userData.loweredY+(slat.userData.raisedY-slat.userData.loweredY)*blindProgress;
   for(const cord of blindCords){cord.scale.y=1-.86*blindProgress;cord.position.y=2.19-.75*cord.scale.y}
   childBlindProgress+=((childBlindRaised?1:0)-childBlindProgress)*.12;
@@ -957,6 +958,8 @@ function toggleDoorAt(e){
   while(door&&!door.userData.door&&!door.userData.slider&&!door.userData.windowTarget&&!door.userData.covering)door=door.parent;
   if(!door)return false;
   const point=hits[0].point.clone();
+  // The master window is behind the bed: operate the entire blind directly on tap.
+  if(door===masterBlinds){performDoorAction(door,point);return true}
   const state=(door.userData.windowTarget||door).userData.door,desiredOpen=state?!state.open:null;
   window.homeGameApproach?.([point.x,point.z],()=>window.homeGameInteract?.(()=>performDoorAction(door,point,desiredOpen)),'走去互動');return true;
 }
