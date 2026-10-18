@@ -1026,19 +1026,27 @@ function renderFarmWardrobe(){
 }
 async function wearFarmShirt(id){if(activity||travel)return toast('請先完成目前的動作，再換裝');try{await mutateGame((p,meta)=>{const farm=meta.farm||getFarmState();if(id&&!farm?.members[playerId()]?.awards?.includes(id))throw Error('這件紀念 T-shirt 尚未解鎖');p.farmShirt=id||'';p.legendaryEquipped=''});renderAvatarPreview();$('#legendary-preview-label').textContent='';toast(id?'已換上'+AWARDS.find(a=>a.id===id).name:'已換回日常服裝')}catch(e){toast(e.message||'換裝未儲存，請重試')}}
 function equippedLegendary(p){return !p?.farmShirt&&p?.xp>=MAX_XP&&Array.isArray(p.legendaryOwned)&&p.legendaryOwned.includes(p.legendaryEquipped)&&outfitById(p.legendaryEquipped)?p.legendaryEquipped:''}
-function renderLegendaryWardrobe(){
- const list=$('#legendary-list');if(!list)return;list.replaceChildren();const unlocked=player.xp>=MAX_XP,current=equippedLegendary(player);
- $('#legendary-note').textContent=unlocked?(player.legendaryFreeClaimed?'首套已領取 · 其餘每套 1,200 遊戲幣':'恭喜滿級！任選一套免費領取，之後每套 1,200 遊戲幣'):'20 級解鎖 · 首套免費，現在可先預覽';
- for(const item of legendaryOutfits){
-  const owned=player.legendaryOwned.includes(item.id),card=document.createElement('article');card.className='legendary-card';card.style.setProperty('--costume-color',item.color);
-  const icon=document.createElement('span');icon.className='legendary-icon';icon.textContent=item.icon;icon.setAttribute('aria-hidden','true');
-  const name=document.createElement('strong');name.textContent=item.name;const note=document.createElement('small');note.textContent=item.note;
-  const preview=document.createElement('button');preview.textContent='預覽';preview.onclick=()=>{renderAvatarPreview(item.id);$('#legendary-preview-label').textContent=`預覽：${item.name}（尚未換裝）`;$('#avatar-current-preview').scrollIntoView({block:'nearest',behavior:'smooth'})};
-  const button=document.createElement('button');button.className='legendary-action';button.textContent=current===item.id?'已穿上':owned?'穿上':!unlocked?'20 級解鎖':!player.legendaryFreeClaimed?'免費領取':'1,200 幣解鎖';
-  button.disabled=syncBusy||current===item.id||!unlocked||(!owned&&player.legendaryFreeClaimed&&player.coins<item.price);button.onclick=()=>wearLegendary(item.id);
-  card.append(icon,name,note,preview,button);list.append(card);
+const legendaryPortraits=new Map();
+function legendaryPortrait(item){
+ const key=JSON.stringify([item.id,avatar,avatarDesign]);let src=legendaryPortraits.get(key);
+ if(!src){
+  renderAvatarPreview(item.id);const canvas=$('#avatar-current-preview');
+  if(!canvas.hidden){src=canvas.toDataURL('image/png');if(legendaryPortraits.size>24)legendaryPortraits.clear();legendaryPortraits.set(key,src)}
+  renderAvatarPreview();
  }
- $('#legendary-remove').disabled=syncBusy||!current;
+ const image=document.createElement('img');image.alt=item.name;image.width=112;image.height=126;image.style.cssText='display:block;width:112px;max-width:100%;height:126px;object-fit:contain;margin:auto';if(src)image.src=src;return image;
+}
+function renderLegendaryWardrobe(){
+ const list=$('#legendary-list');if(!list)return;list.replaceChildren();list.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px';
+ const unlocked=player.xp>=MAX_XP,current=equippedLegendary(player);
+ for(const item of legendaryOutfits){
+  const owned=player.legendaryOwned.includes(item.id),card=document.createElement('article');card.style.cssText='min-width:0;padding:10px;text-align:center;border:1px solid #dce2d2;border-radius:16px;background:#f0f2e8';
+  const image=legendaryPortrait(item),name=document.createElement('strong');name.textContent=item.name;name.style.cssText='display:block;font-size:14px;margin:6px 0';
+  const button=document.createElement('button');button.textContent=current===item.id?'已穿上':owned?'穿上':!unlocked?'20 級解鎖':!player.legendaryFreeClaimed?'免費領取':'1,200 幣解鎖';
+  button.style.cssText='appearance:none;-webkit-appearance:none;border:1px solid #dce2d2;border-radius:14px;background:#e8eddf;color:#405c4e;font:inherit;font-weight:600;min-height:44px;padding:10px 8px;width:100%;margin-top:6px;cursor:pointer';
+  button.disabled=syncBusy||current===item.id||!unlocked||(!owned&&player.legendaryFreeClaimed&&player.coins<item.price);if(button.disabled)button.style.opacity='.5';button.onclick=()=>wearLegendary(item.id);
+  card.append(image,name,button);list.append(card);
+ }
 }
 async function wearLegendary(id){
  if(activity||travel)return toast('請先完成目前的動作，再換裝');
@@ -1049,7 +1057,7 @@ async function wearLegendary(id){
   const result=unlockLegendary(p,id,MAX_XP);p.farmShirt='';record(p,`${result.free?'滿級免費領取':'套裝解鎖'}：${result.item.name}`,-result.cost);
  });renderAvatarPreview();$('#legendary-preview-label').textContent='';toast(id?`已換上${outfitById(id).name}`:'已換回日常服裝')}catch(e){toast(e.message||'套裝未儲存，請再試一次')}
 }
-$('#legendary-remove').onclick=()=>wearLegendary('');
+
 function showPanel(id){$(id).showModal()}
 function itemCard(item,owned=null){
  const card=document.createElement('article');card.className='item-card';
