@@ -1,5 +1,5 @@
 import {applyGameMenuIcons} from './game-menu-icons.js?v=feed27';
-import {installFarm} from './farm-ui.js?v=battle28';
+import {installFarm} from './farm-ui.js?v=wardrobe29';
 import {installSideShooter} from './side-shooter.js?v=rank-2';
 import {battleResult,castleScore,resultScorePanel} from './leaderboard.js?v=rank-2';
 import * as T from './vendor/three.module.js';
@@ -145,6 +145,7 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEs
  applyGameMenuIcons(games);
  games.querySelector('.game-dialog-body').append(rankButton);
 }
+
 
 
 

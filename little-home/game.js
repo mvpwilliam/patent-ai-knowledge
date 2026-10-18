@@ -1,11 +1,12 @@
-import {newFarm,farmAction} from './farm-core.js?v=battle28';
+import {shirtPreview} from './farm-shirt-preview.js?v=wardrobe29';
+import {AWARDS,newFarm,farmAction} from './farm-core.js?v=battle28';
 import {decorateFarmShirt} from './farm-home.js?v=shirts-16';
 import {applyChoreContact,resetChoreContact,contactStops} from './chore-contact.js?v=chore-route-fix-1';
 import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
-import {installToyDefense} from './toy-defense.js?v=battle28';
+import {installToyDefense} from './toy-defense.js?v=wardrobe29';
 import {installLeaderboard,saveBestScore,rankingRows} from './leaderboard.js?v=rank-2';
 import {MEDALS,awardMedal,medalCard,renderMedalCollection,beginEscapeMedal,pendingMedalKey} from './medals.js?v=medal-row-2';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
@@ -1016,8 +1017,14 @@ function renderEconomy(){
  $('#player-level').textContent=`Lv.${info.level} · ${info.title}`;$('#xp-meter').value=info.progress;
  $('#xp-label').textContent=info.level===20?(player.legendaryFreeClaimed?'已滿級 · 家事繼續賺幣':'已滿級 · 下方可免費領取一套傳說套裝'):`${Number(player.xp.toFixed(1))} / ${MAX_XP} EXP`;
  $('#daily-progress').textContent=`今日家事 ${dayTasks().filter(t=>taskDone(t)).length}／${dayTasks().length}`;
- renderInventory();renderShop();renderLegendaryWardrobe();renderMedals();leaderboard?.refresh();
+ renderInventory();renderShop();renderLegendaryWardrobe();renderFarmWardrobe();renderMedals();leaderboard?.refresh();
 }
+function renderFarmWardrobe(){
+ let section=$('#farm-wardrobe');if(!section){section=document.createElement('section');section.id='farm-wardrobe';section.innerHTML='<h3>農場紀念 T-shirt</h3><div data-shirts></div><button data-normal>換回日常服裝</button>';$('#character-dialog .legendary-wardrobe').before(section);section.querySelector('[data-normal]').onclick=()=>wearFarmShirt(null)}
+ const list=section.querySelector('[data-shirts]');list.replaceChildren();list.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px';const awards=getFarmState()?.members[playerId()]?.awards||[];
+ for(const a of AWARDS){const card=document.createElement('article');card.style.cssText='min-width:0;padding:10px;text-align:center;border:1px solid #dce2d2;border-radius:16px;background:#f0f2e8';const image=shirtPreview(a.id,a.name),name=document.createElement('strong'),b=document.createElement('button');const unlocked=awards.includes(a.id),worn=player.farmShirt===a.id;name.textContent=a.name;name.style.cssText='display:block;font-size:14px;margin:6px 0';if(!unlocked)image.style.opacity='.45';b.textContent=worn?'已穿上':unlocked?'穿上':'尚未解鎖';b.disabled=syncBusy||!unlocked||worn;b.style.cssText='min-height:44px;width:100%;margin-top:6px';b.onclick=()=>wearFarmShirt(a.id);card.append(image,name,b);list.append(card)}section.querySelector('[data-normal]').disabled=syncBusy||(!player.farmShirt&&!equippedLegendary(player));
+}
+async function wearFarmShirt(id){if(activity||travel)return toast('請先完成目前的動作，再換裝');try{await mutateGame((p,meta)=>{const farm=meta.farm||getFarmState();if(id&&!farm?.members[playerId()]?.awards?.includes(id))throw Error('這件紀念 T-shirt 尚未解鎖');p.farmShirt=id||'';p.legendaryEquipped=''});renderAvatarPreview();$('#legendary-preview-label').textContent='';toast(id?'已換上'+AWARDS.find(a=>a.id===id).name:'已換回日常服裝')}catch(e){toast(e.message||'換裝未儲存，請重試')}}
 function equippedLegendary(p){return !p?.farmShirt&&p?.xp>=MAX_XP&&Array.isArray(p.legendaryOwned)&&p.legendaryOwned.includes(p.legendaryEquipped)&&outfitById(p.legendaryEquipped)?p.legendaryEquipped:''}
 function renderLegendaryWardrobe(){
  const list=$('#legendary-list');if(!list)return;list.replaceChildren();const unlocked=player.xp>=MAX_XP,current=equippedLegendary(player);
@@ -1345,6 +1352,7 @@ async function claimEscapeMedal(){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect().then(()=>claimEscapeMedal());
 }
+
 
 
 
