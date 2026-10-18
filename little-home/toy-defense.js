@@ -1,5 +1,5 @@
 import {installFarm} from './farm-ui.js?v=direct-exit-23';
-import {installSideShooter} from './side-shooter.js?v=joy24';
+import {installSideShooter} from './side-shooter.js?v=long25';
 import * as T from './vendor/three.module.js';
 import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
 
