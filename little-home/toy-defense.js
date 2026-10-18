@@ -1,5 +1,5 @@
-import {applyGameMenuIcons} from './game-menu-icons.js?v=icons26';
-import {installFarm} from './farm-ui.js?v=direct-exit-23';
+import {applyGameMenuIcons} from './game-menu-icons.js?v=feed27';
+import {installFarm} from './farm-ui.js?v=feed27';
 import {installSideShooter} from './side-shooter.js?v=long25';
 import * as T from './vendor/three.module.js';
 import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
@@ -11,7 +11,7 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions}){
  entry.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h4v4h3V4h3v4h3V4h3v16H4zM10 20v-6h4v6"/></svg>';
  document.querySelector('.scene-menu-options').append(entry);
  const games=document.createElement('dialog');games.className='game-dialog compact-dialog';games.setAttribute('aria-label','遊戲區');
- games.innerHTML="<div class=\"dialog-head\"><h2>遊戲區</h2><button aria-label=\"關閉遊戲區\">×</button></div><div class=\"game-dialog-body\" style=\"display:grid;gap:14px\"><button id=\"start-defense\" style=\"box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:56px;min-height:56px;padding:0 14px;border:0;border-radius:14px;font:inherit;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;background:#405f50;color:#fff\"><span aria-hidden=\"true\">🏰</span><span>城堡保衛戰</span></button><a href=\"./escape.html\" style=\"box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:56px;min-height:56px;padding:0 14px;border:0;border-radius:14px;font:inherit;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;background:#e8eddf;color:#3d5949\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" style=\"flex-shrink:0\"><path d=\"M5 21V3h14v18M3 21h18M8 21V6h8v15\"/><rect x=\"10\" y=\"12\" width=\"4\" height=\"4\" rx=\"1\"/><path d=\"M11 12v-1a1 1 0 0 1 2 0v1\"/></svg><span>小屋密室 · 畫面之外</span></a></div>";
+ games.innerHTML="<div class=\"dialog-head\"><h2>遊戲區</h2><button aria-label=\"關閉遊戲區\">×</button></div><div class=\"game-dialog-body\" style=\"display:grid;gap:14px\"><button id=\"start-defense\" style=\"box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:56px;min-height:56px;padding:0 14px;border:0;border-radius:14px;font:inherit;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;background:#405f50;color:#fff\"><span aria-hidden=\"true\">🏰</span><span>城堡保衛戰</span></button><a href=\"./escape.html\" style=\"box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:56px;min-height:56px;padding:0 14px;border:0;border-radius:14px;font:inherit;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;background:#e8eddf;color:#3d5949\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" style=\"flex-shrink:0\"><path d=\"M5 21V3h14v18M3 21h18M8 21V6h8v15\"/><rect x=\"10\" y=\"12\" width=\"4\" height=\"4\" rx=\"1\"/><path d=\"M11 12v-1a1 1 0 0 1 2 0v1\"/></svg><span>小屋密室</span></a></div>";
  document.body.append(games);games.querySelector('.dialog-head button').onclick=()=>games.close();games.querySelector('#start-defense').onclick=()=>{games.close();open()};
  const ui=document.createElement('section');ui.id='toy-defense';ui.hidden=true;ui.setAttribute('aria-label','玩具保衛戰');
  ui.innerHTML=`<div class="td-hud"><div><small>TOY DEFENSE / 120 SEC</small><strong id="td-wave">客廳保衛戰</strong></div><strong id="td-clock">2:00</strong><button id="td-pause" aria-label="暫停戰鬥">Ⅱ</button></div>
@@ -138,6 +138,7 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions}){
  if(farmOptions)installFarm({games,canStart,options:farmOptions});
  applyGameMenuIcons(games);
 }
+
 
 
 
