@@ -5,7 +5,7 @@ export const WAVE_TRIGGERS=[6,16,26,37,48,58,70,81,94,106,118,131];
 export const TABLES=[{x:20,y:2.5,w:6.6},{x:65,y:2.5,w:6.6},{x:110,y:2.5,w:6.6}];
 export const PLATFORMS=[
  ...TABLES.map(t=>({x:t.x-t.w/2,y:t.y,w:t.w,kind:'table'})),
- {x:13,y:1.4,w:4},{x:20,y:2.5,w:4},{x:29,y:1.5,w:5},{x:45,y:1.7,w:5},{x:52,y:2.7,w:4},{x:70,y:1.6,w:5},{x:79,y:2.5,w:4},{x:92,y:1.4,w:5},{x:100,y:2.5,w:4},{x:112,y:1.5,w:5},{x:120,y:2.6,w:4},{x:130,y:1.4,w:5}
+ {x:13,y:1.4,w:4},{x:29,y:1.5,w:5},{x:45,y:1.7,w:5},{x:52,y:2.7,w:4},{x:70,y:1.6,w:5},{x:79,y:2.5,w:4},{x:92,y:1.4,w:5},{x:100,y:2.5,w:4},{x:112,y:1.5,w:5},{x:120,y:2.6,w:4},{x:130,y:1.4,w:5}
 ];
 export const WEAPONS={P:{name:'手槍',rate:.25,damage:24,speed:22},H:{name:'重機槍',rate:.085,damage:18,speed:27},F:{name:'火焰槍',rate:.16,damage:20,speed:15},R:{name:'火箭筒',rate:.55,damage:65,speed:14},T:{name:'坦克重砲',rate:.32,damage:45,speed:24}};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -21,7 +21,7 @@ export function toggleSideTank(s){if(s.status!=='playing'||s.tank.hp<=0)return;i
 function bullet(s,x,y,vx,vy,damage,kind='P',enemy=false){return put(s.shots,{x,y,oldX:x,oldY:y,vx,vy,damage,kind,enemy,life:kind==='F'?.45:kind==='G'?1.1:3})}
 function fire(s,input){const h=s.hero,id=s.tank.riding?'T':h.weapon,w=WEAPONS[id];if(s.time<h.fireAt)return;h.fireAt=s.time+w.rate;const up=input.up&&!h.crouch,dx=up&&!input.x?0:h.face,dy=up?1:0,n=Math.hypot(dx,dy)||1;const y=h.y+(s.tank.riding?1.1:h.crouch?.48:1.1);for(const spread of id==='F'?[-.18,0,.18]:id==='T'?[-.04,.04]:[0]){const a=Math.atan2(dy,dx)+spread;bullet(s,h.x+dx*.45,y,Math.cos(a)*w.speed,Math.sin(a)*w.speed,w.damage,id)}if(!s.tank.riding&&id!=='P'&&--h.ammo<=0){h.weapon='P';h.ammo=0;notice(s,'彈藥用完，切回手槍')}}
 function segmentHit(q,x,y,w,h){const minX=x-w/2,maxX=x+w/2,minY=y,maxY=y+h;let lo=0,hi=1;for(const [o,d,a,b] of [[q.oldX,q.x-q.oldX,minX,maxX],[q.oldY,q.y-q.oldY,minY,maxY]]){if(Math.abs(d)<1e-8){if(o<a||o>b)return false;continue}let t=(a-o)/d,u=(b-o)/d;if(t>u)[t,u]=[u,t];lo=Math.max(lo,t);hi=Math.min(hi,u);if(lo>hi)return false}return true}
-export function stepSide(s,input,dt){if(s.status!=='playing')return;dt=clamp(dt,0,.04);s.time+=dt;const h=s.hero,t=s.tank,b=s.boss;s.front=Math.max(s.front,h.x);h.crouch=!!input.down&&h.ground&&!t.riding;if(input.x)h.face=Math.sign(input.x);h.x=clamp(h.x+(h.crouch?0:input.x||0)*dt*(t.riding?4.7:5),.6,b.active?b.x-3.2:LENGTH-2);
+export function stepSide(s,input,dt){if(s.status!=='playing')return;dt=clamp(dt,0,.04);s.time+=dt;const h=s.hero,t=s.tank,b=s.boss;s.front=Math.max(s.front,h.x);h.crouch=!!input.down&&h.ground&&!t.riding;h.walking=!!input.x&&!h.crouch;h.aimAngle=input.up&&!h.crouch?(input.x?Math.PI/4:Math.PI/2):0;if(input.x)h.face=Math.sign(input.x);h.x=clamp(h.x+(h.crouch?0:input.x||0)*dt*(t.riding?4.7:5),.6,b.active?b.x-3.2:LENGTH-2);
  if(input.jump&&!h.jumpHeld&&h.ground&&!t.riding){h.vy=9;h.ground=false}h.jumpHeld=!!input.jump;const oldY=h.y;h.vy-=18*dt;h.y+=h.vy*dt;h.ground=false;if(h.vy<=0)for(const p of PLATFORMS)if(h.x>p.x-.25&&h.x<p.x+p.w+.25&&oldY>=p.y&&h.y<=p.y){h.y=p.y;h.vy=0;h.ground=true;break}if(h.y<=0||t.riding){h.y=0;h.vy=0;h.ground=true}if(t.riding)t.x=h.x;
  if(input.fire)fire(s,input);if(input.grenade&&!h.grenadeHeld&&h.grenades>0){h.grenades--;bullet(s,h.x,h.y+1,h.face*8,6,95,'G')}h.grenadeHeld=!!input.grenade;
  const triggers=WAVE_TRIGGERS;if(s.wave<triggers.length&&h.x>triggers[s.wave]){for(let i=0;i<3;i++)put(s.enemies,{x:Math.min(BOSS_TRIGGER+3,h.x+9+i*2),y:0,hp:48+(s.wave>4?24:0),fireAt:s.time+1+i*.4});s.wave++}

@@ -1,8 +1,8 @@
 import {battleResult,resultScorePanel} from './leaderboard.js?v=rank-2';
 import {bindSideStick} from './side-stick.js?v=joy24';
 import * as T from './vendor/three.module.js';
-import {createSideGame,stepSide,toggleSideTank,WEAPONS} from './side-core.js?v=art26';
-import {createSideScene} from './side-scene.js?v=art26';
+import {createSideGame,stepSide,toggleSideTank,WEAPONS} from './side-core.js?v=art27';
+import {createSideScene} from './side-scene.js?v=art27';
 export function installSideShooter({games,canStart,makeHero,onWin,onResult,openLeaderboard}){
  const entry=document.createElement('button');entry.type='button';entry.style.cssText=games.querySelector('#start-defense').style.cssText;entry.textContent='▰ 客廳防衛戰';games.querySelector('.game-dialog-body').append(entry);
  const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./side-shooter.css?v=joy24',import.meta.url);document.head.append(css);
