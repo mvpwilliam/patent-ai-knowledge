@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=home29';
+import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=floor30';
 export function createSideScene(makeHero){
  const scene=new T.Scene();scene.background=new T.Color('#e6e4d9');
  const camera=new T.OrthographicCamera(-10,10,6,-6,.1,90),geo=new T.BoxGeometry(1,1,1),cyl=new T.CylinderGeometry(.5,.5,1,8),mats=new Map(),extra=[];
@@ -8,8 +8,9 @@ export function createSideScene(makeHero){
  function round(g,w,h,d,c,x=0,y=h/2,z=0){const m=new T.Mesh(cyl,mat(c));m.scale.set(w,h,d);m.position.set(x,y,z);g.add(m);return m}
  function group(){const g=new T.Group();scene.add(g);return g}
  scene.add(new T.HemisphereLight(0xfff9e9,0x718275,2));const light=new T.DirectionalLight(0xfff0cc,2);light.position.set(-8,14,10);scene.add(light);
- box(scene,LENGTH+4,.5,5,'#bda98c',LENGTH/2,-.3);const plainWall=box(scene,LENGTH+4,10,.2,'#e7e4d9',LENGTH/2,4,-2.5);box(scene,LENGTH+4,.17,.26,'#f8f2e4',LENGTH/2,.18,-2.3);
- for(let x=0;x<LENGTH+2;x+=3){box(scene,.025,.025,5,'#9b896d',x,-.04);if(x%15===0)box(scene,.035,4,.08,'#d5d6c7',x,3.5,-2.34)}
+ const legacyFloor=group();
+ box(legacyFloor,LENGTH+4,.5,5,'#bda98c',LENGTH/2,-.3);const plainWall=box(scene,LENGTH+4,10,.2,'#e7e4d9',LENGTH/2,4,-2.5);box(legacyFloor,LENGTH+4,.17,.26,'#f8f2e4',LENGTH/2,.18,-2.3);
+ for(let x=0;x<LENGTH+2;x+=3){box(legacyFloor,.025,.025,5,'#9b896d',x,-.04);if(x%15===0)box(legacyFloor,.035,4,.08,'#d5d6c7',x,3.5,-2.34)}
  // Furniture remains behind the play plane. Table surfaces share side-core's collision coordinates.
  const furniture=[];
  function register(g,name,w,h){furniture.push({g,name,w,h});}
@@ -74,7 +75,7 @@ export function createSideScene(makeHero){
  let disposed=false;
  if(typeof window!=='undefined'){
   const loader=new T.TextureLoader();
-  loader.load(new URL('./furniture.webp?v=home29',import.meta.url).href,tex=>{
+  loader.load(new URL('./furniture.webp?v=floor30',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
    const regions={sofa:[25,132,645,311],table:[707,235,505,208],chair:[1248,50,262,395],tv:[45,537,595,420],shelf:[694,484,307,484]};
    const material=new T.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.12,side:T.DoubleSide});
@@ -83,11 +84,11 @@ export function createSideScene(makeHero){
     g.children.forEach(c=>c.visible=false);const plane=new T.Mesh(geometry,material);plane.position.set(0,h/2,.25);g.add(plane);
    });
   });
-  loader.load(new URL('./home-living-backdrop.webp?v=home29',import.meta.url).href,tex=>{
+  loader.load(new URL('./home-living-backdrop.webp?v=floor30',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
    const m=new T.MeshBasicMaterial({map:tex,depthWrite:false});extra.push(m);
    for(let x=15;x<LENGTH;x+=30){const plane=new T.Mesh(new T.PlaneGeometry(30,30*tex.image.height/tex.image.width),m);plane.position.set(x,6*tex.image.height/tex.image.width,-2.35);scene.add(plane)}
-   plainWall.visible=false;furniture.forEach(({g,name})=>{if(name!=='table')g.visible=false});
+   plainWall.visible=false;legacyFloor.visible=false;furniture.forEach(({g,name})=>{if(name!=='table')g.visible=false});
   });
   loader.load(new URL('./battle-toys.webp?v=art-1',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
