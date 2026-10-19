@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {PLATFORMS,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=long25';
+import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=long25';
 export function createSideScene(makeHero){
  const scene=new T.Scene();scene.background=new T.Color('#e6e4d9');
  const camera=new T.OrthographicCamera(-10,10,6,-6,.1,90),geo=new T.BoxGeometry(1,1,1),cyl=new T.CylinderGeometry(.5,.5,1,8),mats=new Map(),extra=[];
@@ -10,14 +10,14 @@ export function createSideScene(makeHero){
  scene.add(new T.HemisphereLight(0xfff9e9,0x718275,2));const light=new T.DirectionalLight(0xfff0cc,2);light.position.set(-8,14,10);scene.add(light);
  box(scene,LENGTH+4,.5,5,'#bda98c',LENGTH/2,-.3);box(scene,LENGTH+4,10,.2,'#e7e4d9',LENGTH/2,4,-2.5);box(scene,LENGTH+4,.17,.26,'#f8f2e4',LENGTH/2,.18,-2.3);
  for(let x=0;x<LENGTH+2;x+=3){box(scene,.025,.025,5,'#9b896d',x,-.04);if(x%15===0)box(scene,.035,4,.08,'#d5d6c7',x,3.5,-2.34)}
- // Furniture remains behind the play plane. Only side-core's PLATFORMS have collision.
+ // Furniture remains behind the play plane. Table surfaces share side-core's collision coordinates.
  function sofa(x){const g=group();g.position.set(x,0,-1.75);box(g,6,1.2,1.45,'#607e71',0,1.05);box(g,5.7,1.25,.45,'#758f7c',0,1.91,-.4);for(const sx of [-2.65,2.65])box(g,.62,1.6,1.7,'#668678',sx,.95);for(const sx of [-1.75,0,1.75]){box(g,1.65,.38,1.48,'#a0b095',sx,1.66,.14);box(g,1.34,.72,.24,'#8ea389',sx,2.18,-.03)}box(g,1,.58,.2,'#d6bca4',-1.45,2.3,.18)}
- function table(x){const g=group();g.position.set(x,0,-1.8);box(g,6.6,.28,1.85,'#9d7755',0,2.14);box(g,6.5,.08,1.9,'#c7a17a',0,2.31);for(const sx of [-2.75,2.75])box(g,.28,2,.42,'#836348',sx,1.07);box(g,.7,.45,.62,'#d9d3be',-1.6,2.6);for(let i=0;i<3;i++)box(g,.72,.07,.5,['#b5755c','#e2cd9d','#798b74'][i],.2+i*.15,2.5+i*.09);box(g,.58,.62,.55,'#d1c0a4',2,2.65);box(g,.06,.48,.06,'#557758',2,3.17);for(const sx of [-.28,.15,.4])box(g,.38,.08,.16,'#6d8a62',2+sx,3.3+sx*.4)}
+ function table(t){const g=group();g.position.set(t.x,0,-1.8);box(g,t.w,.28,1.85,'#9d7755',0,t.y-.2);box(g,t.w-.1,.08,1.9,'#c7a17a',0,t.y-.04);for(const sx of [-t.w/2+.55,t.w/2-.55])box(g,.28,t.y-.22,.42,'#836348',sx,(t.y-.22)/2);box(g,.7,.45,.62,'#d9d3be',-1.6,t.y+.26);for(let i=0;i<3;i++)box(g,.72,.07,.5,['#b5755c','#e2cd9d','#798b74'][i],.2+i*.15,t.y+.16+i*.09);box(g,.58,.62,.55,'#d1c0a4',2,t.y+.31);box(g,.06,.48,.06,'#557758',2,t.y+.83);for(const sx of [-.28,.15,.4])box(g,.38,.08,.16,'#6d8a62',2+sx,t.y+.96+sx*.4)}
  function chair(x){const g=group();g.position.set(x,0,-1.8);box(g,2.4,.3,1.4,'#a77d5b',0,1.75);box(g,2.03,.16,1.15,'#a4ae90',0,1.97);for(const sx of [-.85,.85]){box(g,.17,1.72,.2,'#8a674c',sx,.86);box(g,.18,3.55,.22,'#8a674c',sx,1.8,-.4)}box(g,2.23,.28,.2,'#b58d65',0,3.5,-.4);box(g,2.1,.2,.18,'#b58d65',0,2.85,-.4)}
  function shelf(x){const g=group();g.position.set(x,0,-2.13);box(g,3.2,4.4,.55,'#a48766',0,2.35);box(g,2.94,4.05,.06,'#d6b991',0,2.35,.3);for(const yy of [1.3,2.6,3.8])box(g,3.05,.16,.72,'#8f7357',0,yy,.48);for(const xx of [-.85,-.35,.2,.75])for(const yy of [1.65,2.94])box(g,.23,.64,.21,'#73886e',xx,yy,.53)}
- for(const x of [5,44,94])sofa(x);for(const x of [20,65,110])table(x);for(const x of [33,79,122])chair(x);for(const x of [54,102])shelf(x);
+ for(const x of [5,44,94])sofa(x);for(const t of TABLES)table(t);for(const x of [33,79,122])chair(x);for(const x of [54,102])shelf(x);
  const tv=group();tv.position.set(BOSS_X,0,-2.12);box(tv,10.9,4.9,.15,'#d6d5c8',0,3.15);box(tv,9.5,4.7,.2,'#4b5d56',0,3.55,.21);box(tv,9.1,4.3,.08,'#829b8e',0,3.55,.33);box(tv,11.5,.34,1.1,'#a17e5e',0,1.15,.55);for(const sx of [-4.45,0,4.45])box(tv,3.2,.78,.9,'#b69978',sx,.6,.56);
- for(const p of PLATFORMS){box(scene,p.w,.22,1.3,'#9a7354',p.x+p.w/2,p.y-.11,.1);box(scene,p.w-.1,.07,1.34,'#d2ae80',p.x+p.w/2,p.y+.025,.1);for(const x of [p.x+.25,p.x+p.w-.25])box(scene,.18,p.y,.65,'#8e7556',x,p.y/2,0)}
+ for(const p of PLATFORMS){if(p.kind==='table')continue;box(scene,p.w,.22,1.3,'#9a7354',p.x+p.w/2,p.y-.11,.1);box(scene,p.w-.1,.07,1.34,'#d2ae80',p.x+p.w/2,p.y+.025,.1);for(const x of [p.x+.25,p.x+p.w-.25])box(scene,.18,p.y,.65,'#8e7556',x,p.y/2,0)}
  for(const [x,c] of [[11,'#7d9474'],[36,'#bd8663'],[57,'#cfb180'],[83,'#78948b'],[119,'#bd8663']])box(scene,.64,.64,.65,c,x,.32,-1.1);
  function soldier(color='#697968'){const g=new T.Group();box(g,.52,.62,.42,color,0,.72);box(g,.43,.35,.38,'#e6c7a2',0,1.27);box(g,.62,.16,.52,'#556d58',0,1.46);box(g,.5,.22,.44,'#748973',0,1.57);box(g,.24,.3,.14,'#617666',-.37,.72,.07);for(const x of [-.17,.17])box(g,.18,.4,.26,'#4b6256',x,.24);box(g,.07,.07,.035,'#293e39',-.12,1.3,.21);box(g,.58,.12,.13,'#3c4d43',.39,.91,.26);return g}
  function jumper(){const g=new T.Group();box(g,.7,.62,.54,'#bb765c',0,1.07);box(g,.53,.4,.1,'#e8d8b8',0,1.06,.33);for(const x of [-.17,.17]){box(g,.09,.11,.04,'#344d45',x,1.1,.39);box(g,.12,.38,.13,'#7b6048',x,.48);box(g,.3,.15,.28,'#ad7355',x,.22)}box(g,.18,.14,.1,'#947651',0,.92,.4);round(g,.2,.08,.2,'#b2976c',.24,1.6);box(g,.12,.23,.12,'#b2976c',.24,1.73);return g}
