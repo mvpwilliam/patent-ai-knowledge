@@ -7,7 +7,7 @@ export const WEAPONS={P:{name:'手槍',rate:.25,damage:24,speed:22},H:{name:'重
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function pool(n){return Array.from({length:n},()=>({active:false}))}
 function put(pool,value){const o=pool.find(o=>!o.active);if(o)Object.assign(o,value,{active:true});return o}
-export function createSideGame(){return {status:'playing',time:0,score:0,kills:0,rescues:0,front:0,wave:0,shots:pool(160),enemies:pool(30),effects:pool(32),hero:{x:2,y:0,vy:0,face:1,hp:100,ground:true,crouch:false,weapon:'P',ammo:0,fireAt:0,inv:0,jumpHeld:false,grenadeHeld:false,grenades:6},tank:{x:60,y:0,hp:180,riding:false},boss:{x:BOSS_X,y:0,hp:1000,maxHp:1000,active:false,attackAt:0,warning:0,pattern:0},crates:[{x:9,y:0,weapon:'H',hp:48},{x:28,y:1.5,weapon:'F',hp:48},{x:42,y:0,weapon:'R',hp:48},{x:68,y:0,weapon:'H',hp:48},{x:86,y:0,weapon:'R',hp:48},{x:98,y:0,weapon:'H',hp:48},{x:115,y:1.5,weapon:'F',hp:48},{x:137,y:0,weapon:'R',hp:48}],drops:[],hostages:[{x:23,y:2.5,saved:false},{x:49,y:1.7,saved:false},{x:77,y:0,saved:false},{x:103,y:2.5,saved:false},{x:128,y:0,saved:false}],notice:'向右前進 · 擊破補給箱',noticeUntil:5}}
+export function createSideGame(){return {status:'playing',time:0,score:0,kills:0,rescues:0,front:0,wave:0,shots:pool(160),enemies:pool(30),effects:pool(32),hero:{x:2,y:0,vy:0,face:1,hp:100,ground:true,crouch:false,weapon:'P',ammo:0,fireAt:0,inv:0,jumpHeld:false,grenadeHeld:false,grenades:6},tank:{x:60,y:0,hp:180,riding:false},boss:{x:BOSS_X,y:0,hp:1000,maxHp:1000,active:false,attackAt:0,warning:0,pattern:0},crates:[{x:9,y:0,weapon:'H',hp:48},{x:28,y:1.5,weapon:'F',hp:48},{x:42,y:0,weapon:'R',hp:48},{x:68,y:0,weapon:'H',hp:48},{x:86,y:0,weapon:'R',hp:48},{x:98,y:0,weapon:'H',hp:48},{x:115,y:1.5,weapon:'F',hp:48},{x:137,y:0,weapon:'R',hp:48}],drops:[],hostages:[{x:23,y:2.5,saved:false},{x:49,y:1.7,saved:false},{x:77,y:0,saved:false},{x:103,y:2.5,saved:false},{x:128,y:0,saved:false}],notice:'打破補給箱取得武器 · 靠近黃色夥伴救援',noticeUntil:7}}
 function notice(s,t){s.notice=t;s.noticeUntil=s.time+3}
 function effect(s,x,y,r=1){put(s.effects,{x,y,r,life:.35})}
 function hurt(s,damage){const h=s.hero;if(s.time<h.inv)return;h.inv=s.time+.9;if(s.tank.riding){s.tank.hp=Math.max(0,s.tank.hp-damage);if(!s.tank.hp){s.tank.riding=false;effect(s,h.x,.7,2);notice(s,'坦克損壞，繼續前進！')}}else h.hp=Math.max(0,h.hp-damage);if(!h.hp)s.status='lost'}
@@ -38,3 +38,4 @@ export function stepSide(s,input,dt){if(s.status!=='playing')return;dt=clamp(dt,
  for(const e of s.effects)if(e.active){e.life-=dt;if(e.life<=0)e.active=false}
  if(b.active&&b.hp<=0&&s.status==='playing'){b.hp=0;s.status='won';s.score+=2000;effect(s,b.x,1.6,4)}
 }
+
