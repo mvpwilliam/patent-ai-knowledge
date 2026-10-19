@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=pickup28';
+import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=home29';
 export function createSideScene(makeHero){
  const scene=new T.Scene();scene.background=new T.Color('#e6e4d9');
  const camera=new T.OrthographicCamera(-10,10,6,-6,.1,90),geo=new T.BoxGeometry(1,1,1),cyl=new T.CylinderGeometry(.5,.5,1,8),mats=new Map(),extra=[];
@@ -74,7 +74,7 @@ export function createSideScene(makeHero){
  let disposed=false;
  if(typeof window!=='undefined'){
   const loader=new T.TextureLoader();
-  loader.load(new URL('./furniture.webp?v=pickup28',import.meta.url).href,tex=>{
+  loader.load(new URL('./furniture.webp?v=home29',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
    const regions={sofa:[25,132,645,311],table:[707,235,505,208],chair:[1248,50,262,395],tv:[45,537,595,420],shelf:[694,484,307,484]};
    const material=new T.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.12,side:T.DoubleSide});
@@ -83,11 +83,11 @@ export function createSideScene(makeHero){
     g.children.forEach(c=>c.visible=false);const plane=new T.Mesh(geometry,material);plane.position.set(0,h/2,.25);g.add(plane);
    });
   });
-  loader.load(new URL('./living-room-backdrop.webp?v=pickup28',import.meta.url).href,tex=>{
+  loader.load(new URL('./home-living-backdrop.webp?v=home29',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
    const m=new T.MeshBasicMaterial({map:tex,depthWrite:false});extra.push(m);
-   for(let x=15;x<LENGTH;x+=30){const plane=new T.Mesh(new T.PlaneGeometry(30,11.25),m);plane.position.set(x,1.925,-2.35);scene.add(plane)}
-   plainWall.visible=false;
+   for(let x=15;x<LENGTH;x+=30){const plane=new T.Mesh(new T.PlaneGeometry(30,30*tex.image.height/tex.image.width),m);plane.position.set(x,6*tex.image.height/tex.image.width,-2.35);scene.add(plane)}
+   plainWall.visible=false;furniture.forEach(({g,name})=>{if(name!=='table')g.visible=false});
   });
   loader.load(new URL('./battle-toys.webp?v=art-1',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
