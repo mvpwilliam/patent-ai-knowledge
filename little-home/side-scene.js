@@ -51,10 +51,12 @@ export function createSideScene(makeHero){
   loader.load(new URL('./battle-toys.webp?v=art-1',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
    const regions={soldier:[0,0,440,530],jumper:[460,0,465,530],cannon:[945,0,591,530],hostage:[0,530,395,494],tank:[395,530,540,494],boss:[935,530,601,494]};
+   const material=new T.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.09,depthWrite:false,side:T.DoubleSide});extra.push(material);
    const art=(g,name,height,y=0,z=.46)=>{
-    const [x,top,w,h]=regions[name],map=tex.clone();map.repeat.set(w/1536,h/1024);map.offset.set(x/1536,1-(top+h)/1024);map.needsUpdate=true;extra.push(map);
-    const material=new T.MeshBasicMaterial({map,transparent:true,alphaTest:.09,depthWrite:false,side:T.DoubleSide});extra.push(material);
-    const plane=new T.Mesh(new T.PlaneGeometry(height*w/h,height),material);plane.position.set(0,y+height/2,z);g.add(plane);
+    const [x,top,w,h]=regions[name],geometry=new T.PlaneGeometry(height*w/h,height),uv=geometry.attributes.uv;
+    const u0=x/1536,u1=(x+w)/1536,v0=1-(top+h)/1024,v1=1-top/1024;
+    uv.setXY(0,u0,v1);uv.setXY(1,u1,v1);uv.setXY(2,u0,v0);uv.setXY(3,u1,v0);uv.needsUpdate=true;
+    const plane=new T.Mesh(geometry,material);plane.position.set(0,y+height/2,z);g.add(plane);
    };
    enemies.forEach((g,i)=>{g.children.forEach(c=>c.visible=false);art(g,['soldier','jumper','cannon'][i%3],i%3===2?1.8:1.75)});
    hostages.forEach(g=>{g.children.forEach(c=>{if(!c.isSprite)c.visible=false});art(g,'hostage',1.6)});
