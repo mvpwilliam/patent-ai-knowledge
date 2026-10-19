@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=long25';
+import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=art26';
 export function createSideScene(makeHero){
  const scene=new T.Scene();scene.background=new T.Color('#e6e4d9');
  const camera=new T.OrthographicCamera(-10,10,6,-6,.1,90),geo=new T.BoxGeometry(1,1,1),cyl=new T.CylinderGeometry(.5,.5,1,8),mats=new Map(),extra=[];
@@ -8,7 +8,7 @@ export function createSideScene(makeHero){
  function round(g,w,h,d,c,x=0,y=h/2,z=0){const m=new T.Mesh(cyl,mat(c));m.scale.set(w,h,d);m.position.set(x,y,z);g.add(m);return m}
  function group(){const g=new T.Group();scene.add(g);return g}
  scene.add(new T.HemisphereLight(0xfff9e9,0x718275,2));const light=new T.DirectionalLight(0xfff0cc,2);light.position.set(-8,14,10);scene.add(light);
- box(scene,LENGTH+4,.5,5,'#bda98c',LENGTH/2,-.3);box(scene,LENGTH+4,10,.2,'#e7e4d9',LENGTH/2,4,-2.5);box(scene,LENGTH+4,.17,.26,'#f8f2e4',LENGTH/2,.18,-2.3);
+ box(scene,LENGTH+4,.5,5,'#bda98c',LENGTH/2,-.3);const plainWall=box(scene,LENGTH+4,10,.2,'#e7e4d9',LENGTH/2,4,-2.5);box(scene,LENGTH+4,.17,.26,'#f8f2e4',LENGTH/2,.18,-2.3);
  for(let x=0;x<LENGTH+2;x+=3){box(scene,.025,.025,5,'#9b896d',x,-.04);if(x%15===0)box(scene,.035,4,.08,'#d5d6c7',x,3.5,-2.34)}
  // Furniture remains behind the play plane. Table surfaces share side-core's collision coordinates.
  function sofa(x){const g=group();g.position.set(x,0,-1.75);box(g,6,1.2,1.45,'#607e71',0,1.05);box(g,5.7,1.25,.45,'#758f7c',0,1.91,-.4);for(const sx of [-2.65,2.65])box(g,.62,1.6,1.7,'#668678',sx,.95);for(const sx of [-1.75,0,1.75]){box(g,1.65,.38,1.48,'#a0b095',sx,1.66,.14);box(g,1.34,.72,.24,'#8ea389',sx,2.18,-.03)}box(g,1,.58,.2,'#d6bca4',-1.45,2.3,.18)}
@@ -38,8 +38,32 @@ export function createSideScene(makeHero){
  const crates=layout.crates.map((_,i)=>{const g=group();box(g,.88,1.15,.78,['#718b70','#ba815c','#c7a47c'][i%3]);box(g,.94,.13,.83,'#e1ca9e',0,1.17);box(g,.1,1.1,.09,'#e7cfa4',0,.57,.41);box(g,.8,.08,.1,'#e7cfa4',0,.68,.42);return g});
  const pickups=Array.from({length:layout.crates.length+layout.hostages.length},()=>{const g=group();for(const [id,name] of [['H','重機槍'],['F','火焰槍'],['R','火箭筒']]){const sp=label(name);sp.name=id;g.add(sp)}return g});
  const hostages=Array.from({length:layout.hostages.length},()=>{const g=hostage(),sign=label('救援','rescue');sign.position.set(0,2.03,.45);g.add(sign);scene.add(g);return g}),warning=box(scene,20,.08,.2,'#e66d57');
+ // Illustrated assets load after the scene is ready. Geometry remains a fallback while loading.
+ let disposed=false;
+ if(typeof window!=='undefined'){
+  const loader=new T.TextureLoader();
+  loader.load(new URL('./living-room-backdrop.webp?v=art-1',import.meta.url).href,tex=>{
+   if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
+   const m=new T.MeshBasicMaterial({map:tex,depthWrite:false});extra.push(m);
+   for(let x=15;x<LENGTH;x+=30){const plane=new T.Mesh(new T.PlaneGeometry(30,11.25),m);plane.position.set(x,1.925,-2.35);scene.add(plane)}
+   plainWall.visible=false;
+  });
+  loader.load(new URL('./battle-toys.webp?v=art-1',import.meta.url).href,tex=>{
+   if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
+   const regions={soldier:[0,0,440,530],jumper:[460,0,465,530],cannon:[945,0,591,530],hostage:[0,530,395,494],tank:[395,530,540,494],boss:[935,530,601,494]};
+   const art=(g,name,height,y=0,z=.46)=>{
+    const [x,top,w,h]=regions[name],map=tex.clone();map.repeat.set(w/1536,h/1024);map.offset.set(x/1536,1-(top+h)/1024);map.needsUpdate=true;extra.push(map);
+    const material=new T.MeshBasicMaterial({map,transparent:true,alphaTest:.09,depthWrite:false,side:T.DoubleSide});extra.push(material);
+    const plane=new T.Mesh(new T.PlaneGeometry(height*w/h,height),material);plane.position.set(0,y+height/2,z);g.add(plane);
+   };
+   enemies.forEach((g,i)=>{g.children.forEach(c=>c.visible=false);art(g,['soldier','jumper','cannon'][i%3],i%3===2?1.8:1.75)});
+   hostages.forEach(g=>{g.children.forEach(c=>{if(!c.isSprite)c.visible=false});art(g,'hostage',1.6)});
+   tank.children.forEach(c=>c.visible=false);art(tank,'tank',2.2);
+   boss.children.forEach(c=>c.visible=false);art(boss,'boss',3.35);
+  });
+ }
  return {scene,camera,sync(s,aspect){const half=Math.max(4.7,6/aspect),center=Math.max(half*aspect,Math.min(LENGTH-half*aspect,s.hero.x+half*aspect*.35));camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.position.set(center,1.4,24);camera.lookAt(center,1.4,0);camera.updateProjectionMatrix();const h=s.hero;hero.position.set(h.x,h.y,0);hero.rotation.y=h.face*Math.PI/2;hero.scale.y=h.crouch?.6:1;hero.visible=!s.tank.riding&&(h.inv<=s.time||Math.floor(s.time*14)%2===0);actor.userData.updatePose?.('stand');tank.position.x=s.tank.x;tank.rotation.y=h.face<0&&s.tank.riding?Math.PI:0;tank.visible=s.tank.hp>0;boss.position.x=s.boss.x;boss.visible=s.boss.active&&s.boss.hp>0;
  enemies.forEach((g,i)=>{const e=s.enemies[i];g.visible=e.active;g.position.set(e.x||0,e.y||0,0);g.rotation.y=e.x>h.x?Math.PI:0});shots.forEach((g,i)=>{const q=s.shots[i];g.visible=q.active;if(q.active){g.position.set(q.x,q.y,.5);g.material=mat(q.enemy?'#e06a4b':q.kind==='F'?'#f7a146':'#f5d17b');g.scale.set(q.kind==='R'?.5:.22,q.kind==='W'?.35:.16,.16)}});effects.forEach((g,i)=>{const e=s.effects[i];g.visible=e.active;if(e.active){g.position.set(e.x,e.y,.7);g.scale.setScalar(e.r*(1-e.life/.4));g.rotation.z=s.time*6}});
- crates.forEach((g,i)=>{const c=s.crates[i];g.visible=c.hp>0;g.position.set(c.x,c.y,0)});hostages.forEach((g,i)=>{const p=s.hostages[i];g.visible=!p.saved;g.position.set(p.x,p.y,0)});pickups.forEach((g,i)=>{const d=s.drops[i];g.visible=!!d;if(d){g.position.set(d.x,d.y+.6+Math.sin(s.time*4)*.1,.5);g.children.forEach(c=>c.visible=c.name===d.weapon)}});warning.visible=!!s.boss.warning;warning.position.set(s.boss.x-10,s.boss.pattern===0?1.3:.2,.7);},dispose(){actor.userData.disposeCostume?.();const gs=new Set(),ms=new Set();scene.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const m of [].concat(o.material))ms.add(m)});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());extra.forEach(x=>x.dispose());}};
+ crates.forEach((g,i)=>{const c=s.crates[i];g.visible=c.hp>0;g.position.set(c.x,c.y,0)});hostages.forEach((g,i)=>{const p=s.hostages[i];g.visible=!p.saved;g.position.set(p.x,p.y,0)});pickups.forEach((g,i)=>{const d=s.drops[i];g.visible=!!d;if(d){g.position.set(d.x,d.y+.6+Math.sin(s.time*4)*.1,.5);g.children.forEach(c=>c.visible=c.name===d.weapon)}});warning.visible=!!s.boss.warning;warning.position.set(s.boss.x-10,s.boss.pattern===0?1.3:.2,.7);},dispose(){disposed=true;actor.userData.disposeCostume?.();const gs=new Set(),ms=new Set();scene.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const m of [].concat(o.material))ms.add(m)});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());extra.forEach(x=>x.dispose());}};
 }
 
