@@ -280,3 +280,7 @@ body.night .view-toggle,body.night .view-panel,body.night .chore-popup{color:#34
 .chore-popup{bottom:auto;top:0;width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;padding:8px;gap:8px;font-size:13px}
 #chore-name{max-width:120px;line-height:1.4;overflow-wrap:anywhere}
 #chore-start,#chore-close{flex-shrink:0;min-width:44px;min-height:44px;touch-action:manipulation}
+
+/* The character portrait is for display, not camera control. Let its dialog scroll under a finger. */
+#character-dialog #avatar-current-preview{touch-action:pan-y;cursor:default}
+
