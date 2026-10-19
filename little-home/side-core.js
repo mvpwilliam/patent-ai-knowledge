@@ -2,7 +2,11 @@ export const LENGTH=150;
 export const BOSS_X=LENGTH-6;
 export const BOSS_TRIGGER=BOSS_X-9;
 export const WAVE_TRIGGERS=[6,16,26,37,48,58,70,81,94,106,118,131];
-export const PLATFORMS=[{x:13,y:1.4,w:4},{x:20,y:2.5,w:4},{x:29,y:1.5,w:5},{x:45,y:1.7,w:5},{x:52,y:2.7,w:4},{x:70,y:1.6,w:5},{x:79,y:2.5,w:4},{x:92,y:1.4,w:5},{x:100,y:2.5,w:4},{x:112,y:1.5,w:5},{x:120,y:2.6,w:4},{x:130,y:1.4,w:5}];
+export const TABLES=[{x:20,y:2.5,w:6.6},{x:65,y:2.5,w:6.6},{x:110,y:2.5,w:6.6}];
+export const PLATFORMS=[
+ ...TABLES.map(t=>({x:t.x-t.w/2,y:t.y,w:t.w,kind:'table'})),
+ {x:13,y:1.4,w:4},{x:20,y:2.5,w:4},{x:29,y:1.5,w:5},{x:45,y:1.7,w:5},{x:52,y:2.7,w:4},{x:70,y:1.6,w:5},{x:79,y:2.5,w:4},{x:92,y:1.4,w:5},{x:100,y:2.5,w:4},{x:112,y:1.5,w:5},{x:120,y:2.6,w:4},{x:130,y:1.4,w:5}
+];
 export const WEAPONS={P:{name:'手槍',rate:.25,damage:24,speed:22},H:{name:'重機槍',rate:.085,damage:18,speed:27},F:{name:'火焰槍',rate:.16,damage:20,speed:15},R:{name:'火箭筒',rate:.55,damage:65,speed:14},T:{name:'坦克重砲',rate:.32,damage:45,speed:24}};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function pool(n){return Array.from({length:n},()=>({active:false}))}
