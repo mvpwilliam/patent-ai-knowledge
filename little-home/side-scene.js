@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=art27';
+import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=pickup28';
 export function createSideScene(makeHero){
  const scene=new T.Scene();scene.background=new T.Color('#e6e4d9');
  const camera=new T.OrthographicCamera(-10,10,6,-6,.1,90),geo=new T.BoxGeometry(1,1,1),cyl=new T.CylinderGeometry(.5,.5,1,8),mats=new Map(),extra=[];
@@ -39,15 +39,42 @@ export function createSideScene(makeHero){
   const tex=new T.CanvasTexture(c),m=new T.SpriteMaterial({map:tex,transparent:true}),sp=new T.Sprite(m);
   sp.scale.set(kind==='rescue'?1.55:1.8,.68,1);extra.push(tex,m);return sp
  }
+
+ // Toy-like weapon silhouettes share the hero's sage, charcoal and brass palette.
+ function weaponPickup(id){
+  const g=new T.Group(),mount=new T.Group();g.add(mount);
+  round(mount,1.9,.08,1.9,'#d6c39d',0,-.35,-.08).rotation.x=Math.PI/2;
+  box(mount,.68,.28,.18,'#52665c',-.1,.04,.12);
+  box(mount,.36,.2,.17,'#b69a6a',-.59,.01,.12);
+  box(mount,.13,.3,.15,'#34483f',-.2,-.19,.12);
+  if(id==='H'){
+   box(mount,.7,.13,.15,'#34483f',.56,.09,.12);
+   box(mount,.18,.22,.19,'#d1b77b',.91,.09,.12);
+   box(mount,.26,.35,.17,'#6c7c64',.12,-.21,.12);
+   for(let i=0;i<4;i++)box(mount,.055,.15,.035,'#cfb379',-.05+i*.08,-.08,.23);
+  }else if(id==='F'){
+   round(mount,.3,.57,.3,'#b87851',-.45,-.04,.15);
+   box(mount,.58,.2,.2,'#46594d',.49,.09,.13);
+   box(mount,.2,.28,.24,'#d5b574',.83,.09,.13);
+   const flame=box(mount,.19,.19,.09,'#e5aa57',1.04,.1,.13);flame.rotation.z=Math.PI/4;
+  }else{
+   box(mount,1.65,.3,.24,'#637755',.06,.13,.13);
+   box(mount,.22,.4,.3,'#c2a66c',-.78,.13,.13);
+   box(mount,.3,.38,.27,'#b87e58',.8,.13,.13);
+   box(mount,.22,.08,.15,'#d5c29b',.14,.33,.13);
+  }
+  return g;
+ }
+
  const layout=createSideGame();
  const crates=layout.crates.map((_,i)=>{const g=group();box(g,.88,1.15,.78,['#718b70','#ba815c','#c7a47c'][i%3]);box(g,.94,.13,.83,'#e1ca9e',0,1.17);box(g,.1,1.1,.09,'#e7cfa4',0,.57,.41);box(g,.8,.08,.1,'#e7cfa4',0,.68,.42);return g});
- const pickups=Array.from({length:layout.crates.length+layout.hostages.length},()=>{const g=group();for(const [id,name] of [['H','重機槍'],['F','火焰槍'],['R','火箭筒']]){const sp=label(name);sp.name=id;g.add(sp)}return g});
+ const pickups=Array.from({length:layout.crates.length+layout.hostages.length},()=>{const g=group();for(const [id,name] of [['H','重機槍'],['F','火焰槍'],['R','火箭筒']]){const icon=weaponPickup(id);icon.name=id;g.add(icon)}return g});
  const hostages=Array.from({length:layout.hostages.length},()=>{const g=hostage(),sign=label('救援','rescue');sign.position.set(0,2.03,.45);g.add(sign);scene.add(g);return g}),warning=box(scene,20,.08,.2,'#e66d57');
  // Illustrated assets load after the scene is ready. Geometry remains a fallback while loading.
  let disposed=false;
  if(typeof window!=='undefined'){
   const loader=new T.TextureLoader();
-  loader.load(new URL('./furniture.webp?v=art27',import.meta.url).href,tex=>{
+  loader.load(new URL('./furniture.webp?v=pickup28',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
    const regions={sofa:[25,132,645,311],table:[707,235,505,208],chair:[1248,50,262,395],tv:[45,537,595,420],shelf:[694,484,307,484]};
    const material=new T.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.12,side:T.DoubleSide});
@@ -56,7 +83,7 @@ export function createSideScene(makeHero){
     g.children.forEach(c=>c.visible=false);const plane=new T.Mesh(geometry,material);plane.position.set(0,h/2,.25);g.add(plane);
    });
   });
-  loader.load(new URL('./living-room-backdrop.webp?v=art27',import.meta.url).href,tex=>{
+  loader.load(new URL('./living-room-backdrop.webp?v=pickup28',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
    const m=new T.MeshBasicMaterial({map:tex,depthWrite:false});extra.push(m);
    for(let x=15;x<LENGTH;x+=30){const plane=new T.Mesh(new T.PlaneGeometry(30,11.25),m);plane.position.set(x,1.925,-2.35);scene.add(plane)}

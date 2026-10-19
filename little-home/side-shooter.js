@@ -1,8 +1,8 @@
 import {battleResult,resultScorePanel} from './leaderboard.js?v=rank-2';
 import {bindSideStick} from './side-stick.js?v=joy24';
 import * as T from './vendor/three.module.js';
-import {createSideGame,stepSide,toggleSideTank,WEAPONS} from './side-core.js?v=art27';
-import {createSideScene} from './side-scene.js?v=art27';
+import {createSideGame,stepSide,toggleSideTank,WEAPONS} from './side-core.js?v=pickup28';
+import {createSideScene} from './side-scene.js?v=pickup28';
 export function installSideShooter({games,canStart,makeHero,onWin,onResult,openLeaderboard}){
  const entry=document.createElement('button');entry.type='button';entry.style.cssText=games.querySelector('#start-defense').style.cssText;entry.textContent='▰ 客廳防衛戰';games.querySelector('.game-dialog-body').append(entry);
  const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./side-shooter.css?v=joy24',import.meta.url);document.head.append(css);
@@ -13,12 +13,25 @@ export function installSideShooter({games,canStart,makeHero,onWin,onResult,openL
  const stick=bindSideStick($('.ss-stick'),()=>active&&s?.status==='playing');
  function clear(){stick.reset();keys.clear();touches.clear();ui.querySelectorAll('[data-key]').forEach(b=>b.classList.remove('held'))}
  function modal(title,text,buttons){clear();$('.ss-shade').hidden=false;$('#ss-title').textContent=title;const body=$('[data-text]');body.replaceChildren();if(typeof text==='string')body.textContent=text;else body.append(text);$('.ss-buttons').replaceChildren();for(const [label,fn] of buttons){const b=document.createElement('button');b.textContent=label;b.onclick=fn;$('.ss-buttons').append(b)}$('.ss-card').focus()}
+ function playInstructions(){
+  const list=document.createElement('ul');
+  list.style.cssText='text-align:left;padding-left:1.3em;margin:0;line-height:1.65';
+  for(const text of [
+   '向右闖關，救援夥伴並擊敗哥吉拉。',
+   '左側圓盤：左右移動、上推瞄準、下推蹲下。',
+   '右側按鍵：射擊、跳躍、手榴彈；可與移動同時操作。',
+   '打破補給箱，靠近武器圖案即可補充武器。',
+   '靠近坦克後按「上車」；手機橫放視野更寬。',
+   '鍵盤：方向鍵／WASD 移動與瞄準；空白／J 射擊，K 跳躍，L 手榴彈，E 上下車。'
+  ]){const item=document.createElement('li');item.textContent=text;item.style.marginBottom='.45em';list.append(item)}
+  return list;
+ }
  function resume(){if(ended)return;s.status='playing';$('.ss-shade').hidden=true;last=0;acc=0;clear()}
  function pause(){if(!active||s.status!=='playing')return;s.status='paused';modal('已暫停','離開這一局不會發放通關獎勵。',[['繼續',resume],['離開',close]])}
  function reset(){s=createSideGame();runId='side-'+crypto.randomUUID();ended=false;saved=false;resume()}
  function close(){if(saving)return;active=false;clear();ui.hidden=true;world.classList.remove('side-active','td-active');view?.dispose();view=null;const r=window.homeScene.renderer;r.setClearColor(oldColor,oldAlpha);window.dispatchEvent(new Event('resize'));entry.focus()}
  async function claim(){if(saving||saved)return;saving=true;modal('保存獎勵中','請稍候…',[]);try{await scoreReady.catch(()=>{});const msg=await onWin(runId,{...battleResult('shooter',s),coins:Math.min(50,30+s.rescues*5)});saved=true;saving=false;modal('通關成功',msg,[['查看排行榜',()=>openLeaderboard('shooter')],['回到小屋',close]])}catch(e){saving=false;modal('獎勵尚未保存',e.message||'請重新嘗試。',[['重試',claim],['離開',close]])}}
- entry.onclick=()=>{if(active||!canStart())return;try{view=createSideScene(makeHero)}catch(e){console.error(e);return}const r=window.homeScene.renderer;oldColor=r.getClearColor(new T.Color());oldAlpha=r.getClearAlpha();active=true;reset();s.status='paused';games.close();world.classList.add('td-active','side-active');ui.hidden=false;const panel=document.querySelector('#scene-game-panel');if(panel)panel.hidden=true;modal('客廳防衛戰','向右闖關、救援夥伴、擊敗哥吉拉！手機左側拖曳圓盤移動／瞄準，右側按鍵射擊／跳躍，可同時操作；橫放視野更寬。鍵盤：方向鍵／WASD 移動與瞄準，空白／J 射擊，K 跳躍，L 手榴彈，E 上下坦克。',[['出發',resume],['返回',close]]);window.dispatchEvent(new Event('resize'))};
+ entry.onclick=()=>{if(active||!canStart())return;try{view=createSideScene(makeHero)}catch(e){console.error(e);return}const r=window.homeScene.renderer;oldColor=r.getClearColor(new T.Color());oldAlpha=r.getClearAlpha();active=true;reset();s.status='paused';games.close();world.classList.add('td-active','side-active');ui.hidden=false;const panel=document.querySelector('#scene-game-panel');if(panel)panel.hidden=true;modal('客廳防衛戰',playInstructions(),[['出發',resume],['返回',close]]);window.dispatchEvent(new Event('resize'))};
  $('[data-pause]').onclick=pause;$('[data-tank]').onclick=()=>{toggleSideTank(s)};
  for(const b of ui.querySelectorAll('[data-key]')){b.onpointerdown=e=>{if(s?.status!=='playing')return;e.preventDefault();b.setPointerCapture(e.pointerId);touches.set(e.pointerId,b.dataset.key);b.classList.add('held')};for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,e=>{touches.delete(e.pointerId);if(![...touches.values()].includes(b.dataset.key))b.classList.remove('held')})}
  const mapping={ArrowLeft:'left',a:'left',ArrowRight:'right',d:'right',ArrowUp:'up',w:'up',ArrowDown:'down',s:'down',' ':'fire',j:'fire',k:'jump',l:'grenade'};
