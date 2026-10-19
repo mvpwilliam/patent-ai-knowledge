@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=floor30';
+import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=soft32';
 export function createSideScene(makeHero){
  const scene=new T.Scene();scene.background=new T.Color('#e6e4d9');
  const camera=new T.OrthographicCamera(-10,10,6,-6,.1,90),geo=new T.BoxGeometry(1,1,1),cyl=new T.CylinderGeometry(.5,.5,1,8),mats=new Map(),extra=[];
@@ -26,7 +26,14 @@ export function createSideScene(makeHero){
  function soldier(color='#697968'){const g=new T.Group();box(g,.52,.62,.42,color,0,.72);box(g,.43,.35,.38,'#e6c7a2',0,1.27);box(g,.62,.16,.52,'#556d58',0,1.46);box(g,.5,.22,.44,'#748973',0,1.57);box(g,.24,.3,.14,'#617666',-.37,.72,.07);for(const x of [-.17,.17])box(g,.18,.4,.26,'#4b6256',x,.24);box(g,.07,.07,.035,'#293e39',-.12,1.3,.21);box(g,.58,.12,.13,'#3c4d43',.39,.91,.26);return g}
  function jumper(){const g=new T.Group();box(g,.7,.62,.54,'#bb765c',0,1.07);box(g,.53,.4,.1,'#e8d8b8',0,1.06,.33);for(const x of [-.17,.17]){box(g,.09,.11,.04,'#344d45',x,1.1,.39);box(g,.12,.38,.13,'#7b6048',x,.48);box(g,.3,.15,.28,'#ad7355',x,.22)}box(g,.18,.14,.1,'#947651',0,.92,.4);round(g,.2,.08,.2,'#b2976c',.24,1.6);box(g,.12,.23,.12,'#b2976c',.24,1.73);return g}
  function cannon(){const g=new T.Group();box(g,1.1,.62,.65,'#a56d52',0,.72);for(const x of [-.4,.4])round(g,.34,.2,.34,'#453f39',x,.24,.38);const barrel=round(g,.38,.86,.38,'#41443d',-.45,1,.22);barrel.rotation.z=Math.PI/2;round(g,.48,.07,.48,'#d0ac70',-.88,1,.22).rotation.z=Math.PI/2;box(g,.33,.37,.28,'#e8c5a0',.5,1.13,.12);box(g,.12,.08,.04,'#293d36',.42,1.18,.28);return g}
- function hostage(){const g=new T.Group();box(g,.65,.68,.48,'#d7ad58',0,.67);box(g,.55,.34,.44,'#e3b964',0,1.28);box(g,.36,.3,.35,'#edcba5',0,1.18,.16);for(const x of [-.16,.16]){box(g,.15,.31,.2,'#b68b58',x,.18);box(g,.04,.06,.03,'#40534a',x*.6,1.2,.35)}box(g,.16,.23,.18,'#eacb9c',-.39,.57,.1);return g}
+ function hostage(){const g=new T.Group();
+ // Seated fallback, replaced as one unit by the soldier-and-chair artwork.
+ for(const x of [-.25,.25]){box(g,.1,.75,.1,'#836348',x,.375,-.1);box(g,.14,.35,.18,'#53654c',x,.32,.2);box(g,.2,.13,.3,'#493e32',x,.065,.29)}
+ box(g,.7,.12,.65,'#a1815b',0,.75);box(g,.7,.65,.1,'#947251',0,1.1,-.3);
+ box(g,.56,.57,.38,'#637352',0,1.05);box(g,.4,.33,.32,'#cfaa84',0,1.5);
+ box(g,.52,.22,.43,'#526248',0,1.73);box(g,.58,.06,.48,'#3d4d39',0,1.62);
+ for(const x of [-.17,.17])box(g,.22,.16,.48,'#637352',x,.84,.24);
+ return g;}
  const hero=group(),actor=makeHero?.()||soldier('#527d65');actor.userData.updatePose?.('stand');actor.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(actor),size=bounds.getSize(new T.Vector3());const k=1.65/(size.y||1);actor.scale.multiplyScalar(k);actor.position.y-=bounds.min.y*k;hero.add(actor);const gun=new T.Group();gun.position.set(.16,1.08,.18);hero.add(gun);
  box(gun,.15,.18,.38,'#52665c',0,0,.18);box(gun,.17,.13,.23,'#b69a6a',0,-.01,-.12);box(gun,.1,.11,.34,'#34483f',0,.02,.49);box(gun,.14,.14,.09,'#d1b77b',0,.02,.69);box(gun,.1,.2,.1,'#34483f',0,-.15,.14);box(gun,.12,.07,.19,'#bda574',0,.12,.2);
  const shoulders=['Left shoulder','Right shoulder'].map(n=>actor.getObjectByName(n)),elbows=['Left elbow','Right elbow'].map(n=>actor.getObjectByName(n));
@@ -75,7 +82,15 @@ export function createSideScene(makeHero){
  let disposed=false;
  if(typeof window!=='undefined'){
   const loader=new T.TextureLoader();
-  loader.load(new URL('./furniture.webp?v=floor30',import.meta.url).href,tex=>{
+  loader.load(new URL('./rescue-soldier.webp?v=soft32',import.meta.url).href,tex=>{
+   if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
+   const material=new T.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.15,side:T.DoubleSide});
+   const height=1.8,geometry=new T.PlaneGeometry(height*658/1175,height),uv=geometry.attributes.uv;
+   const u0=323/1312,u1=981/1312,v0=1-1177/1199,v1=1-2/1199;
+   uv.setXY(0,u0,v1);uv.setXY(1,u1,v1);uv.setXY(2,u0,v0);uv.setXY(3,u1,v0);uv.needsUpdate=true;
+   hostages.forEach(g=>{g.children.forEach(c=>{if(!c.isSprite)c.visible=false});const sprite=new T.Mesh(geometry,material);sprite.position.set(0,height/2,.46);g.add(sprite)});
+  });
+  loader.load(new URL('./furniture.webp?v=soft32',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
    const regions={sofa:[25,132,645,311],table:[707,235,505,208],chair:[1248,50,262,395],tv:[45,537,595,420],shelf:[694,484,307,484]};
    const material=new T.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.12,side:T.DoubleSide});
@@ -84,9 +99,33 @@ export function createSideScene(makeHero){
     g.children.forEach(c=>c.visible=false);const plane=new T.Mesh(geometry,material);plane.position.set(0,h/2,.25);g.add(plane);
    });
   });
-  loader.load(new URL('./home-living-backdrop.webp?v=floor30',import.meta.url).href,tex=>{
+  loader.load(new URL('./home-living-backdrop.webp?v=soft32',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
    const m=new T.MeshBasicMaterial({map:tex,depthWrite:false});extra.push(m);
+   // Soften only the scenery material; gameplay sprites and platforms stay sharp.
+   m.onBeforeCompile=shader=>{
+    shader.uniforms.backdropStep={value:new T.Vector2(3/tex.image.width,3/tex.image.height)};
+    shader.fragmentShader='uniform vec2 backdropStep;\n'+shader.fragmentShader;
+    shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
+     #ifdef USE_MAP
+      vec4 softColor=texture2D(map,vMapUv)*4.0;
+      softColor+=2.0*texture2D(map,vMapUv+vec2(backdropStep.x,0.0));
+      softColor+=2.0*texture2D(map,vMapUv-vec2(backdropStep.x,0.0));
+      softColor+=2.0*texture2D(map,vMapUv+vec2(0.0,backdropStep.y));
+      softColor+=2.0*texture2D(map,vMapUv-vec2(0.0,backdropStep.y));
+      softColor+=texture2D(map,vMapUv+backdropStep);
+      softColor+=texture2D(map,vMapUv-backdropStep);
+      softColor+=texture2D(map,vMapUv+vec2(backdropStep.x,-backdropStep.y));
+      softColor+=texture2D(map,vMapUv+vec2(-backdropStep.x,backdropStep.y));
+      softColor/=16.0;
+      float gray=dot(softColor.rgb,vec3(0.2126,0.7152,0.0722));
+      softColor.rgb=mix(vec3(gray),softColor.rgb,0.72);
+      softColor.rgb=mix(vec3(0.48,0.49,0.45),softColor.rgb,0.72);
+      diffuseColor*=softColor;
+     #endif
+    `);
+   };
+   m.customProgramCacheKey=()=> 'soft-home-background-32';
    for(let x=15;x<LENGTH;x+=30){const plane=new T.Mesh(new T.PlaneGeometry(30,30*tex.image.height/tex.image.width),m);plane.position.set(x,6*tex.image.height/tex.image.width,-2.35);scene.add(plane)}
    plainWall.visible=false;legacyFloor.visible=false;furniture.forEach(({g,name})=>{if(name!=='table')g.visible=false});
   });
@@ -101,7 +140,7 @@ export function createSideScene(makeHero){
     const plane=new T.Mesh(geometry,material);plane.position.set(0,y+height/2,z);g.add(plane);
    };
    enemies.forEach((g,i)=>{g.children.forEach(c=>c.visible=false);g.userData.illustrated=true;art(g,['soldier','jumper','cannon'][i%3],i%3===2?1.8:1.75)});
-   hostages.forEach(g=>{g.children.forEach(c=>{if(!c.isSprite)c.visible=false});art(g,'hostage',1.6)});
+
    tank.children.forEach(c=>c.visible=false);art(tank,'tank',2.2);tank.children.at(-1).rotation.y=Math.PI;
    boss.children.forEach(c=>c.visible=false);art(boss,'boss',3.35);
   });

@@ -1,8 +1,8 @@
 import {battleResult,resultScorePanel} from './leaderboard.js?v=rank-2';
 import {bindSideStick} from './side-stick.js?v=joy24';
 import * as T from './vendor/three.module.js';
-import {createSideGame,stepSide,toggleSideTank,WEAPONS} from './side-core.js?v=floor30';
-import {createSideScene} from './side-scene.js?v=floor30';
+import {createSideGame,stepSide,toggleSideTank,WEAPONS} from './side-core.js?v=soft32';
+import {createSideScene} from './side-scene.js?v=soft32';
 export function installSideShooter({games,canStart,makeHero,onWin,onResult,openLeaderboard}){
  const entry=document.createElement('button');entry.type='button';entry.style.cssText=games.querySelector('#start-defense').style.cssText;entry.textContent='▰ 客廳防衛戰';games.querySelector('.game-dialog-body').append(entry);
  const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./side-shooter.css?v=joy24',import.meta.url);document.head.append(css);
@@ -17,7 +17,7 @@ export function installSideShooter({games,canStart,makeHero,onWin,onResult,openL
   const list=document.createElement('ul');
   list.style.cssText='text-align:left;padding-left:1.3em;margin:0;line-height:1.65';
   for(const text of [
-   '向右闖關，救援夥伴並擊敗哥吉拉。',
+   '向右闖關，靠近坐在椅子上的阿兵哥進行救援，並擊敗哥吉拉。',
    '左側圓盤：左右移動、上推瞄準、下推蹲下。',
    '右側按鍵：射擊、跳躍、手榴彈；可與移動同時操作。',
    '打破補給箱，靠近武器圖案即可補充武器。',
