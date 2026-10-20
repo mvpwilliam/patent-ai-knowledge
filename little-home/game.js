@@ -1137,13 +1137,17 @@ function renderPlacements(){
  for(const o of owned){const g=makeDecoration(o.item),p=slots[o.room][o.slot];g.position.set(...p);g.rotation.y=displayFacing[o.room]??0;if(shelfRooms.has(o.room)){g.position.y=1.25;bodyPart(g,new T.BoxGeometry(.23,.025,.19),'#c2ad8b',0,-.012,0)}if(o.id==='preview')g.traverse(n=>{if(n.material){n.material.transparent=true;n.material.opacity=.45}});scene.add(g);placementObjects.set(o.id,g)}
 }
 function onlinePlayers(){return Object.entries(gameMeta.players||{}).filter(([id,p])=>id!==playerId()&&p.presence?.online&&Date.now()-p.presence.at<45000).sort((a,b)=>(b[1].presence.pose==='work')-(a[1].presence.pose==='work')||b[1].presence.at-a[1].presence.at)}
+function memberLastSeenText(at){
+ if(!Number.isFinite(at)||at<=0||!Number.isFinite(new Date(at).getTime()))return '尚無上線紀錄';
+ return '最後上線：'+new Intl.DateTimeFormat('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(at));
+}
 function syncCharacters(){
  if(!scene)return;const online=onlinePlayers(),visible=online.slice(0,5),ids=new Set(visible.map(([id])=>id));
  for(const [id,item] of characters)if(!ids.has(id)){item.mesh.userData.disposeCostume?.();scene.remove(item.mesh);characters.delete(id)}
  for(const [id,p] of visible){const profile=profileCache[id];if(!profile)continue;let item=characters.get(id);const remoteDesign=normalizeAvatarDesign({...p.avatarDesign,hairStyle:p.avatarDesign?.hairStyle||profile.hair,legendaryOutfit:equippedLegendary(p)});remoteDesign.farmShirt=p.farmShirt;const signature=JSON.stringify([profile,remoteDesign]);
  if(!item||item.signature!==signature){if(item){item.mesh.userData.disposeCostume?.();scene.remove(item.mesh)}const mesh=makeCharacter(outfit(profile),remoteDesign);scene.add(mesh);item={mesh,signature,target:p.presence};mesh.position.set(p.presence.x,p.presence.y||.07,p.presence.z);characters.set(id,item)}if(item.target?.x!==p.presence.x||item.target?.z!==p.presence.z){if(item.target?.approach&&['sit','lie'].includes(item.target.pose)&&!['sit','lie'].includes(p.presence.pose)&&!crossesWall([item.mesh.position.x,item.mesh.position.z],item.target.approach)&&!crossesDynamicObstacle([item.mesh.position.x,item.mesh.position.z],item.target.approach))item.mesh.position.set(item.target.approach[0],.07,item.target.approach[1]);const destination=p.presence.approach||[p.presence.x,p.presence.z];item.remotePath=findPath([item.mesh.position.x,item.mesh.position.z],destination);item.remoteIndex=0}item.target=p.presence;item.mesh.userData.bedReservation=p.bedReservation;resolveMonsterOverlap(item.mesh);
  }
- const list=$('#member-list');list.replaceChildren();for(const [id,v] of Object.entries(profileCache)){const row=document.createElement('p');const active=id===playerId()||online.some(([uid])=>uid===id);row.textContent=`${v.name} · ${active?'上線':'離線'}${active&&id!==playerId()&&!ids.has(id)?'（成員列）':''}`;list.append(row)}
+ const list=$('#member-list');list.replaceChildren();for(const [id,v] of Object.entries(profileCache)){const row=document.createElement('p');const active=id===playerId()||online.some(([uid])=>uid===id);const name=document.createElement('span'),seen=document.createElement('small');name.textContent=`${v.name} · ${active?'上線':'離線'}${active&&id!==playerId()&&!ids.has(id)?'（成員列）':''}`;seen.textContent=memberLastSeenText(gameMeta.players[id]?.presence?.at);seen.style.cssText='display:block;margin-top:4px;color:#687667;font-size:13px;line-height:1.5';row.append(name,seen);list.append(row)}
  $('#member-count').textContent=`上線 ${online.length+1} · 屋內 ${characters.size+1}／6`;
 }
 async function publishPresence(force=false,online=true){
@@ -1360,6 +1364,7 @@ async function claimEscapeMedal(){
   window.addEventListener('pagehide',()=>publishPresence(true,false));
   connect().then(()=>claimEscapeMedal());
 }
+
 
 
 
