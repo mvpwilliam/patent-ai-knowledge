@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=gear33';
+import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=floor34';
 export function createSideScene(makeHero){
  const scene=new T.Scene();scene.background=new T.Color('#e6e4d9');
  const camera=new T.OrthographicCamera(-10,10,6,-6,.1,90),geo=new T.BoxGeometry(1,1,1),cyl=new T.CylinderGeometry(.5,.5,1,8),mats=new Map(),extra=[];
@@ -8,6 +8,8 @@ export function createSideScene(makeHero){
  function round(g,w,h,d,c,x=0,y=h/2,z=0){const m=new T.Mesh(cyl,mat(c));m.scale.set(w,h,d);m.position.set(x,y,z);g.add(m);return m}
  function group(){const g=new T.Group();scene.add(g);return g}
  scene.add(new T.HemisphereLight(0xfff9e9,0x718275,2));const light=new T.DirectionalLight(0xfff0cc,2);light.position.set(-8,14,10);scene.add(light);
+ // Lower the gameplay plane while keeping the photographic backdrop framing stable.
+ const groundViewOffset=1.2;
  const legacyFloor=group();
  box(legacyFloor,LENGTH+4,.5,5,'#bda98c',LENGTH/2,-.3);const plainWall=box(scene,LENGTH+4,10,.2,'#e7e4d9',LENGTH/2,4,-2.5);box(legacyFloor,LENGTH+4,.17,.26,'#f8f2e4',LENGTH/2,.18,-2.3);
  for(let x=0;x<LENGTH+2;x+=3){box(legacyFloor,.025,.025,5,'#9b896d',x,-.04);if(x%15===0)box(legacyFloor,.035,4,.08,'#d5d6c7',x,3.5,-2.34)}
@@ -22,7 +24,6 @@ export function createSideScene(makeHero){
  const tv=group();tv.position.set(BOSS_X,0,-2.12);box(tv,10.9,4.9,.15,'#d6d5c8',0,3.15);box(tv,9.5,4.7,.2,'#4b5d56',0,3.55,.21);box(tv,9.1,4.3,.08,'#829b8e',0,3.55,.33);box(tv,11.5,.34,1.1,'#a17e5e',0,1.15,.55);for(const sx of [-4.45,0,4.45])box(tv,3.2,.78,.9,'#b69978',sx,.6,.56);
  register(tv,'tv',11.5,7.8);
  for(const p of PLATFORMS){if(p.kind==='table')continue;const g=group();g.position.set(p.x+p.w/2,0,-.65);box(g,p.w,.22,1.3,'#9a7354',0,p.y-.11);for(const x of [-p.w/2+.25,p.w/2-.25])box(g,.18,p.y,.65,'#8e7556',x,p.y/2);register(g,'table',p.w,p.y)}
- for(const [x,c] of [[11,'#7d9474'],[36,'#bd8663'],[57,'#cfb180'],[83,'#78948b'],[119,'#bd8663']])box(scene,.64,.64,.65,c,x,.32,-1.1);
  function soldier(color='#697968'){const g=new T.Group();box(g,.52,.62,.42,color,0,.72);box(g,.43,.35,.38,'#e6c7a2',0,1.27);box(g,.62,.16,.52,'#556d58',0,1.46);box(g,.5,.22,.44,'#748973',0,1.57);box(g,.24,.3,.14,'#617666',-.37,.72,.07);for(const x of [-.17,.17])box(g,.18,.4,.26,'#4b6256',x,.24);box(g,.07,.07,.035,'#293e39',-.12,1.3,.21);box(g,.58,.12,.13,'#3c4d43',.39,.91,.26);return g}
  function jumper(){const g=new T.Group();box(g,.7,.62,.54,'#bb765c',0,1.07);box(g,.53,.4,.1,'#e8d8b8',0,1.06,.33);for(const x of [-.17,.17]){box(g,.09,.11,.04,'#344d45',x,1.1,.39);box(g,.12,.38,.13,'#7b6048',x,.48);box(g,.3,.15,.28,'#ad7355',x,.22)}box(g,.18,.14,.1,'#947651',0,.92,.4);round(g,.2,.08,.2,'#b2976c',.24,1.6);box(g,.12,.23,.12,'#b2976c',.24,1.73);return g}
  function cannon(){const g=new T.Group();box(g,1.1,.62,.65,'#a56d52',0,.72);for(const x of [-.4,.4])round(g,.34,.2,.34,'#453f39',x,.24,.38);const barrel=round(g,.38,.86,.38,'#41443d',-.45,1,.22);barrel.rotation.z=Math.PI/2;round(g,.48,.07,.48,'#d0ac70',-.88,1,.22).rotation.z=Math.PI/2;box(g,.33,.37,.28,'#e8c5a0',.5,1.13,.12);box(g,.12,.08,.04,'#293d36',.42,1.18,.28);return g}
@@ -143,7 +144,7 @@ export function createSideScene(makeHero){
     `);
    };
    m.customProgramCacheKey=()=> 'soft-home-background-32';
-   for(let x=15;x<LENGTH;x+=30){const plane=new T.Mesh(new T.PlaneGeometry(30,30*tex.image.height/tex.image.width),m);plane.position.set(x,6*tex.image.height/tex.image.width,-2.35);scene.add(plane)}
+   for(let x=15;x<LENGTH;x+=30){const plane=new T.Mesh(new T.PlaneGeometry(30,30*tex.image.height/tex.image.width),m);plane.position.set(x,6*tex.image.height/tex.image.width+groundViewOffset,-2.35);scene.add(plane)}
    plainWall.visible=false;legacyFloor.visible=false;furniture.forEach(({g,name})=>{if(name!=='table')g.visible=false});
   });
   loader.load(new URL('./battle-toys.webp?v=art-1',import.meta.url).href,tex=>{
@@ -162,9 +163,10 @@ export function createSideScene(makeHero){
    boss.children.forEach(c=>c.visible=false);art(boss,'boss',3.35);
   });
  }
- return {scene,camera,sync(s,aspect){const half=Math.max(4.7,6/aspect),center=Math.max(half*aspect,Math.min(LENGTH-half*aspect,s.hero.x+half*aspect*.35));camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.position.set(center,1.4,24);camera.lookAt(center,1.4,0);camera.updateProjectionMatrix();const h=s.hero;hero.position.set(h.x,h.y,0);hero.rotation.y=h.face*Math.PI/2;hero.scale.y=h.crouch?.6:1;hero.visible=!s.tank.riding&&(h.inv<=s.time||Math.floor(s.time*14)%2===0);if(actor.userData.legs)actor.userData.legs.forEach((leg,i)=>leg.rotation.x=h.walking&&h.ground?Math.sin(s.time*12+i*Math.PI)*.34:0);actor.userData.updatePose?.('stand');gun.rotation.x=-(h.aimAngle||0);defaultGunParts.forEach(p=>p.visible=!heldWeapons.has(h.weapon));heldWeapons.forEach((p,id)=>p.visible=id===h.weapon);shoulders.forEach(j=>{if(j)j.rotation.x=-1.15-(h.aimAngle||0)});elbows.forEach(j=>{if(j)j.rotation.x=-.35});tank.position.x=s.tank.x;tank.rotation.y=h.face<0&&s.tank.riding?Math.PI:0;tank.visible=s.tank.hp>0;boss.position.x=s.boss.x;boss.visible=s.boss.active&&s.boss.hp>0;
+ return {scene,camera,sync(s,aspect){const half=Math.max(4.7,6/aspect),center=Math.max(half*aspect,Math.min(LENGTH-half*aspect,s.hero.x+half*aspect*.35));camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.position.set(center,1.4+groundViewOffset,24);camera.lookAt(center,1.4+groundViewOffset,0);camera.updateProjectionMatrix();const h=s.hero;hero.position.set(h.x,h.y,0);hero.rotation.y=h.face*Math.PI/2;hero.scale.y=h.crouch?.6:1;hero.visible=!s.tank.riding&&(h.inv<=s.time||Math.floor(s.time*14)%2===0);if(actor.userData.legs)actor.userData.legs.forEach((leg,i)=>leg.rotation.x=h.walking&&h.ground?Math.sin(s.time*12+i*Math.PI)*.34:0);actor.userData.updatePose?.('stand');gun.rotation.x=-(h.aimAngle||0);defaultGunParts.forEach(p=>p.visible=!heldWeapons.has(h.weapon));heldWeapons.forEach((p,id)=>p.visible=id===h.weapon);shoulders.forEach(j=>{if(j)j.rotation.x=-1.15-(h.aimAngle||0)});elbows.forEach(j=>{if(j)j.rotation.x=-.35});tank.position.x=s.tank.x;tank.rotation.y=h.face<0&&s.tank.riding?Math.PI:0;tank.visible=s.tank.hp>0;boss.position.x=s.boss.x;boss.visible=s.boss.active&&s.boss.hp>0;
  enemies.forEach((g,i)=>{const e=s.enemies[i];g.visible=e.active;g.position.set(e.x||0,e.y||0,0);g.rotation.y=(e.x>h.x)!==!!g.userData.illustrated?Math.PI:0});shots.forEach((g,i)=>{const q=s.shots[i];g.visible=q.active;if(q.active){g.position.set(q.x,q.y,.5);g.material=mat(q.enemy?'#e06a4b':q.kind==='F'?'#f7a146':'#f5d17b');g.scale.set(q.kind==='R'?.5:.22,q.kind==='W'?.35:.16,.16)}});effects.forEach((g,i)=>{const e=s.effects[i];g.visible=e.active;if(e.active){g.position.set(e.x,e.y,.7);g.scale.setScalar(e.r*(1-e.life/.4));g.rotation.z=s.time*6}});
  crates.forEach((g,i)=>{const c=s.crates[i];g.visible=c.hp>0;g.position.set(c.x,c.y,0)});hostages.forEach((g,i)=>{const p=s.hostages[i];g.visible=!p.saved;g.position.set(p.x,p.y,0)});pickups.forEach((g,i)=>{const d=s.drops[i];g.visible=!!d;if(d){g.position.set(d.x,d.y+.6+Math.sin(s.time*4)*.1,.5);g.children.forEach(c=>c.visible=c.name===d.weapon)}});warning.visible=!!s.boss.warning;warning.position.set(s.boss.x-10,s.boss.pattern===0?1.3:.2,.7);},dispose(){disposed=true;actor.userData.disposeCostume?.();const gs=new Set(),ms=new Set();scene.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const m of [].concat(o.material))ms.add(m)});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());extra.forEach(x=>x.dispose());}};
 }
+
 
 
