@@ -1,8 +1,8 @@
 import {battleResult,resultScorePanel} from './leaderboard.js?v=rank-2';
 import {bindSideStick} from './side-stick.js?v=joy24';
 import * as T from './vendor/three.module.js';
-import {createSideGame,stepSide,toggleSideTank,WEAPONS} from './side-core.js?v=soft32';
-import {createSideScene} from './side-scene.js?v=soft32';
+import {createSideGame,stepSide,toggleSideTank,WEAPONS} from './side-core.js?v=gear33';
+import {createSideScene} from './side-scene.js?v=gear33';
 export function installSideShooter({games,canStart,makeHero,onWin,onResult,openLeaderboard}){
  const entry=document.createElement('button');entry.type='button';entry.style.cssText=games.querySelector('#start-defense').style.cssText;entry.textContent='▰ 客廳防衛戰';games.querySelector('.game-dialog-body').append(entry);
  const css=document.createElement('link');css.rel='stylesheet';css.href=new URL('./side-shooter.css?v=joy24',import.meta.url);document.head.append(css);
@@ -41,4 +41,5 @@ export function installSideShooter({games,canStart,makeHero,onWin,onResult,openL
  ui.addEventListener('touchmove',e=>{if(e.target.closest('.ss-controls'))e.preventDefault()},{passive:false});
  const previous=window.homeBattleFrame;window.homeBattleFrame=now=>{if(!active)return previous?.(now)||false;const dt=last?Math.min(.1,(now-last)/1000):0;last=now;const pressed=k=>keys.has(k)||stick.pressed(k)||[...touches.values()].includes(k);acc+=dt;while(acc>=1/60){stepSide(s,{x:Number(pressed('right'))-Number(pressed('left')),up:pressed('up'),down:pressed('down'),fire:pressed('fire'),jump:pressed('jump'),grenade:pressed('grenade')},1/60);acc-=1/60}const r=window.homeScene.renderer,w=canvas.clientWidth||1,h=canvas.clientHeight||1;const size=r.getSize(new T.Vector2());if(size.x!==w||size.y!==h)r.setSize(w,h,false);view.sync(s,w/h);r.render(view.scene,view.camera);$('[data-score]').textContent=`${s.score} 分`;$('[data-hp]').textContent=s.tank.riding?`坦克 ${s.tank.hp}/180`:`生命 ${s.hero.hp}/100`;$('[data-gun]').textContent=`${WEAPONS[s.tank.riding?'T':s.hero.weapon].name} · ${s.tank.riding||s.hero.weapon==='P'?'∞':s.hero.ammo}`;$('[data-grenades]').textContent=`手榴彈 ${s.hero.grenades}`;$('.ss-boss').hidden=!s.boss.active;$('.ss-boss progress').value=s.boss.hp;$('.ss-notice').textContent=s.time<s.noticeUntil?s.notice:'';$('[data-tank]').disabled=s.status!=='playing'||(!s.tank.riding&&(Math.abs(s.hero.x-s.tank.x)>=2||s.hero.y>=.5||s.tank.hp<=0));$('[data-tank]').textContent=s.tank.riding?'下車':'上車';if(!ended&&['won','lost'].includes(s.status)){ended=true;modal(s.status==='won'?'守住客廳了！':'再挑戰一次？',`得分 ${s.score} · 救援 ${s.rescues}/${s.hostages.length}`,s.status==='won'?[['領取獎勵',claim],['離開',close]]:[['重新挑戰',reset],['離開',close]]);$('[data-text]').append(resultScorePanel(battleResult('shooter',s),result=>(scoreReady=onResult(result))));const rank=document.createElement('button');rank.textContent='查看排行榜';rank.onclick=()=>openLeaderboard('shooter');$('.ss-buttons').append(rank)}return true};
 }
+
 

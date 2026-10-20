@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=soft32';
+import {PLATFORMS,TABLES,LENGTH,BOSS_X,createSideGame} from './side-core.js?v=gear33';
 export function createSideScene(makeHero){
  const scene=new T.Scene();scene.background=new T.Color('#e6e4d9');
  const camera=new T.OrthographicCamera(-10,10,6,-6,.1,90),geo=new T.BoxGeometry(1,1,1),cyl=new T.CylinderGeometry(.5,.5,1,8),mats=new Map(),extra=[];
@@ -36,6 +36,7 @@ export function createSideScene(makeHero){
  return g;}
  const hero=group(),actor=makeHero?.()||soldier('#527d65');actor.userData.updatePose?.('stand');actor.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(actor),size=bounds.getSize(new T.Vector3());const k=1.65/(size.y||1);actor.scale.multiplyScalar(k);actor.position.y-=bounds.min.y*k;hero.add(actor);const gun=new T.Group();gun.position.set(.16,1.08,.18);hero.add(gun);
  box(gun,.15,.18,.38,'#52665c',0,0,.18);box(gun,.17,.13,.23,'#b69a6a',0,-.01,-.12);box(gun,.1,.11,.34,'#34483f',0,.02,.49);box(gun,.14,.14,.09,'#d1b77b',0,.02,.69);box(gun,.1,.2,.1,'#34483f',0,-.15,.14);box(gun,.12,.07,.19,'#bda574',0,.12,.2);
+ const defaultGunParts=[...gun.children],heldWeapons=new Map();
  const shoulders=['Left shoulder','Right shoulder'].map(n=>actor.getObjectByName(n)),elbows=['Left elbow','Right elbow'].map(n=>actor.getObjectByName(n));
  const boss=group();box(boss,1.8,1.45,1.1,'#647e60',.25,1.2);box(boss,1.3,.95,1.1,'#789066',-.48,2.66);box(boss,1.15,.4,1.05,'#b5bc92',-.9,2.44);box(boss,.75,.62,.96,'#e3d6a9',-.4,1.47,.1);for(const z of [-.44,.44]){box(boss,.7,.55,.4,'#536b53',.43,.28,z);box(boss,.31,.28,.28,'#718b60',-.58,1.41,z);round(boss,.18,.12,.18,'#ddba72',-.8,2.86,z);box(boss,.055,.1,.055,'#253b35',-.87,2.87,z+.11)}for(let i=0;i<5;i++){const spine=box(boss,.36,.55-i*.05,.46,'#b77d62',.1+i*.37,2.12-i*.31);spine.rotation.z=-.34}for(let i=0;i<4;i++)box(boss,.5-i*.08,.35-i*.05,.55-i*.08,'#617d61',1.26+i*.36,.86-i*.2);
  const tank=group();box(tank,2.15,.45,1.05,'#53604b',0,.35);box(tank,1.82,.43,1.1,'#7d8967',0,.65);box(tank,.87,.43,.78,'#9aa37c',-.1,1.02);box(tank,1.27,.15,.16,'#606e53',.73,1.01,.16);for(const x of [-.7,-.35,0,.35,.7])round(tank,.31,.13,.31,'#b3a17d',x,.3,.58).rotation.x=Math.PI/2;box(tank,1.94,.12,.08,'#3c4c41',0,.3,.69);round(tank,.17,.07,.17,'#bb9d67',-.65,1.1,-.35);
@@ -82,6 +83,22 @@ export function createSideScene(makeHero){
  let disposed=false;
  if(typeof window!=='undefined'){
   const loader=new T.TextureLoader();
+  loader.load(new URL('./weapon-gear.webp?v=gear33',import.meta.url).href,tex=>{
+   if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
+   const material=new T.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.12,side:T.DoubleSide});
+   const regions={H:[8,194,619,292],F:[640,178,605,290],R:[8,798,619,270],crate:[655,728,591,439]};
+   function artwork(id,width){
+    const [x,y,w,h]=regions[id],geometry=new T.PlaneGeometry(width,width*h/w),uv=geometry.attributes.uv;
+    const u0=x/1254,u1=(x+w)/1254,v0=1-(y+h)/1254,v1=1-y/1254;
+    uv.setXY(0,u0,v1);uv.setXY(1,u1,v1);uv.setXY(2,u0,v0);uv.setXY(3,u1,v0);
+    return new T.Mesh(geometry,material);
+   }
+   crates.forEach(g=>{g.children.forEach(c=>c.visible=false);const plane=artwork('crate',1.35);plane.position.set(0,1.35*439/591/2,.46);g.add(plane)});
+   pickups.forEach(g=>g.children.forEach(icon=>{icon.children.forEach(c=>c.visible=false);const plane=artwork(icon.name,1.8);plane.position.z=.25;icon.add(plane)}));
+   for(const id of ['H','F','R']){
+    const plane=artwork(id,id==='R'?1.15:1);plane.rotation.y=-Math.PI/2;plane.position.set(.02,0,.27);plane.visible=false;gun.add(plane);heldWeapons.set(id,plane);
+   }
+  });
   loader.load(new URL('./rescue-soldier.webp?v=soft32',import.meta.url).href,tex=>{
    if(disposed){tex.dispose();return}extra.push(tex);tex.colorSpace=T.SRGBColorSpace;
    const material=new T.MeshBasicMaterial({map:tex,transparent:true,alphaTest:.15,side:T.DoubleSide});
@@ -145,8 +162,9 @@ export function createSideScene(makeHero){
    boss.children.forEach(c=>c.visible=false);art(boss,'boss',3.35);
   });
  }
- return {scene,camera,sync(s,aspect){const half=Math.max(4.7,6/aspect),center=Math.max(half*aspect,Math.min(LENGTH-half*aspect,s.hero.x+half*aspect*.35));camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.position.set(center,1.4,24);camera.lookAt(center,1.4,0);camera.updateProjectionMatrix();const h=s.hero;hero.position.set(h.x,h.y,0);hero.rotation.y=h.face*Math.PI/2;hero.scale.y=h.crouch?.6:1;hero.visible=!s.tank.riding&&(h.inv<=s.time||Math.floor(s.time*14)%2===0);if(actor.userData.legs)actor.userData.legs.forEach((leg,i)=>leg.rotation.x=h.walking&&h.ground?Math.sin(s.time*12+i*Math.PI)*.34:0);actor.userData.updatePose?.('stand');gun.rotation.x=-(h.aimAngle||0);shoulders.forEach(j=>{if(j)j.rotation.x=-1.15-(h.aimAngle||0)});elbows.forEach(j=>{if(j)j.rotation.x=-.35});tank.position.x=s.tank.x;tank.rotation.y=h.face<0&&s.tank.riding?Math.PI:0;tank.visible=s.tank.hp>0;boss.position.x=s.boss.x;boss.visible=s.boss.active&&s.boss.hp>0;
+ return {scene,camera,sync(s,aspect){const half=Math.max(4.7,6/aspect),center=Math.max(half*aspect,Math.min(LENGTH-half*aspect,s.hero.x+half*aspect*.35));camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.position.set(center,1.4,24);camera.lookAt(center,1.4,0);camera.updateProjectionMatrix();const h=s.hero;hero.position.set(h.x,h.y,0);hero.rotation.y=h.face*Math.PI/2;hero.scale.y=h.crouch?.6:1;hero.visible=!s.tank.riding&&(h.inv<=s.time||Math.floor(s.time*14)%2===0);if(actor.userData.legs)actor.userData.legs.forEach((leg,i)=>leg.rotation.x=h.walking&&h.ground?Math.sin(s.time*12+i*Math.PI)*.34:0);actor.userData.updatePose?.('stand');gun.rotation.x=-(h.aimAngle||0);defaultGunParts.forEach(p=>p.visible=!heldWeapons.has(h.weapon));heldWeapons.forEach((p,id)=>p.visible=id===h.weapon);shoulders.forEach(j=>{if(j)j.rotation.x=-1.15-(h.aimAngle||0)});elbows.forEach(j=>{if(j)j.rotation.x=-.35});tank.position.x=s.tank.x;tank.rotation.y=h.face<0&&s.tank.riding?Math.PI:0;tank.visible=s.tank.hp>0;boss.position.x=s.boss.x;boss.visible=s.boss.active&&s.boss.hp>0;
  enemies.forEach((g,i)=>{const e=s.enemies[i];g.visible=e.active;g.position.set(e.x||0,e.y||0,0);g.rotation.y=(e.x>h.x)!==!!g.userData.illustrated?Math.PI:0});shots.forEach((g,i)=>{const q=s.shots[i];g.visible=q.active;if(q.active){g.position.set(q.x,q.y,.5);g.material=mat(q.enemy?'#e06a4b':q.kind==='F'?'#f7a146':'#f5d17b');g.scale.set(q.kind==='R'?.5:.22,q.kind==='W'?.35:.16,.16)}});effects.forEach((g,i)=>{const e=s.effects[i];g.visible=e.active;if(e.active){g.position.set(e.x,e.y,.7);g.scale.setScalar(e.r*(1-e.life/.4));g.rotation.z=s.time*6}});
  crates.forEach((g,i)=>{const c=s.crates[i];g.visible=c.hp>0;g.position.set(c.x,c.y,0)});hostages.forEach((g,i)=>{const p=s.hostages[i];g.visible=!p.saved;g.position.set(p.x,p.y,0)});pickups.forEach((g,i)=>{const d=s.drops[i];g.visible=!!d;if(d){g.position.set(d.x,d.y+.6+Math.sin(s.time*4)*.1,.5);g.children.forEach(c=>c.visible=c.name===d.weapon)}});warning.visible=!!s.boss.warning;warning.position.set(s.boss.x-10,s.boss.pattern===0?1.3:.2,.7);},dispose(){disposed=true;actor.userData.disposeCostume?.();const gs=new Set(),ms=new Set();scene.traverse(o=>{if(o.geometry)gs.add(o.geometry);if(o.material)for(const m of [].concat(o.material))ms.add(m)});gs.forEach(g=>g.dispose());ms.forEach(m=>m.dispose());extra.forEach(x=>x.dispose());}};
 }
+
 
