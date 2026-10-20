@@ -15,7 +15,7 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEs
  games.innerHTML="<div class=\"dialog-head\"><h2>遊戲區</h2><button aria-label=\"關閉遊戲區\">×</button></div><div class=\"game-dialog-body\" style=\"display:grid;gap:14px\"><button id=\"start-defense\" style=\"box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:56px;min-height:56px;padding:0 14px;border:0;border-radius:14px;font:inherit;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;background:#405f50;color:#fff\"><span aria-hidden=\"true\">🏰</span><span>城堡保衛戰</span></button><a href=\"./escape.html\" style=\"box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:56px;min-height:56px;padding:0 14px;border:0;border-radius:14px;font:inherit;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;background:#e8eddf;color:#3d5949\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" style=\"flex-shrink:0\"><path d=\"M5 21V3h14v18M3 21h18M8 21V6h8v15\"/><rect x=\"10\" y=\"12\" width=\"4\" height=\"4\" rx=\"1\"/><path d=\"M11 12v-1a1 1 0 0 1 2 0v1\"/></svg><span>小屋密室</span></a></div>";
  document.body.append(games);games.querySelector('.dialog-head button').onclick=()=>games.close();games.querySelector('#start-defense').onclick=()=>{games.close();open()};
  games.querySelector('a[href="./escape.html"]').addEventListener('click',e=>{if(prepareEscape&&!prepareEscape())e.preventDefault()});
- const rankButton=document.createElement('button');rankButton.textContent='積分排行榜';rankButton.style.cssText=games.querySelector('#start-defense').style.cssText;rankButton.onclick=()=>{games.close();openLeaderboard('castle')};
+ const rankButton=document.createElement('button');rankButton.type='button';rankButton.textContent='🏆 排行榜';rankButton.setAttribute('aria-label','開啟遊戲排行榜');rankButton.style.cssText='width:auto;min-width:0;min-height:44px;padding:8px 12px;border:1px solid #c8d2c0;border-radius:14px;background:#e8eddf;color:#3d5949;font:inherit;font-size:14px;line-height:1.3;white-space:nowrap;flex:0 0 auto';rankButton.onclick=()=>openLeaderboard('castle');
  const ui=document.createElement('section');ui.id='toy-defense';ui.hidden=true;ui.setAttribute('aria-label','玩具保衛戰');
  ui.innerHTML=`<div class="td-hud"><div><small>TOY DEFENSE / 120 SEC</small><strong id="td-wave">客廳保衛戰</strong></div><strong id="td-clock">2:00</strong><button id="td-pause" aria-label="暫停戰鬥">Ⅱ</button></div>
  <div class="td-bars"><label>城堡 <progress id="td-castle" max="180" value="180"></progress><b id="td-castle-num">180</b></label><label>守衛 <progress id="td-hero" max="100" value="100"></progress><b id="td-hero-num">100</b></label><label id="td-boss-row" hidden>恐龍 <progress id="td-boss" max="480" value="480"></progress></label></div>
@@ -143,8 +143,9 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEs
  installSideShooter({games,canStart,makeHero,onWin,onResult,openLeaderboard});
  if(farmOptions)installFarm({games,canStart,options:farmOptions});
  applyGameMenuIcons(games);
- games.querySelector('.game-dialog-body').append(rankButton);
+ const gamesHead=games.querySelector('.dialog-head');gamesHead.style.cssText='display:flex;align-items:center;gap:8px';gamesHead.querySelector('h2').style.cssText='flex:1;min-width:0;margin:0';gamesHead.querySelector('button').before(rankButton);
 }
+
 
 
 
