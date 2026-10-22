@@ -25,8 +25,8 @@ export function createFarmScene(){
     const bounds=new T.Box3().setFromObject(model),size=bounds.getSize(new T.Vector3()),factor=(.52+.104*stage(pet))/Math.max(.01,size.x,size.y,size.z);
     model.scale.multiplyScalar(factor);model.position.y-=bounds.min.y*factor;group.userData.owner=owner;const label=nameTag(pet.name||'小雞');label.position.y=size.y*factor+.32;group.add(label);scene.add(group);item={group,model,label,key};companions.set(owner,item);
    }
-   // Walk around the front lawn, keeping the planting grid and tools clear.
-   const points=[[-1.65,2.85],[1.65,2.85],[1.65,4.35],[-1.65,4.35]],phase=(walkTime*.16+index*.93)%4,segment=Math.floor(phase),fraction=phase-segment,a=points[segment],b=points[(segment+1)%4];
+   // Keep even the largest pet and its name below the planting grid in the tilted camera view.
+   const points=[[-1.45,4.25],[1.45,4.25],[1.45,4.8],[-1.45,4.8]],phase=(walkTime*.16+index*.93)%4,segment=Math.floor(phase),fraction=phase-segment,a=points[segment],b=points[(segment+1)%4];
    item.group.position.set(a[0]+(b[0]-a[0])*fraction,0,a[1]+(b[1]-a[1])*fraction);
    item.group.rotation.y=Math.atan2(b[0]-a[0],b[1]-a[1]);item.model.userData.update?.(walkTime+index,{walk:dt>0});
   });
@@ -35,7 +35,7 @@ export function createFarmScene(){
  const geo=new T.BoxGeometry(1,1,1),mats=new Map(),extra=[],hits=[],plants=[];
  const mat=c=>{if(!mats.has(c))mats.set(c,new T.MeshLambertMaterial({color:c}));return mats.get(c)};
  function box(parent,w,h,d,c,x=0,y=h/2,z=0){const mesh=new T.Mesh(geo,mat(c));mesh.scale.set(w,h,d);mesh.position.set(x,y,z);parent.add(mesh);return mesh}
- box(scene,8,.35,11,'#abc28d',0,-.23);box(scene,6.2,.05,7.2,'#c9c5a0',0,-.03,-.6);box(scene,5.9,.05,2.2,'#b6cd98',0,-.01,4);
+ box(scene,8,.35,11,'#abc28d',0,-.23);box(scene,6.2,.05,7.2,'#c9c5a0',0,-.03,-.6);box(scene,5.9,.05,2.8,'#b6cd98',0,-.01,4);
  for(const x of [-3.6,3.6])for(let z=-4.8;z<=5;z+=.65)box(scene,.10,.65,.10,'#dfcea8',x,.32,z);
  for(const x of [-3.6,3.6])for(const y of [.23,.49])box(scene,.08,.08,10,'#e7d9b7',x,y,0);
  for(let x=-3.4;x<=3.5;x+=.65)box(scene,.10,.65,.10,'#dfcea8',x,.32,-5);for(const y of [.23,.49])box(scene,7.3,.08,.08,'#e7d9b7',0,y,-5);
