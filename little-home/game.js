@@ -1,12 +1,12 @@
 import {shirtPreview} from './farm-shirt-preview.js?v=wardrobe30';
 import {AWARDS,newFarm,farmAction} from './farm-core.js?v=battle28';
-import {decorateFarmShirt} from './farm-home.js?v=shirts-16';
+import {decorateFarmShirt} from './farm-home.js?v=home-pet39';
 import {applyChoreContact,resetChoreContact,contactStops} from './chore-contact.js?v=chore-route-fix-1';
 import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
-import {installToyDefense} from './toy-defense.js?v=pet-path38';
+import {installToyDefense} from './toy-defense.js?v=home-pet39';
 import {installLeaderboard,saveBestScore,rankingRows} from './leaderboard.js?v=rank-2';
 import {MEDALS,awardMedal,medalCard,renderMedalCollection,beginEscapeMedal,pendingMedalKey} from './medals.js?v=medal-row-2';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
