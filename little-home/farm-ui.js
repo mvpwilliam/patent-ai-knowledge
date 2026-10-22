@@ -4,7 +4,7 @@ import {playEvolution} from './farm-evolution.js?v=evo-10';
 import * as T from './vendor/three.module.js';
 import {cropPicture,beastPicture,mountPetViewer} from './farm-art.js?v=evo-10';
 import {CROPS,LINES,AWARDS,FEED_COST,displayFarm,newFarm,slots,plotState,stage,species,dayKey} from './farm-core.js?v=battle28';
-import {createFarmScene} from './farm-scene.js?v=farm-size-14';
+import {createFarmScene} from './farm-scene.js?v=pet-size37';
 import {createHomePets} from './farm-home.js?v=shirts-16';
 export function installFarm({games,canStart,options}){
  const entry=document.createElement('button');entry.type='button';entry.style.cssText=games.querySelector('#start-defense').style.cssText;entry.innerHTML='<span aria-hidden="true">♧</span><span>家庭農場</span>';games.querySelector('.game-dialog-body').append(entry);

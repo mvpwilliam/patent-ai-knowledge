@@ -1,6 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {createFarmPet} from './farm-pets.js?v=roam-12';
-import {CROPS,slots,plotState} from './farm-core.js?v=evo-10';
+import {CROPS,slots,plotState,stage} from './farm-core.js?v=evo-10';
 export function createFarmScene(){
  const scene=new T.Scene();scene.background=new T.Color('#dfe7d6');const camera=new T.OrthographicCamera(-6,6,7,-7,.1,60);camera.position.set(0,11,13);camera.lookAt(0,0,0);
  scene.add(new T.HemisphereLight(0xfff8e9,0x7c9378,2.5));const sun=new T.DirectionalLight(0xffefd5,2.3);sun.position.set(-5,10,4);scene.add(sun);
@@ -17,11 +17,12 @@ export function createFarmScene(){
   const wanted=new Set();
   Object.entries(f.members).sort(([a],[b])=>a.localeCompare(b)).forEach(([owner,m],index)=>{
    const pet=m.pets.find(p=>p.id===m.activeId)||m.pets.at(-1);if(!pet)return;wanted.add(owner);
-   const key=JSON.stringify([pet.id,pet.line,pet.feeds.length,pet.history,pet.name]);
+   const key=JSON.stringify([pet.id,pet.line,pet.feeds.length,pet.history,pet.name,stage(pet)]);
    let item=companions.get(owner);
    if(item?.key!==key){if(item){scene.remove(item.group);item.model.userData.dispose();item.label.userData.dispose()}
     const group=new T.Group(),model=createFarmPet(pet);group.add(model);model.updateMatrixWorld(true);
-    const bounds=new T.Box3().setFromObject(model),size=bounds.getSize(new T.Vector3()),factor=.8*Math.min(1.25/Math.max(.01,size.y),1.3/Math.max(.01,size.x,size.z));
+    // Normalize the model first so every evolution increases its overall footprint.
+    const bounds=new T.Box3().setFromObject(model),size=bounds.getSize(new T.Vector3()),factor=(.52+.104*stage(pet))/Math.max(.01,size.x,size.y,size.z);
     model.scale.multiplyScalar(factor);model.position.y-=bounds.min.y*factor;group.userData.owner=owner;const label=nameTag(pet.name||'小雞');label.position.y=size.y*factor+.32;group.add(label);scene.add(group);item={group,model,label,key};companions.set(owner,item);
    }
    // Walk around the front lawn, keeping the planting grid and tools clear.
