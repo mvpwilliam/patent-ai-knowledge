@@ -1,3 +1,4 @@
+import {validatePlayHit,recentPlayHits} from './player-play.js?v=play40';
 import {shirtPreview} from './farm-shirt-preview.js?v=wardrobe30';
 import {AWARDS,newFarm,farmAction} from './farm-core.js?v=battle28';
 import {decorateFarmShirt} from './farm-home.js?v=home-pet39';
@@ -13,7 +14,7 @@ import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v
 import {firebaseConfig} from './firebase-config.js?v=64';
 import {findPath,canTraverse,walkable,crossesWall,setDynamicObstacles,crossesDynamicObstacle} from './navigation.js?v=games2-1';
 import {scaleX,sinkX,stoveX,kitchenStart,furnitureShift,pointXZ,furnitureXZ,furnitureXYZ,washerPosition,entryZero} from './layout.js?v=entry-expand-1';
-import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=window-night-1';
+import {createPixelDad,createPixelChild,normalizeAvatarDesign,dadWhitePreset} from './pixel-dad.js?v=play40';
 import {legendaryOutfits,outfitById,unlockLegendary} from './legendary-outfits.js?v=editor-visor-1';
 import {openAvatarEditor} from './avatar-editor.js?v=outfit-feed-18';
 import {createHouseNPC} from './house-npc.js?v=games2-1';
@@ -482,6 +483,7 @@ function animate(now){
   window.homeScene?.setBalconyDoor(nearBalconyDoor);
   window.homeScene?.updateDoorsAt(character.position.x,character.position.z,houseNPC?[[houseNPC.character.position.x,houseNPC.character.position.z]]:[]);
   animateOthers(dt,now);
+  animatePlayerHits();
   houseNPC?.update(dt,now);
   if(houseNPC){houseNPC.character.userData.updatePose?.(houseNPC.state==='act'?houseNPC.action?.pose:houseNPC.state==='walk'?'walk':'stand');houseNPC.character.userData.updateNPCDetail?.(now);}
   if(houseNPC&&$('#npc-status'))$('#npc-status').textContent=`小屋日常 · ${houseNPC.action?.label||'在家休息'}`;
@@ -1241,7 +1243,59 @@ function attackMonsterAt(e){
  }else toast('上一筆正在儲存，請稍候再攻擊');
  return true;
 }
-window.homeGameAttackAt=attackMonsterAt;
+
+function animatePlayerHits(){
+ const all=new Map([[playerId(),character],...[...characters].map(([id,v])=>[id,v.mesh])]);
+ const hits=recentPlayHits(gameMeta.players,Date.now()),reactions=new Map();
+ for(const hit of hits){
+  const old=reactions.get(hit.target);if(!old||old.at<hit.at)reactions.set(hit.target,hit);
+  const attacker=all.get(hit.attacker),target=all.get(hit.target);
+  if(attacker&&target&&hit.age<650&&hit.attacker!==playerId()){
+   attacker.rotation.y=Math.atan2(target.position.x-attacker.position.x,target.position.z-attacker.position.z);
+   const arm=attacker.userData.arms?.[1];if(arm)arm.rotation.x=-1.5*Math.sin(Math.PI*hit.age/650);
+  }
+ }
+ for(const [id,mesh] of all){if(!mesh)continue;const hit=reactions.get(id);
+  mesh.userData.setPlayExpression?.(hit?(hit.age<700?'surprised':'angry'):'');
+ }
+}
+async function hitPlayer(id){
+ if(mode!=='online'||!homeReady)return toast('連線後才能和家人互動');
+ const origin=character.position.clone(),scope=homeId,event={id:crypto.randomUUID(),target:id};
+ try{
+  await mutateGame((p,meta)=>{
+   if(homeId!==scope)throw Error('家庭已切換');
+   const target=meta.players[id],now=Date.now();
+   const hit=validatePlayHit(event,p,target,now,origin);
+   const destination=[target.presence.x,target.presence.z];
+   if(crossesWall([origin.x,origin.z],destination)||crossesDynamicObstacle([origin.x,origin.z],destination))throw Error('中間有障礙物，請靠近一點');
+   p.playAttack=hit;
+  });
+ }catch(e){toast(e.message||'互動未同步，請再試一次')}
+}
+function attackPlayerAt(e){
+ if(mode!=='online'||!homeReady||!character||document.querySelector('dialog[open]'))return false;
+ const rect=$('#scene').getBoundingClientRect();if(!rect.width||!rect.height)return false;
+ monsterPointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+ scene.updateMatrixWorld(true);window.homeScene.camera.updateMatrixWorld(true);monsterRay.setFromCamera(monsterPointer,window.homeScene.camera);
+ const hit=monsterRay.intersectObjects([...characters.values()].map(v=>v.mesh),true)[0];if(!hit)return false;
+ const entry=[...characters].find(([,v])=>{let obj=hit.object;while(obj){if(obj===v.mesh)return true;obj=obj.parent}return false});
+ if(!entry||monsterRay.intersectObject(window.homeScene.root,true).some(h=>blocksMonsterHit(h,hit.distance)))return false;
+ const [id,item]=entry;
+ if(syncBusy||handAction){toast('稍等一下再出拳');return true}
+ if(Date.now()-(player.playAttack?.at||0)<2500){toast('稍等一下再出拳');return true}
+ const point=[item.mesh.position.x,item.mesh.position.z];
+ const stops=Array.from({length:12},(_,i)=>[point[0]+Math.sin(i*Math.PI/6)*.65,point[1]+Math.cos(i*Math.PI/6)*.65]);
+ approachTarget(point,()=>{
+  const target=characters.get(id);
+  if(!target||Math.hypot(character.position.x-target.mesh.position.x,character.position.z-target.mesh.position.z)>1.05)return toast('對方走遠了，請再點一次');
+  character.rotation.y=Math.atan2(target.mesh.position.x-character.position.x,target.mesh.position.z-character.position.z);
+  return interactWithHand(()=>hitPlayer(id));
+ },'走去和家人互動',.9,stops);
+ return true;
+}
+window.homeGameAttackAt=e=>attackPlayerAt(e)||attackMonsterAt(e);
+
 
 
 

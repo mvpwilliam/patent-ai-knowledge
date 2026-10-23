@@ -170,6 +170,31 @@ for(const {obj,world,parent,arm,head} of snapshots){
  named.Head.add(closedEyes);
  g.userData.setEyesClosed=closed=>{for(const node of eyeNodes)node.visible=!closed;closedEyes.visible=!!closed;g.userData.eyesClosed=!!closed};
 
+
+ // Temporary playful reactions reuse the face's own local bounds.
+ const faceParts=nodes.filter(n=>/Face pixel \d+ (5|6|7|21|22|23|24|25|26|27|28|29|30|31)$/.test(n.name));
+ model.traverse(n=>{if(n.name.startsWith('Mouth '))faceParts.push(n)});
+ const faceVisibility=faceParts.map(n=>[n,n.visible]),reaction=new T.Group();reaction.name='Play expression';reaction.visible=false;named.Head.add(reaction);
+ const eyeBox=new T.Box3();for(const n of eyeNodes)eyeBox.union(new T.Box3().setFromObject(n));
+ if(!eyeBox.isEmpty()){
+  eyeBox.applyMatrix4(named.Head.matrixWorld.clone().invert());
+  const center=eyeBox.getCenter(new T.Vector3()),width=eyeBox.max.x-eyeBox.min.x;
+  const material=new T.MeshStandardMaterial({color:'#59372d',roughness:1});
+  const brow=[];
+  for(const side of [-1,1]){
+   const b=new T.Mesh(new T.BoxGeometry(width*.36,.006,.006),material);
+   b.position.set(center.x+side*width*.31,eyeBox.max.y+.025,eyeBox.max.z+.006);reaction.add(b);brow.push(b);
+  }
+  const mouth=new T.Mesh(new T.BoxGeometry(width*.28,.014,.006),material);mouth.position.set(center.x,center.y-width*.52,eyeBox.max.z+.005);reaction.add(mouth);
+  let expression='';
+  g.userData.setPlayExpression=next=>{
+   if(next===expression)return;expression=next;reaction.visible=!!next;
+   for(const [n,visible] of faceVisibility)n.visible=next?false:visible;
+   brow.forEach((b,i)=>{b.rotation.z=next==='angry'?(i?-.3:.3):0;b.position.y=eyeBox.max.y+(next==='surprised'?.04:.025)});
+   mouth.scale.set(next==='surprised'?.55:1,next==='surprised'?2:1,1);
+  };
+ }
+
  // Fit the visor after body/face remapping, in the Head joint's local coordinates.
  const fit={faceWidth:d.faceWidth};
  if(d.legendaryOutfit==='neon'){
