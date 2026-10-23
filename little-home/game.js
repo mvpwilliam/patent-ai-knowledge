@@ -1,3 +1,4 @@
+import {hasRestSpace} from './floor-rest.js?v=lie41';
 import {validatePlayHit,recentPlayHits} from './player-play.js?v=play40';
 import {shirtPreview} from './farm-shirt-preview.js?v=wardrobe30';
 import {AWARDS,newFarm,farmAction} from './farm-core.js?v=battle28';
@@ -159,8 +160,26 @@ function leaveRest(){
 }
 let currentBed=null,movementRequest=0,floorPose=false,poseLift=0,furnitureSupport=null;
 function releaseBed(){currentBed=null;if(character)character.userData.bedReservation=null}
+function canLieHere(){
+ // Preview the actual pose without cancelling movement or changing the current pose.
+ const saved=[];character.traverse(obj=>saved.push({obj,position:obj.position.clone(),quaternion:obj.quaternion.clone(),scale:obj.scale.clone(),visible:obj.visible}));
+ try{
+  const body=character.userData.body;body.position.y=0;body.rotation.set(-Math.PI/2,0,0);
+  for(const limb of [...character.userData.arms,...character.userData.legs])limb.rotation.set(0,0,0);
+  character.userData.updatePose?.('lie');character.updateMatrixWorld(true);
+  const bounds=new T.Box3().setFromObject(character);
+  return hasRestSpace(bounds,canTraverse);
+ }finally{
+  for(const {obj,position,quaternion,scale,visible} of saved){obj.position.copy(position);obj.quaternion.copy(quaternion);obj.scale.copy(scale);obj.visible=visible}
+  character.updateMatrixWorld(true);
+ }
+}
 function setPose(next){
  if(activity)return toast('先完成目前的家事');if(!character)return;
+ if(next==='lie'){
+  if(pose==='lie'&&!travel)return;
+  if(!canLieHere())return toast('這裡空間不足，請移到空曠處再躺下');
+ }
  rememberRestExit();
  movementRequest++;cancelHandAction();travel=null;
  if(next==='stand'&&restExit)leaveRest();
