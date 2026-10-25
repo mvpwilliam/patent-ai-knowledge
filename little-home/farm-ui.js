@@ -1,5 +1,5 @@
 import {shirtPreview} from './farm-shirt-preview.js?v=wardrobe30';
-import {openPetBattle,statsText} from './pet-battle-ui.js?v=battle28';
+import {openPetBattle,statsText} from './pet-battle-ui.js?v=face42';
 import {playEvolution} from './farm-evolution.js?v=evo-10';
 import * as T from './vendor/three.module.js';
 import {cropPicture,beastPicture,mountPetViewer} from './farm-art.js?v=evo-10';
