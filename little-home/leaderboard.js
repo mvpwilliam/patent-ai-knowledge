@@ -1,12 +1,16 @@
-export const SCORE_GAMES={castle:{name:'城堡保衛戰',rule:'擊退一隻＋100；存活每秒＋10；通關＋2,000；通關時城堡每點生命＋10。'},shooter:{name:'客廳防衛戰',rule:'擊退一隻＋100；救援一位夥伴＋500；擊敗哥吉拉＋2,000。'}};
+export const SCORE_GAMES={castle:{name:'城堡保衛戰',rule:'擊退一隻＋100；存活每秒＋10；通關＋2,000；通關時城堡每點生命＋10。'},shooter:{name:'客廳防衛戰',rule:'擊退一隻＋100；救援一位夥伴＋500；擊敗哥吉拉＋2,000；300 秒內通關，每快 1 秒＋10；通關剩餘生命每點＋20（角色生命，最高 100 點）。'}};
 const whole=(n,max=1000000)=>Number.isFinite(n)?Math.max(0,Math.min(max,Math.floor(n))):0;
 export function castleScore(s){return whole(s.kills)*100+whole(s.time,120)*10+(s.status==='won'?2000+whole(s.castle?.hp,180)*10:0)}
-export function battleResult(kind,s){return {kind,score:kind==='castle'?castleScore(s):whole(s.score),won:s.status==='won',finished:['won','lost'].includes(s.status),kills:whole(s.kills),time:whole(s.time),rescues:whole(s.rescues,5)}}
+export function shooterBreakdown(s){
+ const time=Number.isFinite(s.time)?Math.max(0,Math.ceil(s.time-1e-8)):0,hp=whole(s.hero?.hp,100),won=s.status==='won';
+ return {baseScore:whole(s.score),time,hp,timeBonus:won?Math.max(0,300-time)*10:0,healthBonus:won?hp*20:0};
+}
+export function battleResult(kind,s){if(kind==='shooter'){const b=shooterBreakdown(s);return {...b,kind,score:b.baseScore+b.timeBonus+b.healthBonus,won:s.status==='won',finished:['won','lost'].includes(s.status),kills:whole(s.kills),rescues:whole(s.rescues,5)}}return {kind,score:kind==='castle'?castleScore(s):whole(s.score),won:s.status==='won',finished:['won','lost'].includes(s.status),kills:whole(s.kills),time:whole(s.time),rescues:whole(s.rescues,5)}}
 export function saveBestScore(player,result,at=Date.now()){
  if(!Object.hasOwn(SCORE_GAMES,result.kind)||!result.finished||!Number.isSafeInteger(result.score)||result.score<0||result.score>10000000)throw new Error('這局成績無法登錄');
  if(!player.bestScores||typeof player.bestScores!=='object'||Array.isArray(player.bestScores))player.bestScores={};
  const old=player.bestScores[result.kind];if(old&&old.score>=result.score)return false;
- player.bestScores[result.kind]={score:result.score,won:!!result.won,at,time:whole(result.time),kills:whole(result.kills),rescues:whole(result.rescues,5)};return true;
+ player.bestScores[result.kind]={score:result.score,won:!!result.won,at,hp:whole(result.hp,100),time:whole(result.time),kills:whole(result.kills),rescues:whole(result.rescues,5)};return true;
 }
 export function rankingRows(players,profiles,kind){
  const rows=Object.entries(players||{}).flatMap(([id,p])=>{const r=p.bestScores?.[kind];return r&&Number.isSafeInteger(r.score)&&r.score>=0?[{...r,id,name:profiles?.[id]?.name||'玩家'}]:[]});
@@ -17,6 +21,14 @@ function styles(){if(document.getElementById('leaderboard-style'))return;const l
 export function resultScorePanel(result,submit){
  styles();const box=document.createElement('section');box.className='result-score';const score=document.createElement('strong'),note=document.createElement('p'),retry=document.createElement('button');
  score.textContent=`本局 ${result.score.toLocaleString()} 分`;note.textContent='正在保存排行榜成績…';note.setAttribute('role','status');retry.textContent='重試保存成績';retry.hidden=true;box.append(score,note,retry);
+ if(result.kind==='shooter'){const details=document.createElement('ul');for(const line of [
+  `${result.won?'通關時間':'遊玩時間'}：${result.time} 秒`,
+  `剩餘生命：${result.hp} / 100`,
+  `戰鬥得分：${result.baseScore} 分`,
+  `時間加分：＋${result.timeBonus} 分`,
+  `生命加分：＋${result.healthBonus} 分`
+ ]){const li=document.createElement('li');li.textContent=line;details.append(li)}score.after(details)}
+
  async function save(){retry.hidden=true;try{note.textContent=await submit(result)}catch(e){note.textContent=e.message||'成績未保存，請重試';retry.hidden=false}}
  retry.onclick=save;save();return box;
 }
