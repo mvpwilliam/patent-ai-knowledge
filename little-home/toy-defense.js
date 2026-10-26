@@ -1,7 +1,7 @@
 import {applyGameMenuIcons} from './game-menu-icons.js?v=block-icons-1';
 import {installFarm} from './farm-ui.js?v=face42';
-import {installSideShooter} from './side-shooter.js?v=score43';
-import {battleResult,castleScore,resultScorePanel} from './leaderboard.js?v=score43';
+import {installSideShooter} from './side-shooter.js?v=reward44';
+import {battleResult,castleScore,resultScorePanel} from './leaderboard.js?v=reward44';
 import * as T from './vendor/three.module.js';
 import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
 
@@ -93,7 +93,7 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEs
  }
  function finish(){
   resultShown=true;clearInput();
-  if(state.status==='won')modal('兩分鐘，守護成功！',`擊退 ${state.kills} 隻玩具怪。獲得 30 幣、20 EXP；首次勝利獲得積木恐龍獎盃。`,[['領取戰利品',claim,true]]);
+  if(state.status==='won')modal('兩分鐘，守護成功！',`擊退 ${state.kills} 隻玩具怪。獲得 30 幣、20 EXP；首次勝利獲得積木恐龍獎盃。`,[['領取金幣與經驗',claim,true]]);
   else modal('再挑戰一次',`${state.reason}。本局擊退 ${state.kills} 隻玩具怪，撐了 ${Math.floor(state.time)} 秒。`,[['再玩兩分鐘',()=>{for(const g of visuals.values())scene.remove(g);visuals.clear();state=createBattle();runId=crypto.randomUUID();resultShown=false;saved=false;last=0;$('td-weapon').innerHTML='🫧<small>泡泡槍／切換</small>';$('td-shade').hidden=true},true],['回到小屋',close]]);
   $('td-content').prepend(resultScorePanel(battleResult('castle',state),result=>(scoreReady=onResult(result))));
   const rank=document.createElement('button');rank.textContent='查看排行榜';rank.onclick=()=>openLeaderboard('castle');$('td-buttons').append(rank);

@@ -29,7 +29,7 @@ export function resultScorePanel(result,submit){
   `生命加分：＋${result.healthBonus} 分`
  ]){const li=document.createElement('li');li.textContent=line;details.append(li)}score.after(details)}
 
- async function save(){retry.hidden=true;try{note.textContent=await submit(result)}catch(e){note.textContent=e.message||'成績未保存，請重試';retry.hidden=false}}
+ async function save(){retry.hidden=true;try{const response=await submit(result);note.textContent=typeof response==='string'?response:response.message;if(response?.reward)box.prepend(response.reward)}catch(e){note.textContent=e.message||'成績未保存，請重試';retry.hidden=false}}
  retry.onclick=save;save();return box;
 }
 export function installLeaderboard({getState}){

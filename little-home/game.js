@@ -8,8 +8,8 @@ import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
-import {installToyDefense} from './toy-defense.js?v=score43';
-import {installLeaderboard,saveBestScore,rankingRows} from './leaderboard.js?v=score43';
+import {installToyDefense} from './toy-defense.js?v=reward44';
+import {installLeaderboard,saveBestScore,rankingRows} from './leaderboard.js?v=reward44';
 import {MEDALS,awardMedal,medalCard,renderMedalCollection,beginEscapeMedal,pendingMedalKey} from './medals.js?v=medal-row-2';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
 import {firebaseConfig} from './firebase-config.js?v=64';
@@ -1366,10 +1366,13 @@ async function claimEscapeMedal(){
    openLeaderboard:kind=>leaderboard.open(kind),
    async onResult(result){
     const owner=battleOwner;if(owner!==medalOwner())throw new Error('帳號或家庭已切換，無法保存原角色的成績');
-    let improved=false;
-    await mutateGame(p=>{if(owner!==medalOwner())throw new Error('帳號或家庭已切換');improved=saveBestScore(p,result)});
+    let improved=false,earned=false;
+    await mutateGame(p=>{if(owner!==medalOwner())throw new Error('帳號或家庭已切換');improved=saveBestScore(p,result);earned=result.won&&awardMedal(p,result.kind)});
     const rows=rankingRows(gameMeta.players,profileCache,result.kind),row=rows.find(r=>r.id===playerId());
-    return `${improved?'刷新個人最高分！':'成績已保存。'}最高 ${player.bestScores[result.kind].score.toLocaleString()} 分${row?` · ${mode==='online'?'家庭':'本機'}第 ${row.rank} 名`:''}`;
+    const message=`${improved?'刷新個人最高分！':'成績已保存。'}最高 ${player.bestScores[result.kind].score.toLocaleString()} 分${row?` · ${mode==='online'?'家庭':'本機'}第 ${row.rank} 名`:''}`;
+    let reward=null;
+    if(result.won){reward=document.createElement('section');reward.setAttribute('role','status');const title=document.createElement('h3');title.textContent=earned?'獲得通關獎牌！':'通關獎牌已擁有';reward.append(title);if(earned)reward.append(medalCard(result.kind,{name:avatar.name,earnedAt:player.medals[result.kind].earnedAt,compact:true}));const note=document.createElement('p');note.textContent=earned?'已自動收入「我的人物 → 我的獎牌」。':'不會重複頒發，可在「我的人物」查看。';reward.append(note)}
+    return {message,reward};
    },
    prepareEscape(){
     if(syncBusy||(mode==='online'&&(!homeReady||!user))){toast('角色資料尚未就緒，請稍候再進入密室');return false}
@@ -1409,8 +1412,8 @@ async function claimEscapeMedal(){
      if(!p.inventory.some(o=>o.item==='toy-trophy'))p.inventory.push({id:'toy-trophy-'+playerId(),item:'toy-trophy',room:null,slot:null});
      record(p,shooting?'客廳防衛戰 · 勝利':'玩具保衛戰 · 兩分鐘勝利',coins);
     });
-    const card=document.createElement('div');card.append(medalCard(medalId,{name:avatar.name,earnedAt:player.medals?.[medalId]?.earnedAt,compact:true}));
-    const note=document.createElement('p');note.textContent=`已保存：${coins} 幣、20 EXP。「${MEDALS[medalId].name}」已收入「我的角色 → 我的獎牌」。積木恐龍獎盃可在「我的道具」擺放。`;card.append(note);return card;
+    const card=document.createElement('div');
+    const note=document.createElement('p');note.textContent=`已保存：${coins} 幣、20 EXP。積木恐龍獎盃可在「我的道具」擺放。`;card.append(note);return card;
    }
   });
   for(const [id,page] of [['character-open','character'],['family-open','family']])$('#'+id).onclick=()=>openHomePanel(page);
