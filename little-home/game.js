@@ -8,7 +8,7 @@ import * as T from './vendor/three.module.js';
 import {installPoseRadial} from './pose-radial.js?v=home-detail-2';
 import {loadHomeCache,saveHomeCache} from './home-cache.js?v=side-fast-1';
 import {MAX_XP,levelInfo,hitHomeMonster} from './home-progression.js?v=boss-reward-2';
-import {installToyDefense} from './toy-defense.js?v=reward44';
+import {installToyDefense} from './toy-defense.js?v=auto45';
 import {installLeaderboard,saveBestScore,rankingRows} from './leaderboard.js?v=reward44';
 import {MEDALS,awardMedal,medalCard,renderMedalCollection,beginEscapeMedal,pendingMedalKey} from './medals.js?v=medal-row-2';
 import {monsterApproachPoints,blocksMonsterHit} from './monster-interaction.js?v=monster-hit-1';
@@ -1401,19 +1401,21 @@ async function claimEscapeMedal(){
    async onWin(runId, result={}){
     const shooting=result.kind==='shooter';const coins=shooting?Math.max(30,Math.min(50,Math.floor(Number(result.coins)||30))):30;
     const medalId=shooting?'shooter':'castle';
+    if(!result.won||!result.finished)throw new Error('尚未通關，無法發放獎勵');
+    let already=false,xpGain=0;
     if(battleOwner!==`${homeId||'preview'}:${playerId()}`)throw new Error('帳號或家庭已切換，無法把這局獎勵存入不同角色');
     await mutateGame(p=>{
      awardMedal(p,medalId);
      if(result.finished)saveBestScore(p,result);
-     if((p.toyDefenseRuns||[]).includes(runId))return;
+     already=(p.toyDefenseRuns||[]).includes(runId);if(already)return;
      p.toyDefenseRuns=[runId,...(p.toyDefenseRuns||[])].slice(0,30);
-     p.coins+=coins;p.xp=Math.min(MAX_XP,p.xp+20);
+     xpGain=Math.max(0,Math.min(20,MAX_XP-p.xp));p.coins+=coins;p.xp=Math.min(MAX_XP,p.xp+20);
      // One earned trophy may use an extra inventory slot; purchases retain their 40-item limit.
      if(!p.inventory.some(o=>o.item==='toy-trophy'))p.inventory.push({id:'toy-trophy-'+playerId(),item:'toy-trophy',room:null,slot:null});
      record(p,shooting?'客廳防衛戰 · 勝利':'玩具保衛戰 · 兩分鐘勝利',coins);
     });
     const card=document.createElement('div');
-    const note=document.createElement('p');note.textContent=`已保存：${coins} 幣、20 EXP。積木恐龍獎盃可在「我的道具」擺放。`;card.append(note);return card;
+    const note=document.createElement('p');note.textContent=already?'本局獎勵已入帳，不會重複發放。':`已自動獲得：＋${coins} 幣${xpGain?`、＋${xpGain} EXP`:'（已滿級）'}。積木恐龍獎盃可在「我的道具」擺放。`;card.append(note);return card;
    }
   });
   for(const [id,page] of [['character-open','character'],['family-open','family']])$('#'+id).onclick=()=>openHomePanel(page);

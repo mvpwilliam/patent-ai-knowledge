@@ -1,6 +1,6 @@
 import {applyGameMenuIcons} from './game-menu-icons.js?v=block-icons-1';
 import {installFarm} from './farm-ui.js?v=face42';
-import {installSideShooter} from './side-shooter.js?v=reward44';
+import {installSideShooter} from './side-shooter.js?v=auto45';
 import {battleResult,castleScore,resultScorePanel} from './leaderboard.js?v=reward44';
 import * as T from './vendor/three.module.js';
 import {createBattle,stepBattle,chooseUpgrade,DURATION} from './toy-defense-core.js?v=games2-1';
@@ -85,18 +85,21 @@ export function installToyDefense({canStart,makeHero,onWin,farmOptions,prepareEs
   modal('選一個玩具升級',list,[]);
  }
  async function claim(){
-  if(saving||saved)return;saving=true;
-  modal('正在保存戰利品','請稍候，正在寫入你的角色資料。',[]);
-  try{await scoreReady.catch(()=>{});const reward=await onWin(runId,battleResult('castle',state));saved=true;modal('城堡守住了！',reward,[['查看排行榜',()=>openLeaderboard('castle')],['回到小屋',close,true]])}
-  catch(e){modal('勝利！獎勵尚未保存',e.message||'連線暫時失敗，可重試領取。',[['重試保存',claim,true],['放棄獎勵並回家',()=>{modal('放棄這次獎勵？','離開後無法重新領取這局獎勵。',[['繼續領取',claim,true],['確定離開',close]])}]])}
+  if(saving||saved||state?.status!=='won')return;saving=true;
+  const panel=$('td-content').querySelector('.result-score');
+  const show=(title,content,buttons)=>{modal(title,content,buttons);if(panel)$('td-content').append(panel)};
+  show('城堡守住了！','正在自動存入通關獎勵…',[]);
+  try{await scoreReady.catch(()=>{});const reward=await onWin(runId,battleResult('castle',state));saved=true;show('城堡守住了！',reward,[['查看排行榜',()=>openLeaderboard('castle')],['回到小屋',close,true]])}
+  catch(e){show('通關成功 · 獎勵尚未入帳',e.message||'連線暫時失敗，請重試保存。',[['重試保存',claim,true],['回到小屋',close]])}
   finally{saving=false}
  }
  function finish(){
   resultShown=true;clearInput();
-  if(state.status==='won')modal('兩分鐘，守護成功！',`擊退 ${state.kills} 隻玩具怪。獲得 30 幣、20 EXP；首次勝利獲得積木恐龍獎盃。`,[['領取金幣與經驗',claim,true]]);
+  if(state.status==='won')modal('兩分鐘，守護成功！',`擊退 ${state.kills} 隻玩具怪。獲得 30 幣、20 EXP；首次勝利獲得積木恐龍獎盃。`,[]);
   else modal('再挑戰一次',`${state.reason}。本局擊退 ${state.kills} 隻玩具怪，撐了 ${Math.floor(state.time)} 秒。`,[['再玩兩分鐘',()=>{for(const g of visuals.values())scene.remove(g);visuals.clear();state=createBattle();runId=crypto.randomUUID();resultShown=false;saved=false;last=0;$('td-weapon').innerHTML='🫧<small>泡泡槍／切換</small>';$('td-shade').hidden=true},true],['回到小屋',close]]);
   $('td-content').prepend(resultScorePanel(battleResult('castle',state),result=>(scoreReady=onResult(result))));
   const rank=document.createElement('button');rank.textContent='查看排行榜';rank.onclick=()=>openLeaderboard('castle');$('td-buttons').append(rank);
+  if(state.status==='won')void claim();
  }
  function sync(){
   hero.position.set(state.hero.x,0,state.hero.z);hero.rotation.y=Math.atan2(state.hero.dx,state.hero.dz);hero.visible=state.hero.inv<=0||Math.floor(state.time*14)%2===0;
